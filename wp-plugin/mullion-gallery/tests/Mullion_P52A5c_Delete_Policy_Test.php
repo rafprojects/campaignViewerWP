@@ -43,14 +43,14 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
 
     public function test_fonts_delete_denies_editor() {
         $this->set_editor();
-        $req = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/admin/font-library/' . wp_generate_uuid4());
+        $req = new WP_REST_Request('DELETE', '/mullion-gallery/v1/admin/font-library/' . wp_generate_uuid4());
         $this->assertSame(403, rest_do_request($req)->get_status(), 'editor must not delete fonts');
     }
 
     public function test_fonts_delete_allows_system_admin() {
         $this->set_system_admin();
         // A well-formed but non-existent id: 404 proves the System Admin passed the gate.
-        $req = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/admin/font-library/' . wp_generate_uuid4());
+        $req = new WP_REST_Request('DELETE', '/mullion-gallery/v1/admin/font-library/' . wp_generate_uuid4());
         $this->assertSame(404, rest_do_request($req)->get_status(), 'System Admin passes the font-delete gate');
     }
 
@@ -62,7 +62,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $campaign = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => 'Bound', 'post_status' => 'publish']);
         update_post_meta($campaign, '_mullion_layout_binding_template_id', $tid);
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/layout-templates/{$tid}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/admin/layout-templates/{$tid}");
         $res = rest_do_request($req);
 
         $this->assertSame(409, $res->get_status(), 'in-use template must not delete without force');
@@ -76,7 +76,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $campaign = wp_insert_post(['post_type' => 'mullion_campaign', 'post_title' => 'Bound', 'post_status' => 'publish']);
         update_post_meta($campaign, '_mullion_layout_binding_template_id', $tid);
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/layout-templates/{$tid}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/admin/layout-templates/{$tid}");
         $req->set_param('force', true);
         $res = rest_do_request($req);
 
@@ -88,7 +88,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $this->set_system_admin();
         $tid = $this->make_template();
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/layout-templates/{$tid}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/admin/layout-templates/{$tid}");
         $this->assertSame(200, rest_do_request($req)->get_status(), 'an unused template deletes freely');
     }
 
@@ -100,7 +100,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $space = Mullion_DB::insert_space(['name' => 'A5c', 'slug' => 'a5c-' . wp_generate_password(6, false), 'isolation_mode' => 'open']);
         Mullion_DB::associate_asset($space, 'asset', $aid);
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/asset-library/{$aid}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/admin/asset-library/{$aid}");
         $res = rest_do_request($req);
 
         $this->assertSame(409, $res->get_status(), 'associated asset must not delete without force');
@@ -114,7 +114,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $space = Mullion_DB::insert_space(['name' => 'A5c', 'slug' => 'a5c-' . wp_generate_password(6, false), 'isolation_mode' => 'open']);
         Mullion_DB::associate_asset($space, 'asset', $aid);
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/asset-library/{$aid}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/admin/asset-library/{$aid}");
         $req->set_param('force', true);
         $this->assertSame(200, rest_do_request($req)->get_status(), 'force=true overrides the asset in-use guard');
     }
@@ -123,7 +123,7 @@ class Mullion_P52A5c_Delete_Policy_Test extends WP_UnitTestCase {
         $this->set_system_admin();
         $aid = $this->make_asset();
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/asset-library/{$aid}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/admin/asset-library/{$aid}");
         $this->assertSame(200, rest_do_request($req)->get_status(), 'an unassociated asset deletes freely');
     }
 }

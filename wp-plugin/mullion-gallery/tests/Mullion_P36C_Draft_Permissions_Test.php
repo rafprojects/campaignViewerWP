@@ -78,18 +78,18 @@ class Mullion_P36C_Draft_Permissions_Test extends WP_UnitTestCase {
     }
 
     private function list_request(): array {
-        $req  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $req  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $resp = rest_do_request($req);
         return (array) ($resp->get_data()['items'] ?? []);
     }
 
     private function fetch_campaign(int $campaign_id): WP_REST_Response {
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         return rest_do_request($req);
     }
 
     private function list_media(int $campaign_id): WP_REST_Response {
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         return rest_do_request($req);
     }
 

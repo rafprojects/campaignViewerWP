@@ -49,7 +49,7 @@ export function useInContextSave(
         pendingRef.current = {};
         try {
           if (sid != null) {
-            const spaceResponse = await apiClient.put(`/wp-json/wp-super-gallery/v1/spaces/${sid}/settings`, batch) as { settings?: unknown };
+            const spaceResponse = await apiClient.put(`/wp-json/mullion-gallery/v1/spaces/${sid}/settings`, batch) as { settings?: unknown };
             // Reflect sanitizer clamping and allowlist drops from the server response
             // back into the cache so the UI stays in sync with persisted state.
             if (spaceResponse?.settings) {

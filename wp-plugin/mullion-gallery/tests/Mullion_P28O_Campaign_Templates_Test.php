@@ -44,7 +44,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     // ── GET /campaign-templates ───────────────────────────────────────────────
 
     public function test_list_includes_builtins() {
-        $response = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-templates'));
+        $response = rest_do_request(new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-templates'));
         $this->assertEquals(200, $response->get_status());
         $items = $response->get_data()['items'];
         $ids   = array_column($items, 'id');
@@ -55,7 +55,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     public function test_list_includes_user_templates() {
         $tpl_id = $this->make_template('User Template');
 
-        $response = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-templates'));
+        $response = rest_do_request(new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-templates'));
         $items    = $response->get_data()['items'];
         $ids      = array_column($items, 'id');
         $this->assertContains(strval($tpl_id), $ids);
@@ -64,7 +64,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_list_builtin_has_correct_shape() {
-        $response = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-templates'));
+        $response = rest_do_request(new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-templates'));
         $items    = $response->get_data()['items'];
         $blank    = array_values(array_filter($items, fn($i) => $i['id'] === 'builtin_blank'))[0];
 
@@ -77,7 +77,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     // ── POST /campaign-templates ──────────────────────────────────────────────
 
     public function test_create_template_from_scratch() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-templates');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-templates');
         $request->set_param('name', 'Scratch Template');
         $request->set_param('description', 'Created in test');
         $response = rest_do_request($request);
@@ -95,7 +95,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
         $campaign_id = $this->make_campaign();
         update_post_meta($campaign_id, 'visibility', 'public');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-templates');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-templates');
         $request->set_param('name', 'From Campaign');
         $request->set_param('from_campaign_id', $campaign_id);
         $response = rest_do_request($request);
@@ -109,7 +109,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_create_template_from_missing_campaign_returns_404() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-templates');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-templates');
         $request->set_param('name', 'Bad Source');
         $request->set_param('from_campaign_id', 999999);
         $response = rest_do_request($request);
@@ -121,7 +121,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
 
     public function test_delete_user_template_succeeds() {
         $tpl_id  = $this->make_template('To Delete');
-        $request = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaign-templates/{$tpl_id}");
+        $request = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaign-templates/{$tpl_id}");
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -131,14 +131,14 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
 
     public function test_delete_builtin_returns_403() {
         $response = rest_do_request(
-            new WP_REST_Request('DELETE', '/wp-super-gallery/v1/campaign-templates/builtin_blank')
+            new WP_REST_Request('DELETE', '/mullion-gallery/v1/campaign-templates/builtin_blank')
         );
         $this->assertEquals(403, $response->get_status());
     }
 
     public function test_delete_nonexistent_template_returns_404() {
         $response = rest_do_request(
-            new WP_REST_Request('DELETE', '/wp-super-gallery/v1/campaign-templates/999999')
+            new WP_REST_Request('DELETE', '/mullion-gallery/v1/campaign-templates/999999')
         );
         $this->assertEquals(404, $response->get_status());
     }
@@ -146,7 +146,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     // ── POST /campaign-templates/{id}/instantiate ─────────────────────────────
 
     public function test_instantiate_builtin_template_creates_campaign() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-templates/builtin_blank/instantiate');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-templates/builtin_blank/instantiate');
         $request->set_param('name', 'From Blank');
         $response = rest_do_request($request);
 
@@ -159,7 +159,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_instantiate_public_showcase_sets_public_visibility() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-templates/builtin_public_showcase/instantiate');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-templates/builtin_public_showcase/instantiate');
         $request->set_param('name', 'From Showcase');
         $response = rest_do_request($request);
 
@@ -172,7 +172,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     public function test_instantiate_user_template_creates_campaign() {
         $tpl_id = $this->make_template('User TPL');
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaign-templates/{$tpl_id}/instantiate");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaign-templates/{$tpl_id}/instantiate");
         $request->set_param('name', 'From User TPL');
         $response = rest_do_request($request);
 
@@ -187,7 +187,7 @@ class Mullion_P28O_Campaign_Templates_Test extends WP_UnitTestCase {
     }
 
     public function test_instantiate_nonexistent_template_returns_404() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-templates/999999/instantiate');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-templates/999999/instantiate');
         $request->set_param('name', 'Ghost');
         $response = rest_do_request($request);
 

@@ -48,7 +48,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_campaign_category_returns_201_with_term_data() {
         $this->set_admin_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-categories');
         $request->set_param('name', 'Weddings');
         $response = rest_do_request($request);
 
@@ -67,7 +67,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_campaign_category_with_custom_slug() {
         $this->set_admin_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-categories');
         $request->set_param('name', 'Corporate Events');
         $request->set_param('slug', 'corp-events');
         $response = rest_do_request($request);
@@ -80,7 +80,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         wp_insert_term('Portraits', 'mullion_campaign_category');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-categories');
         $request->set_param('name', 'Portraits');
         $response = rest_do_request($request);
 
@@ -90,7 +90,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_campaign_category_missing_name_returns_400() {
         $this->set_admin_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-categories');
         // No name param.
         $response = rest_do_request($request);
 
@@ -102,7 +102,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $result  = wp_insert_term('Old Name', 'mullion_campaign_category');
         $term_id = $result['term_id'];
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaign-categories/{$term_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaign-categories/{$term_id}");
         $request->set_param('name', 'New Name');
         $response = rest_do_request($request);
 
@@ -116,7 +116,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_update_campaign_category_not_found_returns_404() {
         $this->set_admin_user();
 
-        $request = new WP_REST_Request('PUT', '/wp-super-gallery/v1/campaign-categories/999999');
+        $request = new WP_REST_Request('PUT', '/mullion-gallery/v1/campaign-categories/999999');
         $request->set_param('name', 'Ghost');
         $response = rest_do_request($request);
 
@@ -128,7 +128,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $result  = wp_insert_term('SomeCategory', 'mullion_campaign_category');
         $term_id = $result['term_id'];
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaign-categories/{$term_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaign-categories/{$term_id}");
         // No name or slug supplied.
         $response = rest_do_request($request);
 
@@ -140,7 +140,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $result  = wp_insert_term('ToDelete', 'mullion_campaign_category');
         $term_id = $result['term_id'];
 
-        $request  = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaign-categories/{$term_id}");
+        $request  = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaign-categories/{$term_id}");
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status(), 'Delete should return 200.');
@@ -153,7 +153,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_delete_campaign_category_not_found_returns_404() {
         $this->set_admin_user();
 
-        $request  = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/campaign-categories/999999');
+        $request  = new WP_REST_Request('DELETE', '/mullion-gallery/v1/campaign-categories/999999');
         $response = rest_do_request($request);
 
         $this->assertEquals(404, $response->get_status());
@@ -162,7 +162,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_campaign_category_non_admin_returns_403() {
         $this->set_subscriber_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-categories');
         $request->set_param('name', 'Forbidden');
         $response = rest_do_request($request);
 
@@ -176,7 +176,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_campaign_tag_returns_201() {
         $this->set_admin_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/campaign');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/campaign');
         $request->set_param('name', 'Summer 2026');
         $response = rest_do_request($request);
 
@@ -192,7 +192,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         wp_insert_term('Existing Tag', 'mullion_campaign_tag');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/campaign');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/campaign');
         $request->set_param('name', 'Existing Tag');
         $response = rest_do_request($request);
 
@@ -204,7 +204,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $result  = wp_insert_term('DeleteableTag', 'mullion_campaign_tag');
         $term_id = $result['term_id'];
 
-        $request  = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/tags/campaign/{$term_id}");
+        $request  = new WP_REST_Request('DELETE', "/mullion-gallery/v1/tags/campaign/{$term_id}");
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -217,7 +217,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_delete_campaign_tag_not_found_returns_404() {
         $this->set_admin_user();
 
-        $request  = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/tags/campaign/999999');
+        $request  = new WP_REST_Request('DELETE', '/mullion-gallery/v1/tags/campaign/999999');
         $response = rest_do_request($request);
 
         $this->assertEquals(404, $response->get_status());
@@ -226,7 +226,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_campaign_tag_non_admin_returns_403() {
         $this->set_subscriber_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/campaign');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/campaign');
         $request->set_param('name', 'Nope');
         $response = rest_do_request($request);
 
@@ -240,7 +240,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_media_tag_returns_201() {
         $this->set_admin_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/media');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/media');
         $request->set_param('name', 'Portrait');
         $response = rest_do_request($request);
 
@@ -255,7 +255,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         wp_insert_term('DupeMediaTag', 'mullion_media_tag');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/media');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/media');
         $request->set_param('name', 'DupeMediaTag');
         $response = rest_do_request($request);
 
@@ -267,7 +267,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
         $result  = wp_insert_term('RemovableMediaTag', 'mullion_media_tag');
         $term_id = $result['term_id'];
 
-        $request  = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/tags/media/{$term_id}");
+        $request  = new WP_REST_Request('DELETE', "/mullion-gallery/v1/tags/media/{$term_id}");
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -280,7 +280,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_delete_media_tag_not_found_returns_404() {
         $this->set_admin_user();
 
-        $request  = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/tags/media/999999');
+        $request  = new WP_REST_Request('DELETE', '/mullion-gallery/v1/tags/media/999999');
         $response = rest_do_request($request);
 
         $this->assertEquals(404, $response->get_status());
@@ -289,7 +289,7 @@ class Mullion_P28C_Taxonomy_CRUD_Test extends WP_UnitTestCase {
     public function test_create_media_tag_non_admin_returns_403() {
         $this->set_subscriber_user();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/media');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/media');
         $request->set_param('name', 'Blocked');
         $response = rest_do_request($request);
 

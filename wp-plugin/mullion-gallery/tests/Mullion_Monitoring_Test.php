@@ -29,7 +29,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
     // ── start_timer ────────────────────────────────────────────────────────
 
     public function test_start_timer_sets_for_mullion_routes() {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $server = rest_get_server();
 
         $result = Mullion_Monitoring::start_timer(null, $server, $request);
@@ -55,7 +55,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
     // ── attach_metrics ─────────────────────────────────────────────────────
 
     public function test_attach_metrics_adds_timing_header_for_mullion_routes() {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $server = rest_get_server();
 
         // Start timer first.
@@ -80,7 +80,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
     }
 
     public function test_attach_metrics_fires_mullion_rest_metrics_action() {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $server = rest_get_server();
         $response = new WP_REST_Response(['ok' => true], 200);
 
@@ -93,7 +93,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
         Mullion_Monitoring::attach_metrics($response, $server, $request);
 
         $this->assertNotNull($captured);
-        $this->assertEquals('/wp-super-gallery/v1/campaigns', $captured['route']);
+        $this->assertEquals('/mullion-gallery/v1/campaigns', $captured['route']);
         $this->assertEquals(200, $captured['status']);
     }
 
@@ -101,7 +101,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
 
     public function test_log_fatal_error_fires_action_on_fatal() {
         // Simulate a WPSG request context.
-        $_GET['rest_route'] = '/wp-super-gallery/v1/campaigns';
+        $_GET['rest_route'] = '/mullion-gallery/v1/campaigns';
 
         // We can't easily simulate error_get_last() returning a fatal in unit tests,
         // but we can verify the method doesn't crash when called directly.

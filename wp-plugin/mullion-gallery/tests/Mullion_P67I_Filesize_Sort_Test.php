@@ -39,7 +39,7 @@ class Mullion_P67I_Filesize_Sort_Test extends WP_UnitTestCase {
     }
 
     private function library_ids(string $sort): array {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/media-library');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/media-library');
         $req->set_param('sort', $sort);
         $req->set_param('per_page', 100);
         $resp = Mullion_Media_Controller::list_media_library($req);

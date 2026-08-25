@@ -53,6 +53,6 @@ describe('query fallbacks', () => {
     const get = vi.fn().mockResolvedValue([{ id: 'a1' }]);
     const { result } = renderHook(() => useAssetLibrary(api({ get }), true, 'all'), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/admin/asset-library');
+    expect(get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/admin/asset-library');
   });
 });

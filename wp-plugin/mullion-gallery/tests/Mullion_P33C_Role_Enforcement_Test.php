@@ -70,7 +70,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $viewer_id   = $this->create_user_with_level($campaign_id, 'viewer');
         wp_set_current_user($viewer_id);
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'New Title');
         $response = rest_do_request($request);
 
@@ -83,7 +83,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $viewer_id   = $this->create_user_with_level($campaign_id, 'viewer');
         wp_set_current_user($viewer_id);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $request->set_param('type', 'image');
         $request->set_param('source', 'external');
         $request->set_param('url', 'https://example.com/img.jpg');
@@ -98,7 +98,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $viewer_id   = $this->create_user_with_level($campaign_id, 'viewer');
         wp_set_current_user($viewer_id);
 
-        $request  = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $request  = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'viewer should be denied POST /campaigns/{id}/archive');
@@ -110,7 +110,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $viewer_id   = $this->create_user_with_level($campaign_id, 'viewer');
         wp_set_current_user($viewer_id);
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'viewer should be denied GET /campaigns/{id}/access');
@@ -126,7 +126,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $editor_id   = $this->create_user_with_level($campaign_id, 'editor');
         wp_set_current_user($editor_id);
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'Editor Updated Title');
         $response = rest_do_request($request);
 
@@ -139,7 +139,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $editor_id   = $this->create_user_with_level($campaign_id, 'editor');
         wp_set_current_user($editor_id);
 
-        $request  = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $request  = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'editor should be denied POST /campaigns/{id}/archive');
@@ -152,7 +152,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $target_id   = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($editor_id);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $target_id);
         $request->set_param('source', 'campaign');
         $response = rest_do_request($request);
@@ -166,7 +166,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $editor_id   = $this->create_user_with_level($campaign_id, 'editor');
         wp_set_current_user($editor_id);
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'editor should be denied GET /campaigns/{id}/access');
@@ -182,7 +182,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $owner_id    = $this->create_user_with_level($campaign_id, 'owner');
         wp_set_current_user($owner_id);
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'Owner Updated Title');
         $response = rest_do_request($request);
 
@@ -195,7 +195,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $owner_id    = $this->create_user_with_level($campaign_id, 'owner');
         wp_set_current_user($owner_id);
 
-        $request  = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $request  = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'owner grant must NOT allow POST /campaigns/{id}/archive');
@@ -207,7 +207,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $owner_id    = $this->create_user_with_level($campaign_id, 'owner');
         wp_set_current_user($owner_id);
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'owner grant must NOT allow GET /campaigns/{id}/access');
@@ -220,7 +220,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $target_id   = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($owner_id);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $target_id);
         $request->set_param('source', 'campaign');
         $request->set_param('access_level', 'viewer');
@@ -237,7 +237,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         // Do NOT add admin to access_grants.
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status(), 'site admin must bypass campaign role checks');
@@ -260,7 +260,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         // Viewer is already blocked, but deny override should still result in 403.
-        $request  = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request  = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'Should Fail');
         $response = rest_do_request($request);
 
@@ -281,7 +281,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
 
         wp_set_current_user($editor_id);
 
-        $request  = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request  = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'Should Still Fail');
         $response = rest_do_request($request);
 
@@ -296,7 +296,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         $no_grant_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($no_grant_id);
 
-        $request  = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request  = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'Should Fail');
         $response = rest_do_request($request);
 
@@ -327,7 +327,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
 
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'Company Editor Title');
         $response = rest_do_request($request);
 
@@ -365,7 +365,7 @@ class Mullion_P33C_Role_Enforcement_Test extends WP_UnitTestCase {
         wp_set_current_user($user_id);
 
         // Viewer cannot edit metadata — even though company says editor.
-        $request  = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $request  = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $request->set_param('title', 'Should Fail — viewer via campaign override');
         $response = rest_do_request($request);
 

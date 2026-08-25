@@ -33,15 +33,15 @@ const UPLOADS_TTL_MS = 60 * 60 * 1000; // 1 hour
 const UPLOADS_MAX_ENTRIES = 100;
 
 // Matches the two public gallery metadata endpoints (pathname only):
-//   /wp-json/wp-super-gallery/v1/campaigns              (campaign list)
-//   /wp-json/wp-super-gallery/v1/campaigns/{id}/media   (per-campaign media list)
-// Does NOT match /wp-json/wp-super-gallery/v1/admin/* or any other route.
+//   /wp-json/mullion-gallery/v1/campaigns              (campaign list)
+//   /wp-json/mullion-gallery/v1/campaigns/{id}/media   (per-campaign media list)
+// Does NOT match /wp-json/mullion-gallery/v1/admin/* or any other route.
 //
 // NOTE: this tests url.pathname (query string excluded), so the admin campaign
 // list — same pathname plus ?include_archived=… — also matches. The auth-header
 // bypass in the fetch handler keeps those (and every authenticated/mutation
 // flow) network-first per Key Decision D; only anonymous public reads get SWR.
-const META_ENDPOINT_RE = /\/wp-json\/wp-super-gallery\/v1\/campaigns(\/\d+\/media)?$/;
+const META_ENDPOINT_RE = /\/wp-json\/mullion-gallery\/v1\/campaigns(\/\d+\/media)?$/;
 
 // Vite-hashed asset filenames contain a content hash (e.g. index-DxTet_7o.js).
 // These should NOT be SW-cached because the hash already busts browser cache,

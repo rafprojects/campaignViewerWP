@@ -66,7 +66,7 @@ export function useMediaExternal({
         caption: externalPreview?.title ?? '',
         thumbnail: externalPreview?.thumbnail_url ?? undefined,
       };
-      const created = await apiClient.post<MediaItem>(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`, payload);
+      const created = await apiClient.post<MediaItem>(`/wp-json/mullion-gallery/v1/campaigns/${campaignId}/media`, payload);
       setMedia((m) => [...m, created]);
       queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), (prev) => [...(prev ?? []), created]);
       setExternalUrl('');
@@ -92,7 +92,7 @@ export function useMediaExternal({
       // Rely on server-side proxy to avoid CORS/provider restrictions.
       // The server implements provider handlers and caching; if it cannot
       // fetch a preview it will return a non-200 or error payload.
-      const data = await apiClient.get<OEmbedResponse>(`/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
+      const data = await apiClient.get<OEmbedResponse>(`/wp-json/mullion-gallery/v1/oembed?url=${encodeURIComponent(externalUrl)}`);
       if (data) {
         setExternalPreview(data);
         showNotification({ title: t('extmedia_preview_loaded_title', 'Preview loaded'), message: data.title ?? t('extmedia_preview_available', 'Preview available') });

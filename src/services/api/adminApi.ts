@@ -41,7 +41,7 @@ export class AdminApi {
    * locate the first '{' and parse from there.
    */
   async getHealthData(): Promise<HealthDataResponse> {
-    const url = `${this.transport.getBaseUrl()}/wp-json/wp-super-gallery/v1/admin/health`;
+    const url = `${this.transport.getBaseUrl()}/wp-json/mullion-gallery/v1/admin/health`;
     const headers = await this.transport.getAuthHeaders();
     const res = await fetch(url, { headers: { ...headers, Accept: 'application/json' } });
     if (!res.ok) {
@@ -65,7 +65,7 @@ export class AdminApi {
     if (params.to) qs.set('to', params.to);
     if (params.action) qs.set('action', params.action);
 
-    const url = `${this.transport.getBaseUrl()}/wp-json/wp-super-gallery/v1/admin/audit-log${qs.toString() ? `?${qs}` : ''}`;
+    const url = `${this.transport.getBaseUrl()}/wp-json/mullion-gallery/v1/admin/audit-log${qs.toString() ? `?${qs}` : ''}`;
     const headers = await this.transport.getAuthHeaders();
     const res = await fetch(url, { headers: { ...headers, Accept: 'text/csv' } });
     const blob = await res.blob();

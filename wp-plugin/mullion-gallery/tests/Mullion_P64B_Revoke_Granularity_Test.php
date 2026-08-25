@@ -80,7 +80,7 @@ class Mullion_P64B_Revoke_Granularity_Test extends WP_UnitTestCase {
     }
 
     private function revoke_campaign_access(int $campaign_id, int $user_id): WP_REST_Response {
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access/{$user_id}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaigns/{$campaign_id}/access/{$user_id}");
         return rest_do_request($req);
     }
 
@@ -188,7 +188,7 @@ class Mullion_P64B_Revoke_Granularity_Test extends WP_UnitTestCase {
             'grantedAt' => gmdate('c'), 'access_level' => 'viewer',
         ]]);
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/companies/{$company}/access/{$user}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/companies/{$company}/access/{$user}");
         $res = rest_do_request($req);
         $this->assertSame(200, $res->get_status());
         $this->assertSame([], get_term_meta($company, 'access_grants', true), 'company-wide revoke clears the company grant');

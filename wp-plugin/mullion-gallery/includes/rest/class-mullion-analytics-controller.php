@@ -8,7 +8,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
         // P18-F: Analytics
-        register_rest_route('wp-super-gallery/v1', '/analytics/event', [
+        register_rest_route('mullion-gallery/v1', '/analytics/event', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'record_analytics_event'],
@@ -31,7 +31,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
                 ],
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/analytics/campaigns/(?P<id>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/analytics/campaigns/(?P<id>\d+)', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_campaign_analytics'],
@@ -39,7 +39,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/analytics/campaigns/(?P<id>\d+)/media', [
+        register_rest_route('mullion-gallery/v1', '/analytics/campaigns/(?P<id>\d+)/media', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_campaign_media_analytics'],
@@ -47,7 +47,7 @@ class Mullion_Analytics_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/analytics/summary', [
+        register_rest_route('mullion-gallery/v1', '/analytics/summary', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_analytics_summary'],

@@ -33,7 +33,7 @@ export function useLayoutBuilderAssets({
         formData.append('file', file);
         formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
         const entry = await apiClient.postForm<AssetLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/asset-library',
+          '/wp-json/mullion-gallery/v1/admin/asset-library',
           formData,
         );
         await refetchAssetLibrary();
@@ -54,7 +54,7 @@ export function useLayoutBuilderAssets({
   const handleDeleteLibraryAsset = useCallback(
     async (id: string) => {
       try {
-        await apiClient.delete(`/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`);
+        await apiClient.delete(`/wp-json/mullion-gallery/v1/admin/asset-library/${id}`);
         await refetchAssetLibrary();
       } catch (err) {
         onNotify?.({
@@ -70,7 +70,7 @@ export function useLayoutBuilderAssets({
     async (id: string, universal: boolean) => {
       try {
         await apiClient.post(
-          `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`,
+          `/wp-json/mullion-gallery/v1/admin/asset-library/${id}`,
           { is_universal: universal },
         );
         await refetchAssetLibrary();
@@ -88,7 +88,7 @@ export function useLayoutBuilderAssets({
     async (id: string, tags: string[]) => {
       try {
         await apiClient.post(
-          `/wp-json/wp-super-gallery/v1/admin/asset-library/${id}`,
+          `/wp-json/mullion-gallery/v1/admin/asset-library/${id}`,
           { tags },
         );
         await refetchAssetLibrary();
@@ -111,7 +111,7 @@ export function useLayoutBuilderAssets({
         formData.append('file', file);
         formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
         const entry = await apiClient.postForm<AssetLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/asset-library',
+          '/wp-json/mullion-gallery/v1/admin/asset-library',
           formData,
         );
         builder.setBackgroundImage(entry.url);
@@ -135,7 +135,7 @@ export function useLayoutBuilderAssets({
         formData.append('file', file);
         formData.append('name', file.name.replace(/\.[^/.]+$/, ''));
         const entry = await apiClient.postForm<AssetLibraryItem>(
-          '/wp-json/wp-super-gallery/v1/admin/asset-library',
+          '/wp-json/mullion-gallery/v1/admin/asset-library',
           formData,
         );
         announce(t('lbassets_ann_mask', 'Mask image uploaded'));

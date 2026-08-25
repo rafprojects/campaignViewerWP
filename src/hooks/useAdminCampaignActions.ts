@@ -64,7 +64,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     const id = String(campaign.id);
     setArchivingIds((prev) => new Set(prev).add(id));
     try {
-      await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/archive`, {});
+      await apiClient.post(`/wp-json/mullion-gallery/v1/campaigns/${campaign.id}/archive`, {});
       onNotify({ type: 'success', text: 'Campaign archived.' });
       await onMutate();
       onCampaignsUpdated();
@@ -94,7 +94,7 @@ export function useAdminCampaignActions({ apiClient, campaigns: _campaigns, onMu
     const id = String(campaign.id);
     setRestoringIds((prev) => new Set(prev).add(id));
     try {
-      await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${campaign.id}/restore`, {});
+      await apiClient.post(`/wp-json/mullion-gallery/v1/campaigns/${campaign.id}/restore`, {});
       onNotify({ type: 'success', text: 'Campaign restored.' });
       await onMutate();
       onCampaignsUpdated();

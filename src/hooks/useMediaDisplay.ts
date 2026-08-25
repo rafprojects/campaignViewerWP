@@ -55,7 +55,7 @@ export function useMediaDisplay({
     const itemsToSend = nextMedia.map((it, i) => ({ id: it.id, order: i + 1 }));
 
     try {
-      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
+      await apiClient.put(`/wp-json/mullion-gallery/v1/campaigns/${campaignId}/media/reorder`, { items: itemsToSend });
       const reorderedMedia = nextMedia.map((it, i) => ({ ...it, order: i + 1 }));
       setMedia(reorderedMedia);
       queryClient.setQueryData<MediaItem[]>(getMediaItemsQueryKey(apiClient, campaignId), reorderedMedia);

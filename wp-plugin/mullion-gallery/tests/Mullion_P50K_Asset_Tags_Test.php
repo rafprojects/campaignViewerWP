@@ -86,7 +86,7 @@ class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
 
     public function test_rest_upload_persists_tags() {
         $this->set_super_admin();
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/asset-library');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/asset-library');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'url'  => 'https://example.com/p50k-upload.png',
@@ -107,7 +107,7 @@ class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
         $this->assertTrue(Mullion_Asset_Library::set_universal($id, true));
 
         // Update only tags via REST.
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/asset-library/{$id}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/asset-library/{$id}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'tags' => ['kept'] ]));
         $response = rest_do_request($request);
@@ -122,7 +122,7 @@ class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
         $this->set_super_admin();
         $id = $this->add_asset('P50K Partial2', ['stay']);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/asset-library/{$id}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/asset-library/{$id}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'is_universal' => true ]));
         $response = rest_do_request($request);
@@ -137,7 +137,7 @@ class Mullion_P50K_Asset_Tags_Test extends WP_UnitTestCase {
         $this->set_super_admin();
         $id = $this->add_asset('P50K NoFields', []);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/asset-library/{$id}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/asset-library/{$id}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'foo' => 'bar' ]));
         $response = rest_do_request($request);

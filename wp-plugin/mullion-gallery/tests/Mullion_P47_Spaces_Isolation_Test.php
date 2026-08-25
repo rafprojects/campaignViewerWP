@@ -61,7 +61,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
     }
 
     private function campaign_ids_for_space($space_id): array {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('space', (string) $space_id);
         $data  = rest_do_request($request)->get_data();
         $items = $data['items'] ?? [];
@@ -96,11 +96,11 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         $space_a = $this->make_space('open', [ 'theme' => 'theme-aaa' ]);
         $space_b = $this->make_space('open', [ 'theme' => 'theme-bbb' ]);
 
-        $req_a = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $req_a = new WP_REST_Request('GET', '/mullion-gallery/v1/settings');
         $req_a->set_param('space', (string) $space_a);
         $theme_a = rest_do_request($req_a)->get_data()['theme'] ?? null;
 
-        $req_b = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $req_b = new WP_REST_Request('GET', '/mullion-gallery/v1/settings');
         $req_b->set_param('space', (string) $space_b);
         $theme_b = rest_do_request($req_b)->get_data()['theme'] ?? null;
 
@@ -120,7 +120,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         $space = $this->make_space('open');
         wp_set_current_user($uid);
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/spaces/{$space}/settings");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'manage_mullion without an explicit grant must be denied even an open space.');
@@ -135,7 +135,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         $space = $this->make_space('delegated');
         wp_set_current_user($uid);
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/spaces/{$space}/settings");
         $response = rest_do_request($request);
 
         $this->assertSame(403, $response->get_status(), 'Delegated space must deny a manage_mullion-only admin.');
@@ -145,7 +145,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         $this->set_super_admin(); // administrator => manage_options
         $space = $this->make_space('delegated');
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/spaces/{$space}/settings");
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status(), 'manage_options must always reach a delegated space.');
@@ -159,7 +159,7 @@ class Mullion_P47_Spaces_Isolation_Test extends WP_UnitTestCase {
         ]);
 
         wp_set_current_user($grantee);
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/spaces/{$space}/settings");
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status(), 'An explicit grantee must reach a delegated space.');

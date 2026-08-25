@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "WP Super Gallery \u2014 Full API Collection",
+    "name": "Mullion \u2014 Full API Collection",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Complete Postman collection for the WP Super Gallery REST API.\n\nEnvironment variables required:\n- baseUrl (e.g. https://example.com)\n- username\n- password\n- wpsg_nonce (auto-captured from login)\n- campaign_id\n- media_id\n- user_id\n- token\n- template_id\n- overlay_id\n- font_id\n- company_id\n\nPre-request script at collection level injects X-WP-Nonce when available."
+    "description": "Complete Postman collection for the Mullion REST API.\n\nEnvironment variables required:\n- baseUrl (e.g. https://example.com)\n- username\n- password\n- mullion_nonce (auto-captured from login)\n- campaign_id\n- media_id\n- user_id\n- token\n- template_id\n- overlay_id\n- font_id\n- company_id\n\nPre-request script at collection level injects X-WP-Nonce when available."
   },
   "item": [
     {
@@ -23,13 +23,13 @@
               "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\",\n  \"remember\": true\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/auth/login",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/auth/login",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "auth",
                 "login"
@@ -53,13 +53,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/auth/logout",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/auth/logout",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "auth",
                 "logout"
@@ -74,13 +74,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/nonce",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/nonce",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "nonce"
               ]
@@ -99,13 +99,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/settings",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/settings",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "settings"
               ]
@@ -128,13 +128,13 @@
               "raw": "{\n  \"default_visibility\": \"public\",\n  \"max_upload_size\": 10485760\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/settings",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/settings",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "settings"
               ]
@@ -153,13 +153,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/permissions",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/permissions",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "permissions"
               ]
@@ -178,13 +178,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns"
               ],
@@ -208,13 +208,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns?category=weddings&tag=2026&sort=title_asc&include_archived=true&template_id={{templateId}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns?category=weddings&tag=2026&sort=title_asc&include_archived=true&template_id={{templateId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns"
               ],
@@ -264,13 +264,13 @@
               "raw": "{\n  \"title\": \"New Campaign from Postman\",\n  \"visibility\": \"public\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns"
               ]
@@ -284,13 +284,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}"
@@ -314,13 +314,13 @@
               "raw": "{\n  \"title\": \"Updated Campaign Title\",\n  \"visibility\": \"private\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}"
@@ -344,13 +344,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/archive",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/archive",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -375,13 +375,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/restore",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/restore",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -397,13 +397,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}?confirm=true&purge_analytics=false",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}?confirm=true&purge_analytics=false",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}"
@@ -439,13 +439,13 @@
               "raw": "{\n  \"title\": \"Copy of Campaign\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/duplicate",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/duplicate",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -461,13 +461,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/export",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/export",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -492,13 +492,13 @@
               "raw": "{\n  \"data\": {}\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/import",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/import",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "import"
@@ -522,13 +522,13 @@
               "raw": "{\n  \"action\": \"archive\",\n  \"ids\": [1, 2, 3]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/batch",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/batch",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "batch"
@@ -548,13 +548,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/media",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -579,13 +579,13 @@
               "raw": "{\n  \"type\": \"image\",\n  \"source\": \"external\",\n  \"url\": \"https://example.com/image.jpg\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/media",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -610,13 +610,13 @@
               "raw": "{\n  \"items\": [\n    {\n      \"type\": \"image\",\n      \"source\": \"upload\",\n      \"attachmentId\": 123,\n      \"caption\": \"Homepage hero\"\n    },\n    {\n      \"type\": \"video\",\n      \"source\": \"external\",\n      \"url\": \"https://example.com/video.mp4\"\n    }\n  ]\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media/batch",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/media/batch",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -642,13 +642,13 @@
               "raw": "{\n  \"caption\": \"Updated caption\",\n  \"sort_order\": 2\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media/{{media_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/media/{{media_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -674,13 +674,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/media/rescan",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/media/rescan",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -702,13 +702,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/library",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/media/library",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "media",
                 "library"
@@ -743,13 +743,13 @@
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/upload",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/media/upload",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "media",
                 "upload"
@@ -779,13 +779,13 @@
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/upload",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/media/upload",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "media",
                 "upload"
@@ -809,13 +809,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/rescan-all",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/media/rescan-all",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "media",
                 "rescan-all"
@@ -830,13 +830,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/{{media_id}}/usage",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/media/{{media_id}}/usage",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "media",
                 "{{media_id}}",
@@ -852,13 +852,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/media/usage-summary",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/media/usage-summary",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "media",
                 "usage-summary"
@@ -878,9 +878,9 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/access-summary?page=1&per_page=50",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/access-summary?page=1&per_page=50",
               "host": ["{{baseUrl}}"],
-              "path": ["wp-json", "wp-super-gallery", "v1", "campaigns", "access-summary"],
+              "path": ["wp-json", "mullion-gallery", "v1", "campaigns", "access-summary"],
               "query": [
                 { "key": "page", "value": "1" },
                 { "key": "per_page", "value": "50" }
@@ -896,13 +896,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -918,13 +918,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access?include_expired=true",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access?include_expired=true",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -961,13 +961,13 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -997,13 +997,13 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1019,13 +1019,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access/{{user_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access/{{user_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1056,13 +1056,13 @@
               "raw": "{\n  \"email\": \"test@example.com\",\n  \"message\": \"Requesting access for review\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access-requests",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1078,13 +1078,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access-requests",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1109,13 +1109,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/approve",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/approve",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1142,13 +1142,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/deny",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/deny",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1166,13 +1166,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/magic-approve?magic_key={{magic_key}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/access-requests/{{token}}/magic-approve?magic_key={{magic_key}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1203,13 +1203,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaigns/{{campaign_id}}/audit",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaigns/{{campaign_id}}/audit",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaigns",
                 "{{campaign_id}}",
@@ -1259,13 +1259,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/audit-log",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/audit-log",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "audit-log"
@@ -1329,13 +1329,13 @@
               "raw": "{\n  \"campaign_id\": {{campaign_id}},\n  \"event_type\": \"view\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/event",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/analytics/event",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "analytics",
                 "event"
@@ -1350,13 +1350,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/campaigns/{{campaign_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/analytics/campaigns/{{campaign_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "analytics",
                 "campaigns",
@@ -1382,13 +1382,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/campaigns/{{campaign_id}}/media",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/analytics/campaigns/{{campaign_id}}/media",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "analytics",
                 "campaigns",
@@ -1415,13 +1415,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/analytics/summary",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/analytics/summary",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "analytics",
                 "summary"
@@ -1451,13 +1451,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaign-categories",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaign-categories"
               ]
@@ -1471,13 +1471,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories?page=1&per_page=10",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaign-categories?page=1&per_page=10",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaign-categories"
               ],
@@ -1508,13 +1508,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaign-categories",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaign-categories"
               ]
@@ -1543,13 +1543,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories/{{category_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaign-categories/{{category_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaign-categories",
                 "{{category_id}}"
@@ -1579,13 +1579,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/campaign-categories/{{category_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/campaign-categories/{{category_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "campaign-categories",
                 "{{category_id}}"
@@ -1601,13 +1601,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/campaign",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/tags/campaign",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "tags",
                 "campaign"
@@ -1627,13 +1627,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/campaign",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/tags/campaign",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "tags",
                 "campaign"
@@ -1663,13 +1663,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/campaign/{{tag_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/tags/campaign/{{tag_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "tags",
                 "campaign",
@@ -1686,13 +1686,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/media",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/tags/media",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "tags",
                 "media"
@@ -1712,13 +1712,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/media",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/tags/media",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "tags",
                 "media"
@@ -1748,13 +1748,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/tags/media/{{tag_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/tags/media/{{tag_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "tags",
                 "media",
@@ -1776,13 +1776,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/companies",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "companies"
               ]
@@ -1796,13 +1796,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/access",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/companies/{{company_id}}/access",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "companies",
                 "{{company_id}}",
@@ -1832,13 +1832,13 @@
               }
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/access",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/companies/{{company_id}}/access",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "companies",
                 "{{company_id}}",
@@ -1854,13 +1854,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/access/{{user_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/companies/{{company_id}}/access/{{user_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "companies",
                 "{{company_id}}",
@@ -1886,13 +1886,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/companies/{{company_id}}/archive",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/companies/{{company_id}}/archive",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "companies",
                 "{{company_id}}",
@@ -1913,13 +1913,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/users/search",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/users/search",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "users",
                 "search"
@@ -1949,13 +1949,13 @@
               "raw": "{\n  \"username\": \"newuser\",\n  \"email\": \"newuser@example.com\",\n  \"password\": \"SecureP@ss1\",\n  \"role\": \"subscriber\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/users",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/users",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "users"
               ]
@@ -1969,13 +1969,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/roles",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/roles",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "roles"
               ]
@@ -1994,13 +1994,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/layout-templates",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "layout-templates"
@@ -2024,13 +2024,13 @@
               "raw": "{\n  \"name\": \"New Template from Postman\",\n  \"config\": {}\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/layout-templates",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "layout-templates"
@@ -2045,13 +2045,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/layout-templates/{{template_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "layout-templates",
@@ -2076,13 +2076,13 @@
               "raw": "{\n  \"name\": \"Updated Template Name\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/layout-templates/{{template_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "layout-templates",
@@ -2098,13 +2098,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/layout-templates/{{template_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "layout-templates",
@@ -2129,13 +2129,13 @@
               "raw": "{\n  \"name\": \"Copy of Template\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/layout-templates/{{template_id}}/duplicate",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/layout-templates/{{template_id}}/duplicate",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "layout-templates",
@@ -2157,13 +2157,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/layout-templates/{{template_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/layout-templates/{{template_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "layout-templates",
                 "{{template_id}}"
@@ -2183,13 +2183,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/overlay-library",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/overlay-library",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "overlay-library"
@@ -2219,13 +2219,13 @@
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/overlay-library",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/overlay-library",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "overlay-library"
@@ -2240,13 +2240,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/overlay-library/{{overlay_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/overlay-library/{{overlay_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "overlay-library",
@@ -2267,13 +2267,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/font-library",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/font-library",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "font-library"
@@ -2303,13 +2303,13 @@
               ]
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/font-library",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/font-library",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "font-library"
@@ -2324,13 +2324,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/font-library/{{font_id}}",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/font-library/{{font_id}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "font-library",
@@ -2351,13 +2351,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/oembed",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/oembed",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "oembed"
               ],
@@ -2382,13 +2382,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/health",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/health",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "health"
@@ -2403,13 +2403,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/oembed-failures",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/oembed-failures",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "oembed-failures"
@@ -2424,13 +2424,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/oembed-failures",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/oembed-failures",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "oembed-failures"
@@ -2445,13 +2445,13 @@
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/thumbnail-cache",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/thumbnail-cache",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "thumbnail-cache"
@@ -2466,13 +2466,13 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/thumbnail-cache",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/thumbnail-cache",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "thumbnail-cache"
@@ -2496,13 +2496,13 @@
               "raw": "{}"
             },
             "url": {
-              "raw": "{{baseUrl}}/wp-json/wp-super-gallery/v1/admin/thumbnail-cache/refresh",
+              "raw": "{{baseUrl}}/wp-json/mullion-gallery/v1/admin/thumbnail-cache/refresh",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "wp-json",
-                "wp-super-gallery",
+                "mullion-gallery",
                 "v1",
                 "admin",
                 "thumbnail-cache",
@@ -2521,7 +2521,7 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "const nonce = pm.environment.get('wpsg_nonce');",
+          "const nonce = pm.environment.get('mullion_nonce');",
           "if (nonce) {",
           "    pm.request.headers.upsert({key: 'X-WP-Nonce', value: nonce});",
           "}"
@@ -2537,7 +2537,7 @@
           "if (pm.request.url.toString().includes('/auth/login') && pm.response.code === 200) {",
           "    try {",
           "        const body = pm.response.json();",
-          "        if (body.nonce) pm.environment.set('wpsg_nonce', body.nonce);",
+          "        if (body.nonce) pm.environment.set('mullion_nonce', body.nonce);",
           "    } catch (e) {}",
           "}"
         ]

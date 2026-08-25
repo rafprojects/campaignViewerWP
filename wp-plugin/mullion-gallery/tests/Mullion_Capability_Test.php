@@ -14,7 +14,7 @@ class Mullion_Capability_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $request->set_param('title', 'Forbidden Campaign');
 
         $response = rest_do_request($request);
@@ -31,7 +31,7 @@ class Mullion_Capability_Test extends WP_UnitTestCase {
         }
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $request->set_param('title', 'Allowed Campaign');
 
         $response = rest_do_request($request);
@@ -45,7 +45,7 @@ class Mullion_Capability_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_param('theme', 'dark');
 
         $response = rest_do_request($request);

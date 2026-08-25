@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { HttpTransport } from '../http/HttpTransport';
 import { AssetsApi, ASSET_IN_USE_CODE } from './assetsApi';
 
-const BASE = '/wp-json/wp-super-gallery/v1/admin/asset-library';
+const BASE = '/wp-json/mullion-gallery/v1/admin/asset-library';
 
 function makeMockTransport(overrides: Partial<HttpTransport> = {}): HttpTransport {
   return {

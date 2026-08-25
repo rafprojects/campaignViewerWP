@@ -97,27 +97,27 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         $overlay_b  = $this->add_overlay('P50B Overlay B');
 
         // No associations: scoped list is empty, unscoped list has both.
-        $this->assertSame([], $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space));
-        $unscoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library');
+        $this->assertSame([], $this->list_asset_ids('/mullion-gallery/v1/admin/asset-library', $space));
+        $unscoped = $this->list_asset_ids('/mullion-gallery/v1/admin/asset-library');
         $this->assertContains($overlay_a, $unscoped);
         $this->assertContains($overlay_b, $unscoped);
 
         // Associate one overlay via REST.
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/library");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/spaces/{$space}/library");
         $request->set_param('assetType', 'asset');
         $request->set_param('assetId', $overlay_a);
         $this->assertSame(200, rest_do_request($request)->get_status());
 
-        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space);
+        $scoped = $this->list_asset_ids('/mullion-gallery/v1/admin/asset-library', $space);
         $this->assertSame([$overlay_a], $scoped, 'Scoped list must contain exactly the associated overlay.');
 
         // Dissociate it again.
-        $request = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/spaces/{$space}/library");
+        $request = new WP_REST_Request('DELETE', "/mullion-gallery/v1/spaces/{$space}/library");
         $request->set_param('assetType', 'asset');
         $request->set_param('assetId', $overlay_a);
         $this->assertSame(200, rest_do_request($request)->get_status());
 
-        $this->assertSame([], $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space));
+        $this->assertSame([], $this->list_asset_ids('/mullion-gallery/v1/admin/asset-library', $space));
     }
 
     public function test_delegated_space_sees_only_associated_fonts() {
@@ -126,11 +126,11 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         $font_a = $this->add_font('P50B Font A');
         $this->add_font('P50B Font B');
 
-        $this->assertSame([], $this->list_asset_ids('/wp-super-gallery/v1/admin/font-library', $space));
+        $this->assertSame([], $this->list_asset_ids('/mullion-gallery/v1/admin/font-library', $space));
 
         Mullion_DB::associate_asset($space, 'font', $font_a);
 
-        $this->assertSame([$font_a], $this->list_asset_ids('/wp-super-gallery/v1/admin/font-library', $space));
+        $this->assertSame([$font_a], $this->list_asset_ids('/mullion-gallery/v1/admin/font-library', $space));
     }
 
     // -------------------------------------------------------------------------
@@ -142,7 +142,7 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         $space   = $this->make_space('open');
         $overlay = $this->add_overlay('P50B Open Overlay');
 
-        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space);
+        $scoped = $this->list_asset_ids('/mullion-gallery/v1/admin/asset-library', $space);
         $this->assertContains($overlay, $scoped, 'Open-mode spaces must see the full global library.');
     }
 
@@ -158,7 +158,7 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         Mullion_DB::associate_asset($space, 'asset', $overlay);
         Mullion_DB::associate_asset($space, 'font', $font);
 
-        $response = rest_do_request(new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/library"));
+        $response = rest_do_request(new WP_REST_Request('GET', "/mullion-gallery/v1/spaces/{$space}/library"));
         $this->assertSame(200, $response->get_status());
         $data = $response->get_data();
         $this->assertSame([$overlay], $data['asset']);
@@ -175,7 +175,7 @@ class Mullion_P50B_Space_Library_Test extends WP_UnitTestCase {
         $overlay = $this->add_overlay('P50B Denied Overlay');
 
         wp_set_current_user($this->make_mullion_only_admin());
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/library");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/spaces/{$space}/library");
         $request->set_param('assetType', 'asset');
         $request->set_param('assetId', $overlay);
 

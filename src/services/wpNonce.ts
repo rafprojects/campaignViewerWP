@@ -13,7 +13,7 @@
 import { fetchNonceFrom } from './http/fetchNonce';
 
 /** REST route (relative to the API base URL) that mints a fresh nonce. */
-export const WP_NONCE_PATH = '/wp-json/wp-super-gallery/v1/nonce';
+export const WP_NONCE_PATH = '/wp-json/mullion-gallery/v1/nonce';
 
 /** Read the current WP REST nonce, or undefined when none is available. */
 export function getWpNonce(): string | undefined {

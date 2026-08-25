@@ -112,7 +112,7 @@ export function MediaPanel({
                 setRescanAllLoading(true);
                 try {
                   const result = await apiClient.post<{ message: string; campaigns_updated: number; media_updated: number }>(
-                    '/wp-json/wp-super-gallery/v1/media/rescan-all', {},
+                    '/wp-json/mullion-gallery/v1/media/rescan-all', {},
                   );
                   onNotify({
                     type: 'success', text: result.media_updated > 0

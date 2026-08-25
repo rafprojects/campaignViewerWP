@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 class Mullion_Campaign_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
-        register_rest_route('wp-super-gallery/v1', '/campaigns', [
+        register_rest_route('mullion-gallery/v1', '/campaigns', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaigns'],
@@ -45,7 +45,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_campaign'],
@@ -79,7 +79,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/archive', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/archive', [
             [
                 'methods' => 'POST',
                 // P33-C: only owner can archive a campaign.
@@ -88,7 +88,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/restore', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/restore', [
             [
                 'methods' => 'POST',
                 // P33-C: restore is paired with archive — owner-only.
@@ -98,7 +98,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         ]);
 
         // P18-C: Campaign duplication
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/duplicate', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/duplicate', [
             [
                 'methods' => 'POST',
                 // P33-C: editor and owner can duplicate a campaign.
@@ -108,7 +108,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         ]);
 
         // P50-A: Cross-space campaign move
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/move', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/move', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'move_campaign'],
@@ -124,7 +124,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         ]);
 
         // P18-B: Bulk campaign actions (archive/restore)
-        register_rest_route('wp-super-gallery/v1', '/campaigns/batch', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/batch', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'batch_campaigns'],
@@ -154,7 +154,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/audit', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/audit', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_audit'],
@@ -163,7 +163,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         ]);
 
         // P28-G: cross-campaign audit log.
-        register_rest_route('wp-super-gallery/v1', '/admin/audit-log', [
+        register_rest_route('mullion-gallery/v1', '/admin/audit-log', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_global_audit'],
@@ -172,7 +172,7 @@ class Mullion_Campaign_Controller extends Mullion_REST_Base {
         ]);
 
         // P48-E: audit log binary export.
-        register_rest_route('wp-super-gallery/v1', '/admin/audit-log/export/binary', [
+        register_rest_route('mullion-gallery/v1', '/admin/audit-log/export/binary', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'export_audit_log_binary'],

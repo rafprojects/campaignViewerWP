@@ -135,7 +135,7 @@ export class WpJwtProvider implements AuthProvider {
       return [];
     }
 
-    const response = await fetch(`${this.apiBaseUrl}/wp-json/wp-super-gallery/v1/permissions`, {
+    const response = await fetch(`${this.apiBaseUrl}/wp-json/mullion-gallery/v1/permissions`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

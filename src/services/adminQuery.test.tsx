@@ -56,7 +56,7 @@ describe('adminQuery', () => {
       expect(result.current.auditEntries).toHaveLength(1);
     });
 
-    expect(get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns/101/audit');
+    expect(get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/campaigns/101/audit');
     expect(result.current.auditEntries[0]?.action).toBe('updated');
   });
 
@@ -89,7 +89,7 @@ describe('adminQuery', () => {
     await waitFor(() => expect(result.current.auditEntries).toHaveLength(1));
 
     expect(get).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/55/audit?scope=campaign&severity=info',
+      '/wp-json/mullion-gallery/v1/campaigns/55/audit?scope=campaign&severity=info',
     );
     const first = result.current.auditEntries[0]!;
     expect(first.severity).toBe('info');
@@ -113,7 +113,7 @@ describe('adminQuery', () => {
 
     await waitFor(() => expect(result.current.companies).toHaveLength(2));
     expect(get).toHaveBeenCalledTimes(1);
-    expect(get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/companies?per_page=100&page=1');
+    expect(get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/companies?per_page=100&page=1');
   });
 
   it('fetches all pages in parallel when totalPages > 1', async () => {

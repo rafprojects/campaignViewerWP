@@ -118,7 +118,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         add_filter('pre_wp_mail', '__return_true', 10, 0);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $req->set_param('email', 'editor-' . uniqid() . '@example.com');
         $req->set_param('displayName', 'New Editor');
         $req->set_param('role', 'mullion_editor');
@@ -133,7 +133,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         add_filter('pre_wp_mail', '__return_true', 10, 0);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $req->set_param('email', 'legacy-' . uniqid() . '@example.com');
         $req->set_param('displayName', 'Legacy Admin');
         $req->set_param('role', 'wpsg_admin');
@@ -144,7 +144,7 @@ class Mullion_P52A2_Role_Migration_Test extends WP_UnitTestCase {
 
     public function test_list_roles_exposes_mullion_editor_not_legacy() {
         $this->set_admin_user();
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/roles');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/roles');
         $res = rest_do_request($req);
         $values = array_column($res->get_data()['items'], 'value');
 

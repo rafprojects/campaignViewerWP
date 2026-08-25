@@ -49,7 +49,7 @@ class Mullion_Settings_Service {
 
         $settings = Mullion_Settings::get_settings();
         $api_base = !empty($settings['api_base']) ? $settings['api_base'] : home_url();
-        $test_url = trailingslashit($api_base) . 'wp-json/wp-super-gallery/v1/campaigns';
+        $test_url = trailingslashit($api_base) . 'wp-json/mullion-gallery/v1/campaigns';
 
         $response = wp_safe_remote_get($test_url, [
             'timeout'   => 10,

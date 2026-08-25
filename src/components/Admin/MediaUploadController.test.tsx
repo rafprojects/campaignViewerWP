@@ -89,7 +89,7 @@ describe('MediaUploadController', () => {
 
     await waitFor(() => expect(apiClient.postForm).toHaveBeenCalledTimes(1));
     const [path, formData] = (apiClient.postForm as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(path).toBe('/wp-json/wp-super-gallery/v1/admin/asset-library');
+    expect(path).toBe('/wp-json/mullion-gallery/v1/admin/asset-library');
     expect((formData as FormData).get('is_universal')).toBe('1');
     expect(uploadMany).not.toHaveBeenCalled();
   });

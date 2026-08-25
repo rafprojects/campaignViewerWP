@@ -65,7 +65,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
     }
 
     private function campaign_ids_for_space(int $space_id): array {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('space', (string) $space_id);
         $data  = rest_do_request($request)->get_data();
         $items = $data['items'] ?? [];
@@ -132,7 +132,7 @@ class Mullion_P50A_Campaign_Move_Test extends WP_UnitTestCase {
     }
 
     private function do_move(int $campaign_id, int $target_space_id): WP_REST_Response {
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/move");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/move");
         $request->set_param('target_space_id', $target_space_id);
         return rest_do_request($request);
     }

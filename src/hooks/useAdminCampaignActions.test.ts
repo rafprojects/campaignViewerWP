@@ -73,7 +73,7 @@ describe('useAdminCampaignActions', () => {
     );
     await act(async () => { await result.current.archiveCampaign(mockCampaign); });
     expect(post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/1/archive',
+      '/wp-json/mullion-gallery/v1/campaigns/1/archive',
       {},
     );
   });
@@ -101,7 +101,7 @@ describe('useAdminCampaignActions', () => {
     );
     await act(async () => { await result.current.restoreCampaign(mockCampaign); });
     expect(post).toHaveBeenCalledWith(
-      '/wp-json/wp-super-gallery/v1/campaigns/1/restore',
+      '/wp-json/mullion-gallery/v1/campaigns/1/restore',
       {},
     );
   });

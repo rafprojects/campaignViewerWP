@@ -67,7 +67,7 @@ class Mullion_P38MD1_PHash_Test extends WP_UnitTestCase {
     }
 
     private function make_upload_request(string $tmp_path, string $filename = 'test.png', bool $force = false): WP_REST_Request {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/upload');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/media/upload');
         $request->set_file_params([
             'file' => [
                 'name'     => $filename,

@@ -80,7 +80,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/permissions', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/permissions', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -91,7 +91,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/settings', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/settings', async (route) => {
     if (route.request().method() === 'POST') {
       const body = route.request().postDataJSON() as Record<string, unknown>;
       currentSettings = {
@@ -107,7 +107,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns?**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns?**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -115,7 +115,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -123,7 +123,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/media', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/media', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -131,7 +131,7 @@ async function installAppRoutes(page: Page) {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101', async (route) => {
     if (route.request().method() === 'PUT') {
       const body = route.request().postDataJSON() as Record<string, unknown>;
       await route.fulfill({

@@ -59,7 +59,7 @@ describe('useSpaces', () => {
     const api = makeApi({ get: vi.fn().mockResolvedValue([{ id: 1 }]) });
     const { result } = renderHook(() => useSpaces(api), { wrapper: wrapper() });
     await waitFor(() => expect(result.current.spaces).toHaveLength(1));
-    expect(api.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/spaces');
+    expect(api.get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/spaces');
   });
   it('coerces a non-array response to an empty list', async () => {
     const api = makeApi({ get: vi.fn().mockResolvedValue({ not: 'array' }) });

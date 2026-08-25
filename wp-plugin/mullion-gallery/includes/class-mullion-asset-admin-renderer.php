@@ -54,17 +54,17 @@ class Mullion_Asset_Admin_Renderer {
 
         // Register the Vite bundle (idempotent) and enqueue script + all app styles.
         Mullion_Embed::register_assets();
-        wp_enqueue_script('wp-super-gallery-app');
+        wp_enqueue_script('mullion-gallery-app');
 
         $i = 0;
-        while (wp_style_is('wp-super-gallery-app-style-' . $i, 'registered')) {
-            wp_enqueue_style('wp-super-gallery-app-style-' . $i);
+        while (wp_style_is('mullion-gallery-app-style-' . $i, 'registered')) {
+            wp_enqueue_style('mullion-gallery-app-style-' . $i);
             $i++;
         }
 
         // Emit the same page-global config (apiBase, restNonce, authProvider…) the
         // shortcode uses, before the module loads, so the app is nonce-authenticated.
-        wp_add_inline_script('wp-super-gallery-app', Mullion_Embed::page_config_js(), 'before');
+        wp_add_inline_script('mullion-gallery-app', Mullion_Embed::page_config_js(), 'before');
     }
 
     public static function render_page() {

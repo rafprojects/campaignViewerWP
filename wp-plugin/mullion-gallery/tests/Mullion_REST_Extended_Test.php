@@ -62,7 +62,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ],
         ]));
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/duplicate");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/duplicate");
         $res = rest_do_request($req);
 
         $this->assertContains($res->get_status(), [200, 201]);
@@ -97,7 +97,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         update_post_meta($cid, '_mullion_layout_binding_template_id', $template['id']);
         update_post_meta($cid, '_mullion_layout_binding', 'layout-builder');
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/duplicate");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/duplicate");
         $req->set_param('duplicateLayoutTemplate', true);
         $res = rest_do_request($req);
 
@@ -113,7 +113,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $c1 = $this->create_campaign('Batch1');
         $c2 = $this->create_campaign('Batch2');
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/batch');
         $req->set_param('action', 'archive');
         $req->set_param('ids', [$c1, $c2]);
         $res = rest_do_request($req);
@@ -124,7 +124,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     public function test_export_campaign() {
         $cid = $this->create_campaign('Export Me');
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/export");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/export");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -158,7 +158,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ],
         ];
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/import');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/import');
         $req->set_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode($payload));
         $res = rest_do_request($req);
@@ -187,7 +187,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ['id' => 'm2', 'url' => 'https://example.com/2.jpg', 'title' => 'Two', 'type' => 'image'],
         ]);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/media");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -201,7 +201,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ['id' => 'del1', 'url' => 'https://example.com/1.jpg', 'title' => 'Del'],
         ]);
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$cid}/media/del1");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaigns/{$cid}/media/del1");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -216,7 +216,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ['id' => 'upd1', 'url' => 'https://example.com/1.jpg', 'title' => 'Old', 'type' => 'image'],
         ]);
 
-        $req = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$cid}/media/upd1");
+        $req = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$cid}/media/upd1");
         $req->set_param('caption', 'New Caption');
         $res = rest_do_request($req);
 
@@ -230,7 +230,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ['id' => 'r2', 'url' => 'https://example.com/2.jpg', 'title' => 'B', 'order' => 1],
         ]);
 
-        $req = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$cid}/media/reorder");
+        $req = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$cid}/media/reorder");
         $req->set_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode([
             'items' => [
@@ -249,14 +249,14 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ['id' => 'rs1', 'url' => 'https://example.com/video.mp4', 'title' => 'Video', 'type' => 'unknown'],
         ]);
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/media/rescan");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/media/rescan");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
     }
 
     public function test_rescan_all_media_types() {
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/rescan-all');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/media/rescan-all');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -275,7 +275,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $cid = $this->create_campaign('Usage Test');
         Mullion_DB::sync_media_refs($cid, [['id' => 'media-1']]);
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/media/media-1/usage');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/media/media-1/usage');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -286,7 +286,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     public function test_get_media_usage_summary_endpoint() {
         Mullion_DB::maybe_upgrade();
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/media/usage-summary');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/media/usage-summary');
         $req->set_param('ids', ['abc', 'def']);
         $res = rest_do_request($req);
 
@@ -301,7 +301,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         Mullion_DB::maybe_upgrade();
         $cid = $this->create_campaign('Analytics');
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/analytics/campaigns/{$cid}");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/analytics/campaigns/{$cid}");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -316,7 +316,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     public function test_list_access() {
         $cid = $this->create_campaign('Access Test');
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/access");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -328,14 +328,14 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $viewer = self::factory()->user->create(['role' => 'subscriber']);
 
         // Grant access.
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access");
         $req->set_param('userId', $viewer);
         $req->set_param('source', 'campaign');
         $res = rest_do_request($req);
         $this->assertEquals(200, $res->get_status());
 
         // Revoke access.
-        $req2 = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$cid}/access/{$viewer}");
+        $req2 = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaigns/{$cid}/access/{$viewer}");
         $res2 = rest_do_request($req2);
         $this->assertEquals(200, $res2->get_status());
     }
@@ -347,7 +347,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     public function test_list_audit() {
         $cid = $this->create_campaign('Audit Test');
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/audit");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -359,7 +359,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_search_users() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/users/search');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/users/search');
         $req->set_param('search', 'admin');
         $res = rest_do_request($req);
 
@@ -368,7 +368,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_list_roles() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/roles');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/roles');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -378,7 +378,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_list_permissions() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/permissions');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/permissions');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -388,7 +388,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_refresh_nonce() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/nonce');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/nonce');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -400,7 +400,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         // Capture wp_mail to prevent actual sends.
         add_filter('pre_wp_mail', function () { return true; }, 10, 0);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $req->set_param('email', 'newuser-' . uniqid() . '@example.com');
         $req->set_param('displayName', 'Test User');
         $req->set_param('role', 'subscriber');
@@ -416,12 +416,12 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         add_filter('pre_wp_mail', function () { return true; }, 10, 0);
         $_SERVER['REMOTE_ADDR'] = '198.51.100.33';
 
-        $first = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $first = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $first->set_param('email', 'limited-user-' . uniqid() . '@example.com');
         $first->set_param('displayName', 'Limited User One');
         $first->set_param('role', 'subscriber');
 
-        $second = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $second = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $second->set_param('email', 'limited-user-' . uniqid() . '@example.com');
         $second->set_param('displayName', 'Limited User Two');
         $second->set_param('role', 'subscriber');
@@ -441,7 +441,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_list_campaign_categories() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-categories');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -449,7 +449,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_list_campaign_tags() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/campaign');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/tags/campaign');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -457,7 +457,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_list_media_tags() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/media');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/tags/media');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -469,7 +469,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_list_companies() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/companies');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/companies');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -482,7 +482,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $term_id = is_array($term) ? $term['term_id'] : 0;
         $this->assertGreaterThan(0, $term_id);
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/companies/{$term_id}/archive");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/companies/{$term_id}/archive");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -492,7 +492,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $term = wp_insert_term('Access Corp', 'mullion_company');
         $term_id = is_array($term) ? $term['term_id'] : 0;
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/companies/{$term_id}/access");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/companies/{$term_id}/access");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -504,13 +504,13 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $viewer = self::factory()->user->create(['role' => 'subscriber']);
 
         // Grant.
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/companies/{$term_id}/access");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/companies/{$term_id}/access");
         $req->set_param('userId', $viewer);
         $res = rest_do_request($req);
         $this->assertEquals(200, $res->get_status());
 
         // Revoke.
-        $req2 = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/companies/{$term_id}/access/{$viewer}");
+        $req2 = new WP_REST_Request('DELETE', "/mullion-gallery/v1/companies/{$term_id}/access/{$viewer}");
         $res2 = rest_do_request($req2);
         $this->assertEquals(200, $res2->get_status());
     }
@@ -520,7 +520,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_get_health_data_endpoint() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/health');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/health');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -529,21 +529,21 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_get_oembed_failures_endpoint() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/oembed-failures');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/oembed-failures');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
     }
 
     public function test_reset_oembed_failures_endpoint() {
-        $req = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/admin/oembed-failures');
+        $req = new WP_REST_Request('DELETE', '/mullion-gallery/v1/admin/oembed-failures');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
     }
 
     public function test_get_thumbnail_cache_stats_endpoint() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/thumbnail-cache');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/thumbnail-cache');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -552,14 +552,14 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_clear_thumbnail_cache_endpoint() {
-        $req = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/admin/thumbnail-cache');
+        $req = new WP_REST_Request('DELETE', '/mullion-gallery/v1/admin/thumbnail-cache');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
     }
 
     public function test_refresh_thumbnail_cache_endpoint() {
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/thumbnail-cache/refresh');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/thumbnail-cache/refresh');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -570,7 +570,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_list_layout_templates_endpoint() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/layout-templates');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/layout-templates');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -578,7 +578,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     }
 
     public function test_create_layout_template_endpoint() {
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/layout-templates');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/layout-templates');
         $req->set_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode([
             'name' => 'Test Template',
@@ -600,7 +600,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_list_overlay_library_endpoint() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/asset-library');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/asset-library');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -619,7 +619,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $this->setup_access_request_tables();
         $cid = $this->create_campaign('Access Req List');
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -630,7 +630,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $this->setup_access_request_tables();
         $cid = $this->create_campaign('AR Submit');
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => 'newuser@example.com']);
         $res = rest_do_request($req);
 
@@ -644,7 +644,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $this->setup_access_request_tables();
         $cid = $this->create_campaign('AR Bad Email');
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => 'not-an-email']);
         $res = rest_do_request($req);
 
@@ -654,7 +654,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     public function test_submit_access_request_404_for_missing_campaign() {
         $this->setup_access_request_tables();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/999999/access-requests');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/999999/access-requests');
         $req->set_body_params(['email' => 'test@example.com']);
         $res = rest_do_request($req);
 
@@ -666,13 +666,13 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $cid = $this->create_campaign('AR Dup');
 
         // First submission.
-        $req1 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req1 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req1->set_body_params(['email' => 'dup@example.com']);
         $res1 = rest_do_request($req1);
         $this->assertEquals(201, $res1->get_status());
 
         // Duplicate while still pending.
-        $req2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req2 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req2->set_body_params(['email' => 'dup@example.com']);
         $res2 = rest_do_request($req2);
         $this->assertEquals(409, $res2->get_status());
@@ -683,16 +683,16 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $cid = $this->create_campaign('AR Cooldown');
 
         // Submit + deny.
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => 'cool@example.com']);
         $res = rest_do_request($req);
         $token = $res->get_data()['token'];
 
-        $deny = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/deny");
+        $deny = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/deny");
         rest_do_request($deny);
 
         // Re-submit within 24h.
-        $req2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req2 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req2->set_body_params(['email' => 'cool@example.com']);
         $res2 = rest_do_request($req2);
         $this->assertEquals(429, $res2->get_status());
@@ -703,13 +703,13 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $cid = $this->create_campaign('AR Approve');
 
         // Submit.
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => 'approve-me@example.com']);
         $res = rest_do_request($req);
         $token = $res->get_data()['token'];
 
         // Approve.
-        $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $approve = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
         $ares = rest_do_request($approve);
         $this->assertEquals(200, $ares->get_status());
 
@@ -727,16 +727,16 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $this->setup_access_request_tables();
         $cid = $this->create_campaign('AR Already');
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => 'resolved@example.com']);
         $token = rest_do_request($req)->get_data()['token'];
 
         // Approve first time.
-        $a1 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $a1 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
         $this->assertEquals(200, rest_do_request($a1)->get_status());
 
         // Approve again — should be 409.
-        $a2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $a2 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
         $this->assertEquals(409, rest_do_request($a2)->get_status());
     }
 
@@ -744,11 +744,11 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $this->setup_access_request_tables();
         $cid = $this->create_campaign('AR Deny');
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => 'deny-me@example.com']);
         $token = rest_do_request($req)->get_data()['token'];
 
-        $deny = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/deny");
+        $deny = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/deny");
         $dres = rest_do_request($deny);
         $this->assertEquals(200, $dres->get_status());
 
@@ -761,7 +761,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $cid = $this->create_campaign('AR Missing');
 
         $fake_token = wp_generate_uuid4();
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$fake_token}/approve");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$fake_token}/approve");
         $res = rest_do_request($req);
         $this->assertEquals(404, $res->get_status());
     }
@@ -772,12 +772,12 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
 
         // Submit two requests.
         foreach (['a@e.com', 'b@e.com'] as $email) {
-            $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+            $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
             $req->set_body_params(['email' => $email]);
             rest_do_request($req);
         }
 
-        $list = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $list = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $res = rest_do_request($list);
         $data = $res->get_data();
 
@@ -796,26 +796,26 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $cid = $this->create_campaign('AR Status Filter');
 
         // Submit 2 requests, approve one.
-        $req1 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req1 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req1->set_body_params(['email' => 'f1@e.com']);
         $t1 = rest_do_request($req1)->get_data()['token'];
 
-        $req2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req2 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req2->set_body_params(['email' => 'f2@e.com']);
         rest_do_request($req2);
 
-        $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$t1}/approve");
+        $approve = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$t1}/approve");
         rest_do_request($approve);
 
         // Filter pending — should get 1.
-        $listPending = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $listPending = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $listPending->set_param('status', 'pending');
         $pending = rest_do_request($listPending)->get_data();
         $this->assertCount(1, $pending);
         $this->assertEquals('f2@e.com', $pending[0]['email']);
 
         // Filter approved — should get 1.
-        $listApproved = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $listApproved = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $listApproved->set_param('status', 'approved');
         $approved = rest_do_request($listApproved)->get_data();
         $this->assertCount(1, $approved);
@@ -826,7 +826,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_list_media_library() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/media/library');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/media/library');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -841,9 +841,9 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         wp_set_current_user(0);
 
         $admin_routes = [
-            ['GET', '/wp-super-gallery/v1/admin/health'],
-            ['GET', '/wp-super-gallery/v1/users/search'],
-            ['GET', '/wp-super-gallery/v1/roles'],
+            ['GET', '/mullion-gallery/v1/admin/health'],
+            ['GET', '/mullion-gallery/v1/users/search'],
+            ['GET', '/mullion-gallery/v1/roles'],
         ];
 
         foreach ($admin_routes as [$method, $route]) {
@@ -884,7 +884,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         Mullion_DB::maybe_upgrade();
         $cid = $this->create_campaign('Analytics Record');
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $req->set_param('campaign_id', $cid);
         $req->set_param('event_type', 'view');
         $res = rest_do_request($req);
@@ -902,7 +902,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $settings['enable_analytics'] = true;
         update_option('mullion_settings', $settings);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $req->set_param('campaign_id', $cid);
         $req->set_param('event_type', 'view');
         $res = rest_do_request($req);
@@ -964,7 +964,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ],
         ]);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/media");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -990,7 +990,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ],
         ]);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/media");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -1031,7 +1031,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ],
         ]);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/media");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -1058,7 +1058,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
             ],
         ]);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}/media");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}/media");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());
@@ -1077,7 +1077,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
     // ═══════════════════════════════════════════════════════════════════════
 
     public function test_get_layout_template_public_not_found() {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/layout-templates/00000000-0000-0000-0000-000000000000');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/layout-templates/00000000-0000-0000-0000-000000000000');
         $res = rest_do_request($req);
 
         $this->assertEquals(404, $res->get_status());
@@ -1092,7 +1092,7 @@ class Mullion_REST_Extended_Test extends WP_UnitTestCase {
         $this->assertIsArray($tpl);
         $id = $tpl['id'];
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/layout-templates/{$id}");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/layout-templates/{$id}");
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status());

@@ -8,7 +8,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
         // P18-H: Campaign categories
-        register_rest_route('wp-super-gallery/v1', '/campaign-categories', [
+        register_rest_route('mullion-gallery/v1', '/campaign-categories', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_campaign_categories'],
@@ -37,7 +37,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaign-categories/(?P<id>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/campaign-categories/(?P<id>\d+)', [
             [
                 'methods'             => 'PUT',
                 'callback'            => [self::class, 'update_campaign_category'],
@@ -65,7 +65,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         // P28-O: Campaign Templates
-        register_rest_route('wp-super-gallery/v1', '/campaign-templates', [
+        register_rest_route('mullion-gallery/v1', '/campaign-templates', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_campaign_templates'],
@@ -94,7 +94,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaign-templates/(?P<id>[a-zA-Z0-9_]+)', [
+        register_rest_route('mullion-gallery/v1', '/campaign-templates/(?P<id>[a-zA-Z0-9_]+)', [
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'delete_campaign_template'],
@@ -102,7 +102,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaign-templates/(?P<id>[a-zA-Z0-9_]+)/instantiate', [
+        register_rest_route('mullion-gallery/v1', '/campaign-templates/(?P<id>[a-zA-Z0-9_]+)/instantiate', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'instantiate_campaign_template'],
@@ -118,7 +118,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         // Company management routes
-        register_rest_route('wp-super-gallery/v1', '/companies', [
+        register_rest_route('mullion-gallery/v1', '/companies', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_companies'],
@@ -127,7 +127,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         // P14-G / P28-C: Campaign tags.
-        register_rest_route('wp-super-gallery/v1', '/tags/campaign', [
+        register_rest_route('mullion-gallery/v1', '/tags/campaign', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_campaign_tags'],
@@ -140,7 +140,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/tags/campaign/(?P<id>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/tags/campaign/(?P<id>\d+)', [
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'delete_campaign_tag'],
@@ -149,7 +149,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         // ── P15-B: Layout Template CRUD (admin) ──────────────────
-        register_rest_route('wp-super-gallery/v1', '/admin/layout-templates', [
+        register_rest_route('mullion-gallery/v1', '/admin/layout-templates', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_layout_templates'],
@@ -162,7 +162,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/admin/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
+        register_rest_route('mullion-gallery/v1', '/admin/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_layout_template'],
@@ -180,7 +180,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/admin/layout-templates/(?P<templateId>[a-f0-9\-]{36})/duplicate', [
+        register_rest_route('mullion-gallery/v1', '/admin/layout-templates/(?P<templateId>[a-f0-9\-]{36})/duplicate', [
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'duplicate_layout_template'],
@@ -189,7 +189,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         // P15-H / P50-K: Visual asset library (admin, campaign-agnostic).
-        register_rest_route('wp-super-gallery/v1', '/admin/asset-library', [
+        register_rest_route('mullion-gallery/v1', '/admin/asset-library', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_asset_library'],
@@ -202,7 +202,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/admin/asset-library/(?P<id>[a-f0-9\-]{36})', [
+        register_rest_route('mullion-gallery/v1', '/admin/asset-library/(?P<id>[a-f0-9\-]{36})', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'update_asset'],
@@ -216,7 +216,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         // P22-L5: Custom font library (admin, campaign-agnostic).
-        register_rest_route('wp-super-gallery/v1', '/admin/font-library', [
+        register_rest_route('mullion-gallery/v1', '/admin/font-library', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_font_library'],
@@ -229,7 +229,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/admin/font-library/(?P<id>[a-f0-9\-]{36})', [
+        register_rest_route('mullion-gallery/v1', '/admin/font-library/(?P<id>[a-f0-9\-]{36})', [
             [
                 // P50-J: partial update of a font's `is_universal` flag.
                 'methods'             => 'POST',
@@ -244,7 +244,7 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         ]);
 
         // P15-B: Public read-only endpoint for rendering (no auth, ID-based only).
-        register_rest_route('wp-super-gallery/v1', '/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
+        register_rest_route('mullion-gallery/v1', '/layout-templates/(?P<templateId>[a-f0-9\-]{36})', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_layout_template_public'],

@@ -348,7 +348,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
     public function test_add_module_type_modifies_app_handle() {
         $tag    = '<script src="test.js"></script>';
-        $result = Mullion_Embed::add_module_type( $tag, 'wp-super-gallery-app', 'test.js' );
+        $result = Mullion_Embed::add_module_type( $tag, 'mullion-gallery-app', 'test.js' );
 
         $this->assertStringContainsString( 'type="module"', $result );
     }
@@ -362,7 +362,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     }
 
     public function test_register_assets_uses_versionless_manifest_entry_script() {
-        wp_deregister_script( 'wp-super-gallery-app' );
+        wp_deregister_script( 'mullion-gallery-app' );
 
         // Inject a fake manifest so the manifest-entry (versionless) path is exercised.
         // Without this the code falls back to wp_register_script(..., MULLION_VERSION, ...).
@@ -374,7 +374,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         Mullion_Embed::register_assets();
 
-        $registered = wp_scripts()->registered['wp-super-gallery-app'] ?? null;
+        $registered = wp_scripts()->registered['mullion-gallery-app'] ?? null;
 
         $this->assertNotNull( $registered );
         $this->assertNull( $registered->ver );

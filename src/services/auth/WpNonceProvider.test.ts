@@ -87,7 +87,7 @@ describe('WpNonceProvider', () => {
 
     expect(session.accessToken).toBe('fresh-nonce');
     const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/wp-json/wp-super-gallery/v1/auth/login');
+    expect(url).toContain('/wp-json/mullion-gallery/v1/auth/login');
     expect(init.method).toBe('POST');
     expect(window.__MULLION_CONFIG__?.restNonce).toBe('fresh-nonce');
     expect(await provider.getUser()).toEqual({ id: '5', email: 'u@e.com', role: 'viewer' });
@@ -114,7 +114,7 @@ describe('WpNonceProvider', () => {
     await provider.logout();
 
     const [url, init] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [string, RequestInit];
-    expect(url).toContain('/wp-json/wp-super-gallery/v1/auth/logout');
+    expect(url).toContain('/wp-json/mullion-gallery/v1/auth/logout');
     expect(init.method).toBe('POST');
     expect(window.__MULLION_CONFIG__?.restNonce).toBe('guest-nonce');
     expect(await provider.getUser()).toBeNull();

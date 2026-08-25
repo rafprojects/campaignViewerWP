@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 class Mullion_Auth_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
-        register_rest_route('wp-super-gallery/v1', '/permissions', [
+        register_rest_route('mullion-gallery/v1', '/permissions', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_permissions'],
@@ -18,7 +18,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
         // P20-K: Lightweight nonce refresh endpoint for long-running tabs.
         // Returns a fresh wp_rest nonce so the client can update its header
         // without a full page reload. Requires existing valid cookie auth.
-        register_rest_route('wp-super-gallery/v1', '/nonce', [
+        register_rest_route('mullion-gallery/v1', '/nonce', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'refresh_nonce'],
@@ -28,7 +28,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
 
         // P20-K: Cookie-based login endpoint so the React LoginForm modal works
         // without JWT and without redirecting to wp-login.php.
-        register_rest_route('wp-super-gallery/v1', '/auth/login', [
+        register_rest_route('mullion-gallery/v1', '/auth/login', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'handle_cookie_login'],
@@ -51,7 +51,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/auth/logout', [
+        register_rest_route('mullion-gallery/v1', '/auth/logout', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'handle_cookie_logout'],
@@ -59,7 +59,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/users/search', [
+        register_rest_route('mullion-gallery/v1', '/users/search', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'search_users'],
@@ -67,7 +67,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/users', [
+        register_rest_route('mullion-gallery/v1', '/users', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'create_user'],
@@ -97,7 +97,7 @@ class Mullion_Auth_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/roles', [
+        register_rest_route('mullion-gallery/v1', '/roles', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_roles'],

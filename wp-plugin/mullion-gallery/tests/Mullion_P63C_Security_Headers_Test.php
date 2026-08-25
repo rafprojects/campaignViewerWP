@@ -95,7 +95,7 @@ class Mullion_P63C_Security_Headers_Test extends WP_UnitTestCase {
     // ── REST callback is a pass-through ──────────────────────────────────────
 
     public function test_rest_callback_returns_served_unchanged() {
-        $mullion_req  = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/campaigns' );
+        $mullion_req  = new WP_REST_Request( 'GET', '/mullion-gallery/v1/campaigns' );
         $other_req = new WP_REST_Request( 'GET', '/wp/v2/posts' );
 
         $this->assertTrue( mullion_add_rest_security_headers( true, null, $mullion_req, null ) );

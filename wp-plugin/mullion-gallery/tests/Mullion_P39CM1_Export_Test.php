@@ -282,7 +282,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         }
 
         $cid      = $this->create_campaign();
-        $response = $this->make_request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/export/binary");
+        $response = $this->make_request('POST', "/mullion-gallery/v1/campaigns/{$cid}/export/binary");
         $this->assertSame(202, $response->get_status());
         $data = $response->get_data();
         $this->assertArrayHasKey('jobId', $data);
@@ -293,13 +293,13 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
     }
 
     public function test_export_binary_route_404_for_missing_campaign() {
-        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/999999/export/binary');
+        $response = $this->make_request('POST', '/mullion-gallery/v1/campaigns/999999/export/binary');
         $this->assertSame(404, $response->get_status());
     }
 
     public function test_get_export_job_route_returns_status() {
         $id  = Mullion_Export_Engine::create_job('campaign', '{"version":2}', []);
-        $response = $this->make_request('GET', "/wp-super-gallery/v1/export-jobs/{$id}");
+        $response = $this->make_request('GET', "/mullion-gallery/v1/export-jobs/{$id}");
         $this->assertSame(200, $response->get_status());
         $data = $response->get_data();
         $this->assertSame('pending', $data['status']);
@@ -315,7 +315,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         $id = Mullion_Export_Engine::create_job('campaign', '{"version":2}', []);
         Mullion_Export_Engine::process_job($id);
 
-        $response = $this->make_request('GET', "/wp-super-gallery/v1/export-jobs/{$id}");
+        $response = $this->make_request('GET', "/mullion-gallery/v1/export-jobs/{$id}");
         $data = $response->get_data();
         $this->assertSame('complete', $data['status']);
         $this->assertArrayHasKey('downloadUrl', $data);
@@ -325,26 +325,26 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
     }
 
     public function test_get_export_job_route_404_for_unknown() {
-        $response = $this->make_request('GET', '/wp-super-gallery/v1/export-jobs/' . str_repeat('a', 32));
+        $response = $this->make_request('GET', '/mullion-gallery/v1/export-jobs/' . str_repeat('a', 32));
         $this->assertSame(404, $response->get_status());
     }
 
     public function test_delete_export_job_route() {
         $id = Mullion_Export_Engine::create_job('campaign', '{}', []);
-        $response = $this->make_request('DELETE', "/wp-super-gallery/v1/export-jobs/{$id}");
+        $response = $this->make_request('DELETE', "/mullion-gallery/v1/export-jobs/{$id}");
         $this->assertSame(200, $response->get_status());
         $this->assertNull(Mullion_Export_Engine::get_job($id));
     }
 
     public function test_download_route_409_when_not_complete() {
         $id = Mullion_Export_Engine::create_job('campaign', '{}', []);
-        $response = $this->make_request('GET', "/wp-super-gallery/v1/export-jobs/{$id}/download");
+        $response = $this->make_request('GET', "/mullion-gallery/v1/export-jobs/{$id}/download");
         $this->assertSame(409, $response->get_status());
         Mullion_Export_Engine::delete_job($id);
     }
 
     public function test_binary_import_rejects_missing_file() {
-        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary');
+        $response = $this->make_request('POST', '/mullion-gallery/v1/campaigns/import/binary');
         $this->assertSame(400, $response->get_status());
     }
 
@@ -379,7 +379,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         $zip->addFromString('media/media-m1.jpg', file_get_contents(__DIR__ . '/stubs/1x1.jpg'));
         $zip->close();
 
-        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
+        $response = $this->make_request('POST', '/mullion-gallery/v1/campaigns/import/binary', [], [
             'file' => [
                 'name'     => 'test-export.zip',
                 'tmp_name' => $tmp_zip,
@@ -413,7 +413,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         $zip->addFromString('manifest.json', $manifest);
         $zip->close();
 
-        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
+        $response = $this->make_request('POST', '/mullion-gallery/v1/campaigns/import/binary', [], [
             'file' => ['name' => 'old.zip', 'tmp_name' => $tmp_zip, 'error' => UPLOAD_ERR_OK, 'size' => filesize($tmp_zip)],
         ]);
 
@@ -432,7 +432,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         $zip->addFromString('readme.txt', 'no manifest here');
         $zip->close();
 
-        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
+        $response = $this->make_request('POST', '/mullion-gallery/v1/campaigns/import/binary', [], [
             'file' => ['name' => 'no-manifest.zip', 'tmp_name' => $tmp_zip, 'error' => UPLOAD_ERR_OK, 'size' => filesize($tmp_zip)],
         ]);
 
@@ -448,7 +448,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         }
 
         $cid = $this->create_campaign('Filename Test');
-        $response = $this->make_request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/export/binary");
+        $response = $this->make_request('POST', "/mullion-gallery/v1/campaigns/{$cid}/export/binary");
         $this->assertSame(202, $response->get_status());
         $job_id = $response->get_data()['jobId'];
 
@@ -476,7 +476,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
         }
 
         $cid = $this->create_campaign('Consistency Check');
-        $response = $this->make_request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/export/binary");
+        $response = $this->make_request('POST', "/mullion-gallery/v1/campaigns/{$cid}/export/binary");
         $job_id   = $response->get_data()['jobId'];
 
         Mullion_Export_Engine::process_job($job_id);
@@ -517,7 +517,7 @@ class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
             ['id' => 'b-item', 'url' => $shared_url, 'title' => 'Shared'],
         ]);
 
-        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/batch/export/binary', [
+        $response = $this->make_request('POST', '/mullion-gallery/v1/campaigns/batch/export/binary', [
             'ids' => [$cid_a, $cid_b],
         ]);
         $this->assertSame(202, $response->get_status());

@@ -29,7 +29,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
     /** POST /admin/media/export/binary returns 503 when ZipArchive unavailable. */
     public function test_export_returns_503_when_zip_unavailable(): void {
         if (!Mullion_Export_Engine::check_zip_available()) {
-            $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+            $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/media/export/binary');
             $res = rest_do_request($req);
             $this->assertSame(503, $res->get_status());
         } else {
@@ -43,7 +43,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
             $this->markTestSkipped('ext-zip required for this test.');
         }
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/media/export/binary');
         $res = rest_do_request($req);
 
         $this->assertSame(202, $res->get_status(), 'Expected 202 Accepted.');
@@ -60,7 +60,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
             $this->markTestSkipped('ext-zip required.');
         }
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/media/export/binary');
         $req->set_param('mime_type', 'image');
         $res = rest_do_request($req);
 
@@ -81,7 +81,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
         // No WP-attachment media items — export should succeed with empty item list.
         update_post_meta($campaign_id, 'media_items', []);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/media/export/binary');
         $req->set_param('campaign_id', $campaign_id);
         $res = rest_do_request($req);
 
@@ -94,7 +94,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
             $this->markTestSkipped('ext-zip required.');
         }
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/media/export/binary');
         $res = rest_do_request($req);
 
         $job_id = $res->get_data()['jobId'];
@@ -109,7 +109,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
         $subscriber = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($subscriber);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/media/export/binary');
         $res = rest_do_request($req);
 
         $this->assertSame(403, $res->get_status());
@@ -122,7 +122,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
             $this->markTestSkipped('ext-zip required.');
         }
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/import/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/media/import/binary');
         $res = rest_do_request($req);
 
         $this->assertSame(400, $res->get_status());
@@ -133,7 +133,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
         $subscriber = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($subscriber);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/import/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/media/import/binary');
         $res = rest_do_request($req);
 
         $this->assertSame(403, $res->get_status());
@@ -172,7 +172,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
             ],
         ]);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/media/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/media/export/binary');
         $req->set_param('campaign_id', $campaign_id);
         $res = rest_do_request($req);
         $this->assertSame(202, $res->get_status());
@@ -219,7 +219,7 @@ class Mullion_P48F_Media_Export_Test extends WP_UnitTestCase {
         $zip->addFromString('media/media-1.jpg', file_get_contents(__DIR__ . '/stubs/1x1.jpg'));
         $zip->close();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/import/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/media/import/binary');
         $req->set_file_params([
             'file' => ['name' => 'mlib-import.zip', 'tmp_name' => $tmp_zip, 'error' => UPLOAD_ERR_OK, 'size' => filesize($tmp_zip)],
         ]);

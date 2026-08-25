@@ -29,7 +29,7 @@ class Mullion_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
 
     private function poll_job( int $user_id, string $job_id ) {
         wp_set_current_user( $user_id );
-        $req = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/export-jobs/' . $job_id );
+        $req = new WP_REST_Request( 'GET', '/mullion-gallery/v1/export-jobs/' . $job_id );
         $req->set_param( 'job_id', $job_id );
         return Mullion_Export_Controller::get_export_job( $req );
     }
@@ -105,7 +105,7 @@ class Mullion_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
         $id = Mullion_Export_Engine::create_job( 'audit', '{}', [], required_tier: Mullion_Permissions::TIER_SYSTEM_ADMIN );
 
         wp_set_current_user( $this->editor_id );
-        $req = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/export-jobs/' . $id . '/download' );
+        $req = new WP_REST_Request( 'GET', '/mullion-gallery/v1/export-jobs/' . $id . '/download' );
         $req->set_param( 'job_id', $id );
         $resp = Mullion_Export_Controller::download_export_job( $req );
 
@@ -183,7 +183,7 @@ class Mullion_P63E_Export_Job_Tier_Test extends WP_UnitTestCase {
         get_user_by( 'id', $editor_b )->add_cap( 'manage_mullion' );
 
         wp_set_current_user( $editor_b );
-        $req = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/export-jobs/' . $id . '/download' );
+        $req = new WP_REST_Request( 'GET', '/mullion-gallery/v1/export-jobs/' . $id . '/download' );
         $req->set_param( 'job_id', $id );
         $resp = Mullion_Export_Controller::download_export_job( $req );
 

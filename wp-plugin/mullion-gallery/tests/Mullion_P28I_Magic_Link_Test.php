@@ -93,7 +93,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
     public function test_submit_access_request_generates_magic_key() {
         $campaign_id = $this->create_campaign();
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests");
         $request->set_param('email', 'newuser@example.com');
         rest_do_request($request);
 
@@ -125,7 +125,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         ['token' => $token, 'raw_key' => $raw_key] = $this->insert_request_with_magic_key($campaign_id);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
         $response = rest_do_request($request);
 
@@ -149,7 +149,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
             -1  // already expired
         );
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
         [$response, $html] = $this->serve_and_capture_html($request);
 
@@ -172,7 +172,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
         // Pre-mark as used.
         Mullion_DB::mark_magic_key_used($token);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
         [$response, $html] = $this->serve_and_capture_html($request);
 
@@ -193,7 +193,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
         ['token' => $token, 'raw_key' => $raw_key] = $this->insert_request_with_magic_key($campaign_a);
 
         // Use campaign_b's ID in the URL — should fail even though key is valid.
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_b}/access-requests/{$token}/magic-approve");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_b}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', $raw_key);
         rest_do_request($request);
 
@@ -209,7 +209,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         ['token' => $token] = $this->insert_request_with_magic_key($campaign_id);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         $request->set_param('magic_key', 'aabbccdd' . str_repeat('00', 28));  // wrong key
         rest_do_request($request);
 
@@ -225,7 +225,7 @@ class Mullion_P28I_Magic_Link_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         ['token' => $token] = $this->insert_request_with_magic_key($campaign_id);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/magic-approve");
         rest_do_request($request);
 
         $updated = Mullion_DB::get_access_request($token);

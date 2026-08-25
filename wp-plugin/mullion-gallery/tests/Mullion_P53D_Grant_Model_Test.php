@@ -52,7 +52,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
     }
 
     private function update_status(int $cid): int {
-        $req = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$cid}");
+        $req = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$cid}");
         $req->set_param('title', 'Edited');
         return rest_do_request($req)->get_status();
     }
@@ -102,7 +102,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         ]]);
         wp_set_current_user($sub);
 
-        $view = rest_do_request(new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$cid}"))->get_status();
+        $view = rest_do_request(new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$cid}"))->get_status();
         $this->assertSame(200, $view, 'a granted user can still VIEW the private campaign');
         $this->assertSame(403, $this->update_status($cid), 'a legacy editor grant must NOT confer edit rights');
     }
@@ -114,13 +114,13 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $cid = $this->campaign();
         $target = self::factory()->user->create(['role' => 'subscriber']);
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access");
         $req->set_param('userId', $target);
         $req->set_param('source', 'campaign');
         $req->set_param('access_level', 'editor'); // no longer allowed
         $this->assertSame(400, rest_do_request($req)->get_status(), 'access_level=editor must be rejected by the viewer-only enum');
 
-        $ok = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access");
+        $ok = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access");
         $ok->set_param('userId', $target);
         $ok->set_param('source', 'campaign');
         $ok->set_param('access_level', 'viewer');
@@ -137,7 +137,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $target = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($editor);
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/access");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/spaces/{$space}/access");
         $req->set_param('userId', $target);
         $req->set_param('access_level', 'viewer');
         $this->assertSame(200, rest_do_request($req)->get_status(), 'an editor may manage access in a space it has been granted access to');
@@ -149,7 +149,7 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $target = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($editor);
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/access");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/spaces/{$space}/access");
         $req->set_param('userId', $target);
         $req->set_param('access_level', 'viewer');
         $this->assertSame(403, rest_do_request($req)->get_status(), 'an editor without space access cannot manage it (F2)');
@@ -161,11 +161,11 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $this->grant_space($space, $sub);
         wp_set_current_user($sub);
 
-        $read = rest_do_request(new WP_REST_Request('GET', "/wp-super-gallery/v1/spaces/{$space}/settings"))->get_status();
+        $read = rest_do_request(new WP_REST_Request('GET', "/mullion-gallery/v1/spaces/{$space}/settings"))->get_status();
         $this->assertSame(200, $read, 'a space viewer-grantee can READ the space');
 
         $target = self::factory()->user->create(['role' => 'subscriber']);
-        $manage = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/access");
+        $manage = new WP_REST_Request('POST', "/mullion-gallery/v1/spaces/{$space}/access");
         $manage->set_param('userId', $target);
         $manage->set_param('access_level', 'viewer');
         $this->assertSame(403, rest_do_request($manage)->get_status(), 'a viewer-grantee (no manage_mullion) cannot manage the space');
@@ -176,12 +176,12 @@ class Mullion_P53D_Grant_Model_Test extends WP_UnitTestCase {
         $space  = $this->make_space('open');
         $target = self::factory()->user->create(['role' => 'subscriber']);
 
-        $bad = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/access");
+        $bad = new WP_REST_Request('POST', "/mullion-gallery/v1/spaces/{$space}/access");
         $bad->set_param('userId', $target);
         $bad->set_param('access_level', 'owner');
         $this->assertSame(400, rest_do_request($bad)->get_status(), 'space access_level=owner must be rejected by the viewer-only enum');
 
-        $ok = new WP_REST_Request('POST', "/wp-super-gallery/v1/spaces/{$space}/access");
+        $ok = new WP_REST_Request('POST', "/mullion-gallery/v1/spaces/{$space}/access");
         $ok->set_param('userId', $target);
         $ok->set_param('access_level', 'viewer');
         $this->assertSame(200, rest_do_request($ok)->get_status());

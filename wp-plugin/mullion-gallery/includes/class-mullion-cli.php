@@ -531,7 +531,7 @@ class Mullion_CLI {
         }
 
         // Find WP attachment posts that are under this plugin's taxonomy
-        // (uploaded via wp-super-gallery) and not referenced by any campaign.
+        // (uploaded via mullion-gallery) and not referenced by any campaign.
         $attachments = get_posts( [
             'post_type'      => 'attachment',
             'post_status'    => 'inherit',

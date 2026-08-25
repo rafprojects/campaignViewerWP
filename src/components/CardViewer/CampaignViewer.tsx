@@ -341,7 +341,7 @@ export function CampaignViewer({
     };
 
     try {
-      await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(viewerCampaign.id)}`, payload);
+      await apiClient.put(`/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(viewerCampaign.id)}`, payload);
 
       setViewerCampaign((current) => ({
         ...current,

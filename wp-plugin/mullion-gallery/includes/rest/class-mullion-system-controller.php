@@ -16,7 +16,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         // still be abused for reconnaissance or as a component in attack chains. Consider requiring
         // authentication for this endpoint or implementing rate limiting to prevent abuse. If public
         // access is intentional for preview functionality, document this security tradeoff prominently.
-        register_rest_route('wp-super-gallery/v1', '/oembed', [
+        register_rest_route('mullion-gallery/v1', '/oembed', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'proxy_oembed'],
@@ -25,7 +25,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         ]);
 
         // P14-D/E: Health & monitoring endpoints (admin only).
-        register_rest_route('wp-super-gallery/v1', '/admin/health', [
+        register_rest_route('mullion-gallery/v1', '/admin/health', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_health_data'],
@@ -33,7 +33,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/admin/oembed-failures', [
+        register_rest_route('mullion-gallery/v1', '/admin/oembed-failures', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_oembed_failures'],
@@ -47,7 +47,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         ]);
 
         // P14-C: Thumbnail cache management (admin only).
-        register_rest_route('wp-super-gallery/v1', '/admin/thumbnail-cache', [
+        register_rest_route('mullion-gallery/v1', '/admin/thumbnail-cache', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_thumbnail_cache_stats'],
@@ -60,7 +60,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/admin/thumbnail-cache/refresh', [
+        register_rest_route('mullion-gallery/v1', '/admin/thumbnail-cache/refresh', [
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'refresh_thumbnail_cache'],
@@ -69,7 +69,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
         ]);
 
         // P39-IN1: Webhook endpoint management.
-        register_rest_route('wp-super-gallery/v1', '/webhooks', [
+        register_rest_route('mullion-gallery/v1', '/webhooks', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_webhook_endpoints'],
@@ -82,7 +82,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/webhooks/delivery-log', [
+        register_rest_route('mullion-gallery/v1', '/webhooks/delivery-log', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_webhook_deliveries'],
@@ -90,7 +90,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/webhooks/(?P<index>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/webhooks/(?P<index>\d+)', [
             [
                 'methods'             => 'PUT',
                 'callback'            => [self::class, 'update_webhook_endpoint'],
@@ -103,7 +103,7 @@ class Mullion_System_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/webhooks/(?P<index>\d+)/rotate-secret', [
+        register_rest_route('mullion-gallery/v1', '/webhooks/(?P<index>\d+)/rotate-secret', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'rotate_webhook_secret'],

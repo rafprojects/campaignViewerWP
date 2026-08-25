@@ -5,7 +5,7 @@
 
 class ProxyOEmbedTest extends WP_UnitTestCase {
     public function test_missing_url_returns_400() {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/oembed');
         // no url param
         $response = Mullion_System_Controller::proxy_oembed($request);
         $this->assertInstanceOf('WP_REST_Response', $response);
@@ -18,7 +18,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
         // A URL with no meaningful host should be rejected with 400.
         // The specific message depends on how wp_parse_url handles the input;
         // we assert status = 400 and that a message key is present.
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/oembed');
         $request->set_param('url', 'https://');
         $response = Mullion_System_Controller::proxy_oembed($request);
         $this->assertInstanceOf('WP_REST_Response', $response);
@@ -38,7 +38,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
         $payload = ['title' => 'Cached Title', 'thumbnail_url' => 'https://example.com/thumb.jpg'];
         set_transient($cache_key, $payload, 60);
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/oembed');
         $request->set_param('url', $url);
         $response = Mullion_System_Controller::proxy_oembed($request);
 
@@ -58,7 +58,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
         ];
         set_transient($cache_key, $error_payload, 60);
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/oembed');
         $request->set_param('url', $url);
         $response = Mullion_System_Controller::proxy_oembed($request);
 
@@ -73,7 +73,7 @@ class ProxyOEmbedTest extends WP_UnitTestCase {
         // Test that allowlisted hosts don't go through IP resolution check
         // We'll test this by using a non-allowlisted host that would normally require IP check,
         // and verify the error message is about IP resolution, not about being allowlisted
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/oembed');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/oembed');
         $request->set_param('url', 'https://non-allowlisted-site.com/watch?v=123');
 
         $response = Mullion_System_Controller::proxy_oembed($request);

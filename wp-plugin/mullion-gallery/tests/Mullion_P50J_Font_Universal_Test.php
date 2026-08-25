@@ -52,7 +52,7 @@ class Mullion_P50J_Font_Universal_Test extends WP_UnitTestCase {
     }
 
     private function list_font_ids(?int $space_id = null): array {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/font-library');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/font-library');
         if ($space_id !== null) {
             $request->set_param('space', (string) $space_id);
         }
@@ -135,7 +135,7 @@ class Mullion_P50J_Font_Universal_Test extends WP_UnitTestCase {
         $this->set_super_admin();
         $id = $this->add_font('P50J REST Toggle', false);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/font-library/{$id}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/font-library/{$id}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'is_universal' => true ]));
         $response = rest_do_request($request);
@@ -149,7 +149,7 @@ class Mullion_P50J_Font_Universal_Test extends WP_UnitTestCase {
         $this->set_super_admin();
         $missing = '00000000-0000-0000-0000-000000000000';
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/font-library/{$missing}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/font-library/{$missing}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'is_universal' => true ]));
         $response = rest_do_request($request);
@@ -161,7 +161,7 @@ class Mullion_P50J_Font_Universal_Test extends WP_UnitTestCase {
         $this->set_super_admin();
         $id = $this->add_font('P50J REST NoField', false);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/font-library/{$id}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/font-library/{$id}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'foo' => 'bar' ]));
         $response = rest_do_request($request);

@@ -157,9 +157,9 @@ describe('UPLOADS_PATH_RE', () => {
 
   it('does not match non-upload static assets or API routes', () => {
     expect(match('/wp-content/themes/x/style.css')).toBe(false);
-    expect(match('/wp-content/plugins/wp-super-gallery/font.woff2')).toBe(false);
+    expect(match('/wp-content/plugins/mullion-gallery/font.woff2')).toBe(false);
     expect(match('/fonts/roboto.woff2')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns')).toBe(false);
   });
 });
 

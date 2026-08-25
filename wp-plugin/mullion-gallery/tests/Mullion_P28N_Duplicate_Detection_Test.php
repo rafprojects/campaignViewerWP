@@ -33,7 +33,7 @@ class Mullion_P28N_Duplicate_Detection_Test extends WP_UnitTestCase {
     }
 
     private function make_request(string $tmp_path, string $filename = 'test.gif', bool $force = false): WP_REST_Request {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/upload');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/media/upload');
         $request->set_file_params([
             'file' => [
                 'name'     => $filename,
@@ -106,7 +106,7 @@ class Mullion_P28N_Duplicate_Detection_Test extends WP_UnitTestCase {
 
         // Batch upload with the same file content.
         $tmp2 = $this->create_temp_gif('batch2');
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/upload');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/media/upload');
         $request->set_file_params([
             'files' => [
                 'name'     => ['batch_dup.gif'],

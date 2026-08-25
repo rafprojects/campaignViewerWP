@@ -252,7 +252,7 @@ function AppContent({
     const pages = await fetchAllPages<ApiCampaignResponse>(
       (page) =>
         apiClient.get<ApiCampaignResponse>(
-          `/wp-json/wp-super-gallery/v1/campaigns?include_media=1&per_page=50&page=${page}${spaceParam}`,
+          `/wp-json/mullion-gallery/v1/campaigns?include_media=1&per_page=50&page=${page}${spaceParam}`,
         ),
       { onPage: (completed, total) => setCampaignLoadProgress({ completed, total }) },
     );

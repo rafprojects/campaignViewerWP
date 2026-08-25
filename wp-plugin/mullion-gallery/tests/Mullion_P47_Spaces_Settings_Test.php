@@ -42,7 +42,7 @@ class Mullion_P47_Spaces_Settings_Test extends WP_UnitTestCase {
     }
 
     private function put_space_settings(int $space_id, array $body): WP_REST_Response {
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/spaces/{$space_id}/settings");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/spaces/{$space_id}/settings");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode($body));
         return rest_do_request($request);

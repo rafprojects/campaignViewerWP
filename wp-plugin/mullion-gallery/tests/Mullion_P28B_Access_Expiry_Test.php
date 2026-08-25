@@ -53,7 +53,7 @@ class Mullion_P28B_Access_Expiry_Test extends WP_UnitTestCase {
         $grantee_id  = self::factory()->user->create([ 'role' => 'subscriber' ]);
         $future      = gmdate('c', strtotime('+7 days'));
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('source', 'campaign');
         $request->set_param('expires_at', $future);
@@ -70,7 +70,7 @@ class Mullion_P28B_Access_Expiry_Test extends WP_UnitTestCase {
         $this->assertNotNull($stored['expires_at'], 'expires_at should be persisted.');
 
         // GET returns is_expired = false.
-        $get = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $get = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $get_response = rest_do_request($get);
         $data  = $get_response->get_data();
         $items = $data['items'] ?? [];
@@ -104,14 +104,14 @@ class Mullion_P28B_Access_Expiry_Test extends WP_UnitTestCase {
         update_post_meta($campaign_id, 'access_grants', $grants);
 
         // Default GET should NOT include the expired grant.
-        $get = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $get = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $get_response = rest_do_request($get);
         $items = $get_response->get_data()['items'] ?? [];
         $match = array_filter($items, fn($g) => intval($g['userId'] ?? 0) === $grantee_id);
         $this->assertCount(0, $match, 'Expired grant should be hidden from default list.');
 
         // With include_expired=true it should appear and is_expired should be true.
-        $get_expired = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $get_expired = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $get_expired->set_param('include_expired', 'true');
         $get_expired_response = rest_do_request($get_expired);
         $items_with = $get_expired_response->get_data()['items'] ?? [];
@@ -129,7 +129,7 @@ class Mullion_P28B_Access_Expiry_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         $grantee_id  = self::factory()->user->create([ 'role' => 'subscriber' ]);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('source', 'campaign');
         // No expires_at supplied.
@@ -137,7 +137,7 @@ class Mullion_P28B_Access_Expiry_Test extends WP_UnitTestCase {
 
         $this->assertEquals(200, $response->get_status());
 
-        $get = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $get = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $items = rest_do_request($get)->get_data()['items'] ?? [];
         $match = array_values(array_filter($items, fn($g) => intval($g['userId'] ?? 0) === $grantee_id));
         $this->assertCount(1, $match, 'Permanent grant should appear.');
@@ -154,7 +154,7 @@ class Mullion_P28B_Access_Expiry_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         $grantee_id  = self::factory()->user->create([ 'role' => 'subscriber' ]);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('source', 'campaign');
         $request->set_param('expires_at', 'not-a-date');

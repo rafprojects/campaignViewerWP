@@ -76,7 +76,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
     queryKey: ['space-grants', apiClient.getBaseUrl(), selectedSpaceId],
     queryFn: async () => {
       const res = await apiClient.get<{ items?: SpaceGrant[] } | SpaceGrant[]>(
-        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`
+        `/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/access`
       );
       if (Array.isArray(res)) return res;
       return (res as { items?: SpaceGrant[] }).items ?? [];
@@ -93,7 +93,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
   const { data: allAssets, isLoading: assetsLoading } = useQuery({
     queryKey: ['asset-library', apiClient.getBaseUrl()],
     queryFn: async () =>
-      (await apiClient.get<AssetLibraryItem[]>('/wp-json/wp-super-gallery/v1/admin/asset-library')) ?? [],
+      (await apiClient.get<AssetLibraryItem[]>('/wp-json/mullion-gallery/v1/admin/asset-library')) ?? [],
     enabled: libraryTabActive && isDelegated,
     staleTime: 30_000,
     retry: false,
@@ -103,7 +103,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
   const { data: allFonts, isLoading: fontsLoading } = useQuery({
     queryKey: ['font-library', apiClient.getBaseUrl()],
     queryFn: async () =>
-      (await apiClient.get<FontLibraryEntry[]>('/wp-json/wp-super-gallery/v1/admin/font-library')) ?? [],
+      (await apiClient.get<FontLibraryEntry[]>('/wp-json/mullion-gallery/v1/admin/font-library')) ?? [],
     enabled: libraryTabActive && isDelegated,
     staleTime: 30_000,
     retry: false,
@@ -114,7 +114,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
     queryKey: ['space-library', apiClient.getBaseUrl(), selectedSpaceId],
     queryFn: async () =>
       apiClient.get<{ asset: string[]; font: string[] }>(
-        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library`
+        `/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/library`
       ),
     enabled: libraryTabActive && isDelegated && selectedSpaceId !== null,
     staleTime: 30_000,
@@ -129,14 +129,14 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
   ): Promise<void> => {
     if (!selectedSpaceId) return;
     if (checked) {
-      await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library`, {
+      await apiClient.post(`/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/library`, {
         assetType,
         assetId,
       });
     } else {
       const params = new URLSearchParams({ assetType, assetId });
       await apiClient.delete(
-        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/library?${params.toString()}`
+        `/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/library?${params.toString()}`
       );
     }
   }, [apiClient, selectedSpaceId]);
@@ -183,7 +183,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
     if (!createName.trim()) return;
     setCreateSaving(true);
     try {
-      const res = await apiClient.post<{ id: number }>('/wp-json/wp-super-gallery/v1/spaces', {
+      const res = await apiClient.post<{ id: number }>('/wp-json/mullion-gallery/v1/spaces', {
         name: createName.trim(),
         slug: createSlug.trim() || autoSlug(createName.trim()),
         isolation_mode: createIsolation ? 'delegated' : 'open',
@@ -205,7 +205,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
 
   const handleArchiveSpace = useCallback(async (spaceId: number, spaceName: string) => {
     try {
-      await apiClient.delete(`/wp-json/wp-super-gallery/v1/spaces/${spaceId}`);
+      await apiClient.delete(`/wp-json/mullion-gallery/v1/spaces/${spaceId}`);
       await mutateSpaces();
       onSpacesChanged();
       if (selectedSpaceId === spaceId) {
@@ -223,14 +223,14 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
     setGrantSaving(true);
     try {
       const resolveRes = await apiClient.get<{ found: boolean; id?: number }>(
-        `/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/resolve-user?search=${encodeURIComponent(grantEmail.trim())}`,
+        `/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/resolve-user?search=${encodeURIComponent(grantEmail.trim())}`,
       );
       if (!resolveRes?.found || !resolveRes.id) {
         onNotify({ type: 'error', text: t('admin_space_no_user', 'No WordPress user found with that email') });
         setGrantSaving(false);
         return;
       }
-      await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`, {
+      await apiClient.post(`/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/access`, {
         userId: resolveRes.id,
         access_level: grantRole,
       });
@@ -247,7 +247,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
   const handleRevokeAccess = useCallback(async (userId: number) => {
     if (!selectedSpaceId) return;
     try {
-      await apiClient.delete(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access/${userId}`);
+      await apiClient.delete(`/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/access/${userId}`);
       await refetchGrants();
       onNotify({ type: 'success', text: t('admin_space_access_revoked', 'Access revoked') });
     } catch (err) {
@@ -283,7 +283,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
     if (!selectedSpaceId) return;
     setRoleSavingUserId(userId);
     try {
-      await apiClient.post(`/wp-json/wp-super-gallery/v1/spaces/${selectedSpaceId}/access`, {
+      await apiClient.post(`/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/access`, {
         userId,
         access_level: newLevel,
       });

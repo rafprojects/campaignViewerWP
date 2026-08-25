@@ -204,7 +204,7 @@ describe('AdminPanel', () => {
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns',
+        '/wp-json/mullion-gallery/v1/campaigns',
         expect.objectContaining({ title: 'New Campaign' }),
       );
     });

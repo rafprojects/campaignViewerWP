@@ -181,7 +181,7 @@ export function useUnifiedCampaignModal({
     setMediaLoading(true);
     try {
       const response = await apiClient.get<MediaItem[] | { items: MediaItem[] }>(
-        `/wp-json/wp-super-gallery/v1/campaigns/${c.id}/media`,
+        `/wp-json/mullion-gallery/v1/campaigns/${c.id}/media`,
       );
       const items = Array.isArray(response) ? response : (response.items ?? []);
       setMediaItems(sortByOrder(items));
@@ -239,7 +239,7 @@ export function useUnifiedCampaignModal({
       const formData = new FormData();
       formData.append('file', file);
       const response = await apiClient.postForm<UploadResponse>(
-        '/wp-json/wp-super-gallery/v1/media/upload',
+        '/wp-json/mullion-gallery/v1/media/upload',
         formData,
       );
       // Defer state update past focus-trap restoration cycle (fixes FileButton freeze)
@@ -281,12 +281,12 @@ export function useUnifiedCampaignModal({
 
     try {
       if (editingCampaignId) {
-        await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${editingCampaignId}`, payload);
+        await apiClient.put(`/wp-json/mullion-gallery/v1/campaigns/${editingCampaignId}`, payload);
         onNotify({ type: 'success', text: 'Campaign updated.' });
       } else {
         // P47-J: assign to the active space on creation.
         if (spaceId != null) payload.space_id = spaceId;
-        await apiClient.post('/wp-json/wp-super-gallery/v1/campaigns', payload);
+        await apiClient.post('/wp-json/mullion-gallery/v1/campaigns', payload);
         onNotify({ type: 'success', text: 'Campaign created.' });
       }
       close();
@@ -312,7 +312,7 @@ export function useUnifiedCampaignModal({
     }
     try {
       await apiClient.delete(
-        `/wp-json/wp-super-gallery/v1/campaigns/${editingCampaignId}/media/${encodeURIComponent(mediaItem.id)}`,
+        `/wp-json/mullion-gallery/v1/campaigns/${editingCampaignId}/media/${encodeURIComponent(mediaItem.id)}`,
       );
       setMediaItems((prev) => prev.filter((m) => m.id !== mediaItem.id));
       onNotify({ type: 'success', text: 'Media removed from campaign.' });
@@ -332,7 +332,7 @@ export function useUnifiedCampaignModal({
       params.set('per_page', '50');
       if (search) params.set('search', search);
       const response = await apiClient.get<{ items: MediaItem[]; total: number }>(
-        `/wp-json/wp-super-gallery/v1/media/library?${params.toString()}`,
+        `/wp-json/mullion-gallery/v1/media/library?${params.toString()}`,
       );
       if (!controller.signal.aborted) setLibraryMedia(response.items ?? []);
     } catch (err) {
@@ -354,7 +354,7 @@ export function useUnifiedCampaignModal({
     try {
       const order = mediaItems.length + 1;
       const response = await apiClient.post<MediaItem>(
-        `/wp-json/wp-super-gallery/v1/campaigns/${editingCampaignId}/media`,
+        `/wp-json/mullion-gallery/v1/campaigns/${editingCampaignId}/media`,
         {
           type: libraryItem.type,
           source: 'upload',
@@ -379,7 +379,7 @@ export function useUnifiedCampaignModal({
     try {
       const order = mediaItems.length + 1;
       const response = await apiClient.post<MediaItem>(
-        `/wp-json/wp-super-gallery/v1/campaigns/${editingCampaignId}/media`,
+        `/wp-json/mullion-gallery/v1/campaigns/${editingCampaignId}/media`,
         { type: addMediaType, source: 'external', url: addMediaUrl, caption: addMediaCaption || undefined, order },
       );
       setMediaItems((prev) => [...prev, response]);
@@ -411,7 +411,7 @@ export function useUnifiedCampaignModal({
     try {
       const authHeaders = await apiClient.getAuthHeaders();
       const uploadResponse = await uploadMany<BatchUploadResponse>({
-        url: `${apiClient.getBaseUrl()}/wp-json/wp-super-gallery/v1/media/upload`,
+        url: `${apiClient.getBaseUrl()}/wp-json/mullion-gallery/v1/media/upload`,
         files,
         headers: authHeaders,
       });

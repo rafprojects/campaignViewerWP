@@ -56,7 +56,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         $grantee_id  = self::factory()->user->create([ 'role' => 'subscriber' ]);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('source', 'campaign');
         $request->set_param('access_level', 'viewer');
@@ -77,13 +77,13 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         $grantee_id  = self::factory()->user->create([ 'role' => 'subscriber' ]);
 
-        $post_request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $post_request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $post_request->set_param('userId', $grantee_id);
         $post_request->set_param('source', 'campaign');
         $post_request->set_param('access_level', 'viewer');
         rest_do_request($post_request);
 
-        $get_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $get_request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $get_response = rest_do_request($get_request);
 
         $this->assertSame(200, $get_response->get_status());
@@ -98,7 +98,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         $grantee_id  = self::factory()->user->create([ 'role' => 'subscriber' ]);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('source', 'campaign');
         // No access_level param — should default to 'viewer'.
@@ -126,7 +126,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
             // Intentionally omitting access_level to simulate a legacy record.
         ]]);
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status());
@@ -142,7 +142,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign();
         $grantee_id  = self::factory()->user->create([ 'role' => 'subscriber' ]);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('source', 'campaign');
         $request->set_param('access_level', 'superadmin');   // not in enum
@@ -158,7 +158,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
         $company_id = $this->create_company();
         $grantee_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/companies/{$company_id}/access");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/companies/{$company_id}/access");
         $request->set_param('userId', $grantee_id);
         $request->set_param('access_level', 'viewer');
         $response = rest_do_request($request);
@@ -185,7 +185,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
             'grantedAt' => gmdate('c'),
         ]]);
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/companies/{$company_id}/access");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/companies/{$company_id}/access");
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status());
@@ -213,7 +213,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
             'requested_at' => current_time('mysql', true),
         ]);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/approve");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/approve");
         $request->set_param('access_level', 'viewer');
         $response = rest_do_request($request);
 
@@ -243,7 +243,7 @@ class Mullion_P33B_Access_Level_Test extends WP_UnitTestCase {
             'requested_at' => current_time('mysql', true),
         ]);
 
-        $request  = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/approve");
+        $request  = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/access-requests/{$token}/approve");
         // No access_level param.
         $response = rest_do_request($request);
 

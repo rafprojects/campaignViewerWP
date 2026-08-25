@@ -9,7 +9,7 @@ class Mullion_Settings_Controller extends Mullion_REST_Base {
     public static function register_routes(): void {
         // Public endpoint to get display settings (no auth required for frontend).
         // POST requires admin permission to update settings.
-        register_rest_route('wp-super-gallery/v1', '/settings', [
+        register_rest_route('mullion-gallery/v1', '/settings', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_public_settings'],

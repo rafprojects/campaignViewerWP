@@ -45,7 +45,7 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
     }
 
     private function make_upload_request(string $tmp_path, string $filename, int $campaign_id = 0, bool $force = false): WP_REST_Request {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/upload');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/media/upload');
         $request->set_file_params([
             'file' => [
                 'name'     => $filename,
@@ -65,13 +65,13 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
     }
 
     private function get_audit_actions(int $campaign_id): array {
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req->set_param('id', $campaign_id);
         return array_column(rest_do_request($req)->get_data()['items'] ?? [], 'action');
     }
 
     private function get_audit_entries(int $campaign_id): array {
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req->set_param('id', $campaign_id);
         return rest_do_request($req)->get_data()['items'] ?? [];
     }
@@ -194,7 +194,7 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('CA1 Export Audit Campaign');
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/export");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/export");
         $req->set_param('id', $campaign_id);
         $res = rest_do_request($req);
         $this->assertEquals(200, $res->get_status(), 'Export request must succeed.');
@@ -207,7 +207,7 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('CA1 Export Meta Campaign');
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/export");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/export");
         $req->set_param('id', $campaign_id);
         rest_do_request($req);
 
@@ -236,7 +236,7 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
             'media_references' => [],
         ]);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/import');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/import');
         $req->set_header('Content-Type', 'application/json');
         $req->set_body($payload);
 
@@ -262,7 +262,7 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('CA1 Batch Info Campaign');
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media/batch");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/media/batch");
         $req->set_param('id', $campaign_id);
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode([
@@ -284,7 +284,7 @@ class Mullion_P40_CA1_Campaign_Coverage_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('CA1 Batch Warning Campaign');
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media/batch");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/media/batch");
         $req->set_param('id', $campaign_id);
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode([

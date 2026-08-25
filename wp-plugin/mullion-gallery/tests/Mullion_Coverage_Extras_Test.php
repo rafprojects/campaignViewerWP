@@ -57,11 +57,11 @@ class Mullion_Coverage_Extras_Test extends WP_UnitTestCase {
 
     public function test_embed_register_assets() {
         // Deregister if present.
-        wp_deregister_script('wp-super-gallery-app');
-        $this->assertFalse(wp_script_is('wp-super-gallery-app', 'registered'));
+        wp_deregister_script('mullion-gallery-app');
+        $this->assertFalse(wp_script_is('mullion-gallery-app', 'registered'));
 
         Mullion_Embed::register_assets();
-        $this->assertTrue(wp_script_is('wp-super-gallery-app', 'registered'));
+        $this->assertTrue(wp_script_is('mullion-gallery-app', 'registered'));
     }
 
     // P63-C: Mullion_Embed::add_asset_cache_headers() was removed — static assets are

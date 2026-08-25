@@ -75,7 +75,7 @@ export class CampaignsApi {
     options: { name?: string; copyMedia?: boolean; duplicateLayoutTemplate?: boolean },
   ): Promise<{ id: string; title: string }> {
     return this.transport.post<{ id: string; title: string }>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/duplicate`,
+      `/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(id)}/duplicate`,
       {
         name: options.name,
         copyMedia: options.copyMedia ?? false,
@@ -91,7 +91,7 @@ export class CampaignsApi {
     targetSpaceId: number,
   ): Promise<{ message: string; spaceId: number; moved: boolean }> {
     return this.transport.post<{ message: string; spaceId: number; moved: boolean }>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/move`,
+      `/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(id)}/move`,
       { target_space_id: targetSpaceId },
     );
   }
@@ -107,7 +107,7 @@ export class CampaignsApi {
       params.set('purge_analytics', 'true');
     }
     return this.transport.delete<{ message: string; id: number }>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}?${params.toString()}`,
+      `/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(id)}?${params.toString()}`,
     );
   }
 
@@ -121,7 +121,7 @@ export class CampaignsApi {
     return this.transport.post<{
       success: string[];
       failed: Array<{ id: string; reason: string }>;
-    }>('/wp-json/wp-super-gallery/v1/campaigns/batch', {
+    }>('/wp-json/mullion-gallery/v1/campaigns/batch', {
       action,
       ids,
       ...(action === 'delete' ? { confirm: true } : {}),
@@ -134,7 +134,7 @@ export class CampaignsApi {
     items: CampaignMediaBatchRequestItem[],
   ): Promise<CampaignMediaBatchResponse> {
     return this.transport.post<CampaignMediaBatchResponse>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(campaignId)}/media/batch`,
+      `/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(campaignId)}/media/batch`,
       { items },
     );
   }
@@ -143,13 +143,13 @@ export class CampaignsApi {
 
   exportCampaign(id: string): Promise<CampaignExportPayload> {
     return this.transport.get<CampaignExportPayload>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${encodeURIComponent(id)}/export`,
+      `/wp-json/mullion-gallery/v1/campaigns/${encodeURIComponent(id)}/export`,
     );
   }
 
   importCampaign(payload: CampaignExportPayload): Promise<Record<string, unknown>> {
     return this.transport.post<Record<string, unknown>>(
-      '/wp-json/wp-super-gallery/v1/campaigns/import',
+      '/wp-json/mullion-gallery/v1/campaigns/import',
       payload,
     );
   }
@@ -161,21 +161,21 @@ export class CampaignsApi {
     fd.append('file', file);
     return this.transport.postForm<
       Record<string, unknown> | { imported: Array<{ id: number; title: string }> }
-    >('/wp-json/wp-super-gallery/v1/campaigns/import/binary', fd);
+    >('/wp-json/mullion-gallery/v1/campaigns/import/binary', fd);
   }
 
   // ── P18-H / P28-C: Categories ────────────────────────────────────────────
 
   async listCampaignCategories(): Promise<CampaignCategoryEntry[]> {
     const response = await this.transport.get<{ items: CampaignCategoryEntry[] }>(
-      '/wp-json/wp-super-gallery/v1/campaign-categories',
+      '/wp-json/mullion-gallery/v1/campaign-categories',
     );
     return response.items ?? [];
   }
 
   createCampaignCategory(name: string, slug?: string): Promise<CampaignCategoryEntry> {
     return this.transport.post<CampaignCategoryEntry>(
-      '/wp-json/wp-super-gallery/v1/campaign-categories',
+      '/wp-json/mullion-gallery/v1/campaign-categories',
       { name, ...(slug ? { slug } : {}) },
     );
   }
@@ -185,14 +185,14 @@ export class CampaignsApi {
     data: { name?: string; slug?: string },
   ): Promise<CampaignCategoryEntry> {
     return this.transport.put<CampaignCategoryEntry>(
-      `/wp-json/wp-super-gallery/v1/campaign-categories/${id}`,
+      `/wp-json/mullion-gallery/v1/campaign-categories/${id}`,
       data,
     );
   }
 
   deleteCampaignCategory(id: string): Promise<{ deleted: boolean; id: string }> {
     return this.transport.delete<{ deleted: boolean; id: string }>(
-      `/wp-json/wp-super-gallery/v1/campaign-categories/${id}`,
+      `/wp-json/mullion-gallery/v1/campaign-categories/${id}`,
     );
   }
 
@@ -200,13 +200,13 @@ export class CampaignsApi {
 
   async listCampaignTags(): Promise<TagEntry[]> {
     const response = await this.transport.get<{ items: TagEntry[] }>(
-      '/wp-json/wp-super-gallery/v1/tags/campaign',
+      '/wp-json/mullion-gallery/v1/tags/campaign',
     );
     return response.items ?? [];
   }
 
   createCampaignTag(name: string, slug?: string): Promise<TagEntry> {
-    return this.transport.post<TagEntry>('/wp-json/wp-super-gallery/v1/tags/campaign', {
+    return this.transport.post<TagEntry>('/wp-json/mullion-gallery/v1/tags/campaign', {
       name,
       ...(slug ? { slug } : {}),
     });
@@ -214,7 +214,7 @@ export class CampaignsApi {
 
   deleteCampaignTag(id: string): Promise<{ deleted: boolean; id: string }> {
     return this.transport.delete<{ deleted: boolean; id: string }>(
-      `/wp-json/wp-super-gallery/v1/tags/campaign/${id}`,
+      `/wp-json/mullion-gallery/v1/tags/campaign/${id}`,
     );
   }
 
@@ -222,7 +222,7 @@ export class CampaignsApi {
 
   async listCampaignTemplates(): Promise<CampaignTemplate[]> {
     const response = await this.transport.get<{ items: CampaignTemplate[] }>(
-      '/wp-json/wp-super-gallery/v1/campaign-templates',
+      '/wp-json/mullion-gallery/v1/campaign-templates',
     );
     return response.items ?? [];
   }
@@ -233,26 +233,26 @@ export class CampaignsApi {
     from_campaign_id?: number;
   }): Promise<CampaignTemplate> {
     return this.transport.post<CampaignTemplate>(
-      '/wp-json/wp-super-gallery/v1/campaign-templates',
+      '/wp-json/mullion-gallery/v1/campaign-templates',
       data,
     );
   }
 
   async deleteCampaignTemplate(id: string): Promise<void> {
-    await this.transport.delete(`/wp-json/wp-super-gallery/v1/campaign-templates/${id}`);
+    await this.transport.delete(`/wp-json/mullion-gallery/v1/campaign-templates/${id}`);
   }
 
   // ── P28-C: Media Tags ────────────────────────────────────────────────────
 
   async listMediaTags(): Promise<TagEntry[]> {
     const response = await this.transport.get<{ items: TagEntry[] }>(
-      '/wp-json/wp-super-gallery/v1/tags/media',
+      '/wp-json/mullion-gallery/v1/tags/media',
     );
     return response.items ?? [];
   }
 
   createMediaTag(name: string, slug?: string): Promise<TagEntry> {
-    return this.transport.post<TagEntry>('/wp-json/wp-super-gallery/v1/tags/media', {
+    return this.transport.post<TagEntry>('/wp-json/mullion-gallery/v1/tags/media', {
       name,
       ...(slug ? { slug } : {}),
     });
@@ -260,7 +260,7 @@ export class CampaignsApi {
 
   deleteMediaTag(id: string): Promise<{ deleted: boolean; id: string }> {
     return this.transport.delete<{ deleted: boolean; id: string }>(
-      `/wp-json/wp-super-gallery/v1/tags/media/${id}`,
+      `/wp-json/mullion-gallery/v1/tags/media/${id}`,
     );
   }
 
@@ -271,7 +271,7 @@ export class CampaignsApi {
     email: string,
   ): Promise<{ message: string; token: string }> {
     return this.transport.post(
-      `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests`,
+      `/wp-json/mullion-gallery/v1/campaigns/${campaignId}/access-requests`,
       { email },
     );
   }
@@ -279,7 +279,7 @@ export class CampaignsApi {
   async listAccessRequests(campaignId: string, status?: string): Promise<AccessRequest[]> {
     const qs = status ? `?status=${encodeURIComponent(status)}` : '';
     const response = await this.transport.get<AccessRequest[] | { items?: AccessRequest[] }>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests${qs}`,
+      `/wp-json/mullion-gallery/v1/campaigns/${campaignId}/access-requests${qs}`,
     );
     if (Array.isArray(response)) return response;
     if (Array.isArray(response.items)) return response.items;
@@ -288,14 +288,14 @@ export class CampaignsApi {
 
   approveAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
     return this.transport.post(
-      `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/approve`,
+      `/wp-json/mullion-gallery/v1/campaigns/${campaignId}/access-requests/${token}/approve`,
       {},
     );
   }
 
   denyAccessRequest(campaignId: string, token: string): Promise<{ message: string }> {
     return this.transport.post(
-      `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/access-requests/${token}/deny`,
+      `/wp-json/mullion-gallery/v1/campaigns/${campaignId}/access-requests/${token}/deny`,
       {},
     );
   }
@@ -304,7 +304,7 @@ export class CampaignsApi {
 
   getAccessSummary(page = 1, perPage = 50): Promise<AccessSummaryResponse> {
     return this.transport.get<AccessSummaryResponse>(
-      `/wp-json/wp-super-gallery/v1/campaigns/access-summary?page=${page}&per_page=${perPage}`,
+      `/wp-json/mullion-gallery/v1/campaigns/access-summary?page=${page}&per_page=${perPage}`,
     );
   }
 }

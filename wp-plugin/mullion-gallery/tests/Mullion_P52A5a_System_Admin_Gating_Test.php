@@ -84,14 +84,14 @@ class Mullion_P52A5a_System_Admin_Gating_Test extends WP_UnitTestCase {
 
     public function test_users_create_requires_system_admin() {
         $this->make_editor();
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $this->assertFalse(
             (bool) Mullion_Permissions::check('users.create', $req),
             'mullion_editor must not create users'
         );
 
         $this->make_system_admin();
-        $req2 = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $req2 = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $this->assertTrue(
             Mullion_Permissions::check('users.create', $req2) === true,
             'System Admin may create users'

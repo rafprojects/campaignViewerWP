@@ -20,7 +20,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     // ── P28-K: args validation tests ────────────────────────────────────────
 
     public function test_create_campaign_requires_title() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         // No title — WP core should reject with rest_missing_callback_param
         $response = rest_do_request($request);
         $this->assertEquals(400, $response->get_status());
@@ -29,7 +29,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_create_campaign_rejects_invalid_visibility() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $request->set_param('title', 'Test');
         $request->set_param('visibility', 'secret');
         $response = rest_do_request($request);
@@ -38,14 +38,14 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_batch_campaigns_requires_action_and_ids() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/batch');
         $response = rest_do_request($request);
         $this->assertEquals(400, $response->get_status());
         $this->assertEquals('rest_missing_callback_param', $response->get_data()['code']);
     }
 
     public function test_batch_campaigns_rejects_invalid_action() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/batch');
         $request->set_param('action', 'foobar');
         $request->set_param('ids', [1, 2]);
         $response = rest_do_request($request);
@@ -54,7 +54,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_analytics_event_requires_campaign_id() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $response = rest_do_request($request);
         $this->assertEquals(400, $response->get_status());
         $this->assertEquals('rest_missing_callback_param', $response->get_data()['code']);
@@ -68,7 +68,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
             'post_status' => 'publish',
         ]);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $request->set_param('campaign_id', $campaign_id);
         $request->set_param('event_type', 'click');
         $response = rest_do_request($request);
@@ -79,19 +79,19 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_schema_document_lists_routes_with_args() {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1');
         $response = rest_do_request($request);
         $this->assertEquals(200, $response->get_status());
         $data = $response->get_data();
         // Campaigns route should expose its schema
-        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns', $data['routes']);
+        $this->assertArrayHasKey('/mullion-gallery/v1/campaigns', $data['routes']);
     }
 
     // ── P28-L: X-RateLimit-* header tests ───────────────────────────────────
 
     public function test_rate_limited_response_includes_ratelimit_headers() {
         // GET /campaigns is rate_limit_public — should always return headers
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $response = rest_do_request($request);
         $headers = $response->get_headers();
         $this->assertArrayHasKey('X-RateLimit-Limit', $headers);
@@ -103,11 +103,11 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_remaining_decrements_on_successive_requests() {
-        $request1 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request1 = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $response1 = rest_do_request($request1);
         $remaining1 = (int) $response1->get_headers()['X-RateLimit-Remaining'];
 
-        $request2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request2 = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $response2 = rest_do_request($request2);
         $remaining2 = (int) $response2->get_headers()['X-RateLimit-Remaining'];
 
@@ -118,7 +118,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         // Override limit to 0 so the very first request trips the limiter
         add_filter('mullion_rate_limit_public', '__return_zero');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         // rate_limit_check returns early when limit <= 0, so use limit=1 instead
         remove_all_filters('mullion_rate_limit_public');
         add_filter('mullion_rate_limit_public', static function () { return 1; });
@@ -126,7 +126,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         // First request consumes the only slot
         rest_do_request($request);
         // Second request hits 429
-        $response = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns'));
+        $response = rest_do_request(new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns'));
 
         // If the server returned 429, headers must still be present
         if ($response->get_status() === 429) {
@@ -159,7 +159,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
             ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Alpha', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
         ]);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $response = rest_do_request($request);
         $this->assertEquals(200, $response->get_status());
         $items = $response->get_data()['items'];
@@ -174,7 +174,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
             ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Second', 'order' => 2, 'url' => 'https://example.com/2.jpg'],
         ]);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $request->set_param('sort', 'order_desc');
         $response = rest_do_request($request);
         $items = $response->get_data()['items'];
@@ -188,7 +188,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
             ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Apple', 'order' => 2, 'url' => 'https://example.com/a.jpg'],
         ]);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $request->set_param('sort', 'title_asc');
         $response = rest_do_request($request);
         $items = $response->get_data()['items'];
@@ -202,7 +202,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
             ['id' => 'm2', 'type' => 'image', 'source' => 'upload', 'caption' => 'Apple', 'order' => 2, 'url' => 'https://example.com/a.jpg'],
         ]);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $request->set_param('sort', 'title_desc');
         $response = rest_do_request($request);
         $items = $response->get_data()['items'];
@@ -218,7 +218,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
 
         // WP REST args validation will reject unknown enums with 400 before reaching the handler.
         // So we test the default (no sort param) falls back gracefully.
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $response = rest_do_request($request);
         $this->assertEquals(200, $response->get_status());
         $items = $response->get_data()['items'];
@@ -231,7 +231,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
             ['id' => 'm1', 'type' => 'image', 'source' => 'upload', 'caption' => 'A', 'order' => 1, 'url' => 'https://example.com/a.jpg'],
         ]);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $request->set_param('sort', 'title_asc');
         $response = rest_do_request($request);
         $meta = $response->get_data()['meta'];
@@ -240,10 +240,10 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_media_routes_are_registered() {
-        $routes = rest_get_server()->get_routes('wp-super-gallery/v1');
-        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media', $routes);
-        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media/batch', $routes);
-        $this->assertArrayHasKey('/wp-super-gallery/v1/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)', $routes);
+        $routes = rest_get_server()->get_routes('mullion-gallery/v1');
+        $this->assertArrayHasKey('/mullion-gallery/v1/campaigns/(?P<id>\d+)/media', $routes);
+        $this->assertArrayHasKey('/mullion-gallery/v1/campaigns/(?P<id>\d+)/media/batch', $routes);
+        $this->assertArrayHasKey('/mullion-gallery/v1/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)', $routes);
     }
 
     public function test_valid_media_ids_work_with_api() {
@@ -265,7 +265,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
 
         foreach ($valid_ids as $media_id) {
             // Test that we can create media with valid IDs
-            $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+            $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
             $request->set_param('type', 'video');
             $request->set_param('source', 'external');
             $request->set_param('provider', 'youtube');
@@ -307,7 +307,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
 
         foreach ($invalid_ids as $media_id) {
             // Test that invalid IDs cause route not found (404) because they don't match the regex
-            $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media/{$media_id}");
+            $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}/media/{$media_id}");
             $request->set_param('caption', 'Test caption');
 
             $response = rest_do_request($request);
@@ -324,7 +324,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $media_id = 'test_video_001.mp4';
         $campaign_id = '456';
 
-        $route = "/wp-super-gallery/v1/campaigns/{$campaign_id}/media/{$media_id}";
+        $route = "/mullion-gallery/v1/campaigns/{$campaign_id}/media/{$media_id}";
         $request = new WP_REST_Request('PUT', $route);
 
         $matched_route = rest_get_server()->match_request_to_handler($request);
@@ -337,7 +337,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     // ── P28-P: Settings ETag + PATCH ────────────────────────────────────────
 
     public function test_get_settings_returns_etag_header() {
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/settings');
         $response = rest_do_request($request);
         $this->assertEquals(200, $response->get_status());
         $headers = $response->get_headers();
@@ -347,11 +347,11 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
 
     public function test_get_settings_returns_304_on_matching_etag() {
         // First request — capture the ETag.
-        $response1 = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/settings'));
+        $response1 = rest_do_request(new WP_REST_Request('GET', '/mullion-gallery/v1/settings'));
         $etag = $response1->get_headers()['ETag'];
 
         // Second request with If-None-Match — should return 304.
-        $request2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $request2 = new WP_REST_Request('GET', '/mullion-gallery/v1/settings');
         $request2->add_header('If-None-Match', $etag);
         $response2 = rest_do_request($request2);
         $this->assertEquals(304, $response2->get_status());
@@ -360,7 +360,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     public function test_patch_settings_merges_partial_keys() {
         update_option('mullion_settings', ['enable_analytics' => true, 'default_visibility' => 'public']);
 
-        $request = new WP_REST_Request('PATCH', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('PATCH', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(json_encode(['defaultVisibility' => 'private']));
         $response = rest_do_request($request);
@@ -373,7 +373,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
     }
 
     public function test_post_settings_still_works_after_patch_added() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(json_encode(['enableAnalytics' => false]));
         $response = rest_do_request($request);
@@ -386,7 +386,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $result = wp_insert_term('Parent Cat', 'mullion_campaign_category');
         $parent_term_id = $result['term_id'];
 
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-categories');
         $response = rest_do_request($request);
         $this->assertEquals(200, $response->get_status());
         $items = $response->get_data()['items'];
@@ -401,7 +401,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $parent = wp_insert_term('Parent', 'mullion_campaign_category');
         $parent_id = (int) $parent['term_id'];
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-categories');
         $request->set_param('name', 'Child Category');
         $request->set_param('parent_id', $parent_id);
         $response = rest_do_request($request);
@@ -420,7 +420,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         $parent_id = (int) $parent['term_id'];
         $child_id  = (int) $child['term_id'];
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaign-categories/{$child_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaign-categories/{$child_id}");
         $request->set_param('parent_id', $parent_id);
         $response = rest_do_request($request);
 
@@ -445,7 +445,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         update_post_meta($post_id, 'status', 'active');
         wp_set_object_terms($post_id, [$term_id], 'mullion_campaign_category');
 
-        $request  = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $request  = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$post_id}");
         $response = rest_do_request($request);
         $data     = $response->get_data();
 
@@ -467,7 +467,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         ]);
         update_post_meta($post_id, 'status', 'active');
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$post_id}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_param('title', 'Save Cat Test');
         $request->set_param('categories', [strval($term_id)]);
@@ -495,7 +495,7 @@ class Mullion_REST_Routes_Test extends WP_UnitTestCase {
         update_post_meta($post_id, 'status', 'active');
         wp_set_object_terms($post_id, [$term_id], 'mullion_campaign_category');
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$post_id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$post_id}");
         $request->set_param('title', 'Clear Cat Test');
         $request->set_param('categories', []);
         $response = rest_do_request($request);

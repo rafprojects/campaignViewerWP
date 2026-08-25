@@ -28,14 +28,14 @@ class Mullion_P52A4_Settings_Split_Test extends WP_UnitTestCase {
     }
 
     private function post_settings(array $camel_body): WP_REST_Response {
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $req->set_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode($camel_body));
         return rest_do_request($req);
     }
 
     private function patch_settings(array $camel_body): WP_REST_Response {
-        $req = new WP_REST_Request('PATCH', '/wp-super-gallery/v1/settings');
+        $req = new WP_REST_Request('PATCH', '/mullion-gallery/v1/settings');
         $req->set_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode($camel_body));
         return rest_do_request($req);

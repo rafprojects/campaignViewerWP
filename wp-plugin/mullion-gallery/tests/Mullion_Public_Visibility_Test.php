@@ -36,7 +36,7 @@ class Mullion_Public_Visibility_Test extends WP_UnitTestCase {
     }
 
     private function get_status(int $campaign_id): int {
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         return rest_do_request($req)->get_status();
     }
 

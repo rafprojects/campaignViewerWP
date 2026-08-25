@@ -38,7 +38,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     // ── Login endpoint ────────────────────────────────────
 
     public function test_login_succeeds_with_valid_credentials() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
         $request->set_param('password', $this->test_user_pass);
 
@@ -59,7 +59,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
         $user->set_role('administrator');
         $user->add_cap('manage_mullion');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
         $request->set_param('password', $this->test_user_pass);
 
@@ -78,7 +78,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
         $user = get_user_by('id', $this->test_user_id);
         $user->add_cap('manage_mullion');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
         $request->set_param('password', $this->test_user_pass);
 
@@ -92,7 +92,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_login_returns_viewer_role_for_non_admin() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
         $request->set_param('password', $this->test_user_pass);
 
@@ -105,7 +105,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_login_fails_with_wrong_password() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
         $request->set_param('password', 'WrongPassword!');
 
@@ -117,7 +117,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_login_fails_with_nonexistent_user() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'nobody_here');
         $request->set_param('password', 'anything');
 
@@ -127,7 +127,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_login_returns_fresh_nonce() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
         $request->set_param('password', $this->test_user_pass);
 
@@ -141,7 +141,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_login_requires_username_parameter() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('password', $this->test_user_pass);
 
         $response = rest_do_request($request);
@@ -150,7 +150,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     }
 
     public function test_login_requires_password_parameter() {
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
 
         $response = rest_do_request($request);
@@ -163,7 +163,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
     public function test_logout_succeeds_when_authenticated() {
         wp_set_current_user($this->test_user_id);
 
-        $request  = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/logout');
+        $request  = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/logout');
         $response = rest_do_request($request);
         $data     = $response->get_data();
 
@@ -176,7 +176,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
         // Ensure no user is logged in.
         wp_set_current_user(0);
 
-        $request  = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/logout');
+        $request  = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/logout');
         $response = rest_do_request($request);
 
         // Should be rejected by require_authenticated permission callback.
@@ -190,7 +190,7 @@ class Mullion_Cookie_Auth_Test extends WP_UnitTestCase {
         $hook  = function () use (&$fired) { $fired = true; };
         add_action('wp_login_failed', $hook);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $request->set_param('username', 'testuser');
         $request->set_param('password', 'BadPassword!');
 

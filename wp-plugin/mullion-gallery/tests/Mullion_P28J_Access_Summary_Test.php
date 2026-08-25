@@ -59,7 +59,7 @@ class Mullion_P28J_Access_Summary_Test extends WP_UnitTestCase {
             ['userId' => 11, 'expires_at' => ''],
         ]);
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/access-summary');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/access-summary');
         $response = rest_do_request($request);
         $data     = $response->get_data();
 
@@ -77,7 +77,7 @@ class Mullion_P28J_Access_Summary_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('No Grants');
 
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/access-summary');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/access-summary');
         $response = rest_do_request($request);
         $data     = $response->get_data();
 
@@ -100,7 +100,7 @@ class Mullion_P28J_Access_Summary_Test extends WP_UnitTestCase {
             ['userId' => 21, 'expires_at' => ''],       // active
         ]);
 
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/access-summary');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/access-summary');
         $response = rest_do_request($request);
         $data     = $response->get_data();
 
@@ -120,7 +120,7 @@ class Mullion_P28J_Access_Summary_Test extends WP_UnitTestCase {
         $this->add_pending_request($campaign_id, 'a@example.com');
         $this->add_pending_request($campaign_id, 'b@example.com');
 
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/access-summary');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/access-summary');
         $response = rest_do_request($request);
         $data     = $response->get_data();
 
@@ -141,7 +141,7 @@ class Mullion_P28J_Access_Summary_Test extends WP_UnitTestCase {
         $this->create_campaign('Paginate B');
         $this->create_campaign('Paginate C');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/access-summary');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/access-summary');
         $request->set_param('per_page', 2);
         $request->set_param('page', 1);
         $response = rest_do_request($request);
@@ -161,7 +161,7 @@ class Mullion_P28J_Access_Summary_Test extends WP_UnitTestCase {
         $this->create_campaign('Page2 B');
         $this->create_campaign('Page2 C');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/access-summary');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/access-summary');
         $request->set_param('per_page', 2);
         $request->set_param('page', 2);
         $response = rest_do_request($request);
@@ -179,7 +179,7 @@ class Mullion_P28J_Access_Summary_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($user_id);
 
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/access-summary');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/access-summary');
         $response = rest_do_request($request);
 
         $this->assertEquals(403, $response->get_status(), 'Non-admin should receive 403.');

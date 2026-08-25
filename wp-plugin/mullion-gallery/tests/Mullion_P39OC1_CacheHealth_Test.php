@@ -70,7 +70,7 @@ class Mullion_P39OC1_CacheHealth_Test extends WP_UnitTestCase {
     }
 
     public function test_health_endpoint_includes_object_cache(): void {
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/health');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/health');
         $response = rest_do_request($request);
 
         $this->assertSame(200, $response->get_status());

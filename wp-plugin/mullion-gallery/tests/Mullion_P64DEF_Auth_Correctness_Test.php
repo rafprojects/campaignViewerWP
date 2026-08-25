@@ -34,7 +34,7 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
     }
 
     private function submit_request(int $cid, string $email): string {
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => $email]);
         return rest_do_request($req)->get_data()['token'];
     }
@@ -52,7 +52,7 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
         }, 10, 2);
 
         $this->admin();
-        $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $approve = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
         $this->assertSame(200, rest_do_request($approve)->get_status());
 
         $new_user = get_user_by('email', 'firsttimer@example.com');
@@ -72,7 +72,7 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
         }, 10, 2);
 
         $this->admin();
-        $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $approve = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
         $this->assertSame(200, rest_do_request($approve)->get_status());
 
         $this->assertNotContains((int) $existing, $notified, 'an existing user gets no spurious password-set notification');
@@ -144,7 +144,7 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
         };
         add_filter('pre_wp_mail', $fail, 10, 1);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $req->set_body_params(['email' => 'failmail@example.com', 'displayName' => 'Fail Mail', 'role' => 'subscriber']);
         $res  = rest_do_request($req);
         $data = $res->get_data();
@@ -165,7 +165,7 @@ class Mullion_P64DEF_Auth_Correctness_Test extends WP_UnitTestCase {
         // wp_mail_failed, so we can't rely on the default to represent "success".)
         add_filter('pre_wp_mail', '__return_true');
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/users');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/users');
         $req->set_body_params(['email' => 'okmail@example.com', 'displayName' => 'Ok Mail', 'role' => 'subscriber']);
         $data = rest_do_request($req)->get_data();
 

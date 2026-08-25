@@ -70,7 +70,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $b = $this->create_campaign('Cat B');
         $this->set_category($a, 'weddings');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('category', 'weddings');
         $response = rest_do_request($request);
         $data     = $response->get_data();
@@ -90,7 +90,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $b = $this->create_campaign('Untagged B');
         $this->set_tag($a, '2026');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('tag', '2026');
         $response = rest_do_request($request);
         $data     = $response->get_data();
@@ -110,7 +110,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $this->create_campaign('Apple');
         $this->create_campaign('Mango');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('sort', 'title_asc');
         $request->set_param('per_page', 50);
         $response = rest_do_request($request);
@@ -127,7 +127,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $this->create_campaign('Alpha');
         $this->create_campaign('Omega');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('sort', 'title_desc');
         $request->set_param('per_page', 50);
         $response = rest_do_request($request);
@@ -152,7 +152,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $active   = $this->create_campaign('Active Campaign');
         $archived = $this->create_campaign('Archived Campaign', 'archived');
 
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $response = rest_do_request($request);
         $data     = $response->get_data();
 
@@ -166,7 +166,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $active   = $this->create_campaign('Active X');
         $archived = $this->create_campaign('Archived X', 'archived');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('include_archived', 'true');
         $response = rest_do_request($request);
         $data     = $response->get_data();
@@ -187,7 +187,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $b = $this->create_campaign('No Template');
         $this->set_template($a, $uuid);
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('template_id', $uuid);
         $response = rest_do_request($request);
         $data     = $response->get_data();
@@ -211,7 +211,7 @@ class Mullion_P28E_Campaign_Filters_Test extends WP_UnitTestCase {
         $this->set_category($b, 'portraits');
         $this->set_tag($c, 'featured');
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('category', 'portraits');
         $request->set_param('tag', 'featured');
         $response = rest_do_request($request);

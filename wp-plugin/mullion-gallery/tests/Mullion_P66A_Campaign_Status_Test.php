@@ -182,7 +182,7 @@ class Mullion_P66A_Campaign_Status_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         $id = $this->create_campaign('active');
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$id}/archive");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$id}/archive");
         $request->set_param('id', $id);
         $response = rest_do_request($request);
 
@@ -195,7 +195,7 @@ class Mullion_P66A_Campaign_Status_Test extends WP_UnitTestCase {
         $id = $this->create_campaign('active');
         Mullion_Campaign_Status::set($id, 'archived');
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$id}/restore");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$id}/restore");
         $request->set_param('id', $id);
         $response = rest_do_request($request);
 
@@ -209,7 +209,7 @@ class Mullion_P66A_Campaign_Status_Test extends WP_UnitTestCase {
         $a = $this->create_campaign('active');
         $b = $this->create_campaign('active');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/batch');
         $request->set_param('action', 'archive');
         $request->set_param('ids', [$a, $b]);
         $response = rest_do_request($request);
@@ -223,7 +223,7 @@ class Mullion_P66A_Campaign_Status_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         $id = $this->create_campaign('active');
 
-        $request = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$id}");
+        $request = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$id}");
         $request->set_param('id', $id);
         $request->set_param('status', 'archived');
         $response = rest_do_request($request);

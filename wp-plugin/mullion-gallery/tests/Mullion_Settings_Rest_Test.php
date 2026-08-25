@@ -12,7 +12,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
     }
 
     public function test_settings_get_is_public() {
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/settings');
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -41,7 +41,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
             ],
         ]);
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/settings');
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -56,7 +56,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
         $user_id = self::factory()->user->create([ 'role' => 'subscriber' ]);
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_param('theme', 'light');
         $response = rest_do_request($request);
 
@@ -73,7 +73,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
         }
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'theme' => 'github-light',   // valid theme ID
@@ -100,7 +100,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
         }
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'galleryConfig' => [
@@ -160,7 +160,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
         }
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'galleryConfig' => [
@@ -211,7 +211,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
         }
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'cardConfig' => [
@@ -264,7 +264,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
         }
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'cardConfig' => [
@@ -304,7 +304,7 @@ class Mullion_Settings_Rest_Test extends WP_UnitTestCase {
         }
         wp_set_current_user($user_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'gallerySectionPadding' => 28,

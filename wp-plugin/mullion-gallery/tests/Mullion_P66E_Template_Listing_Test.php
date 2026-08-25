@@ -39,7 +39,7 @@ class Mullion_P66E_Template_Listing_Test extends WP_UnitTestCase {
     }
 
     private function list_ids(): array {
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $request->set_param('include_archived', 'true');
         $request->set_param('per_page', 50);
         $data = rest_do_request($request)->get_data();

@@ -32,7 +32,7 @@ class Mullion_P53A_Tier_Signal_Test extends WP_UnitTestCase {
 
     private function permissions_for(int $uid): array {
         wp_set_current_user($uid);
-        $res = rest_do_request(new WP_REST_Request('GET', '/wp-super-gallery/v1/permissions'));
+        $res = rest_do_request(new WP_REST_Request('GET', '/mullion-gallery/v1/permissions'));
         $this->assertSame(200, $res->get_status());
         return $res->get_data();
     }

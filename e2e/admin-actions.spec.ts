@@ -23,7 +23,7 @@ test('admin actions call REST endpoints', async ({ page }) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/permissions', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/permissions', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -31,7 +31,7 @@ test('admin actions call REST endpoints', async ({ page }) => {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/**/media**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/**/media**', async (route) => {
     if (route.request().method() === 'GET') {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
       return;
@@ -40,12 +40,12 @@ test('admin actions call REST endpoints', async ({ page }) => {
     await route.fulfill({ status: 201, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101/archive', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/archive', async (route) => {
     counts.postArchive += 1;
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns/101', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101', async (route) => {
     if (route.request().method() === 'PUT') {
       counts.put += 1;
       await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
@@ -72,7 +72,7 @@ test('admin actions call REST endpoints', async ({ page }) => {
     ],
   };
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -80,7 +80,7 @@ test('admin actions call REST endpoints', async ({ page }) => {
     });
   });
 
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns?**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns?**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -8,7 +8,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
         // P41-EX3: Bulk binary export — specific route before parameterised /{id}/ siblings.
-        register_rest_route('wp-super-gallery/v1', '/campaigns/batch/export/binary', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/batch/export/binary', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'batch_export_binary'],
@@ -26,14 +26,14 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         ]);
 
         // P18-D: Export / Import
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/export', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/export', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'export_campaign'],
                 'permission_callback' => Mullion_Permissions::gate('campaign.export'),
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/campaigns/import', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/import', [
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'import_campaign'],
@@ -42,21 +42,21 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         ]);
 
         // P39-CM1: Binary export / import
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/export/binary', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/export/binary', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'export_campaign_binary'],
                 'permission_callback' => Mullion_Permissions::gate('campaign.export_binary'),
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/campaigns/import/binary', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/import/binary', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'import_campaign_binary'],
                 'permission_callback' => Mullion_Permissions::gate('campaigns.import_binary'),
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})', [
+        register_rest_route('mullion-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_export_job'],
@@ -68,7 +68,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
                 'permission_callback' => Mullion_Permissions::gate('export_jobs.delete'),
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})/download', [
+        register_rest_route('mullion-gallery/v1', '/export-jobs/(?P<job_id>[a-f0-9]{32})/download', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'download_export_job'],
@@ -407,7 +407,7 @@ class Mullion_Export_Controller extends Mullion_REST_Base {
         ];
 
         if ($job['status'] === 'complete') {
-            $payload['downloadUrl'] = rest_url('wp-super-gallery/v1/export-jobs/' . $job_id . '/download');
+            $payload['downloadUrl'] = rest_url('mullion-gallery/v1/export-jobs/' . $job_id . '/download');
         }
 
         return new WP_REST_Response($payload, 200);

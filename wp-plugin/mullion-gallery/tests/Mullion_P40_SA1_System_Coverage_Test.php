@@ -38,7 +38,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
 
     private function get_system_audit_entries(): array {
         $this->set_admin();
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/audit-log');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/audit-log');
         return rest_do_request($req)->get_data()['items'] ?? [];
     }
 
@@ -77,7 +77,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     // =========================================================================
 
     public function test_successful_login_writes_auth_login_success() {
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $req->set_param('username', 'sa1testlogin');
         $req->set_param('password', $this->test_user_pass);
         $res = rest_do_request($req);
@@ -89,7 +89,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     }
 
     public function test_login_success_entry_has_summary_and_system_scope() {
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $req->set_param('username', 'sa1testlogin');
         $req->set_param('password', $this->test_user_pass);
         rest_do_request($req);
@@ -102,7 +102,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     }
 
     public function test_failed_login_writes_auth_login_failed_with_warning() {
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/login');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/login');
         $req->set_param('username', 'sa1testlogin');
         $req->set_param('password', 'wrongpassword!');
         $res = rest_do_request($req);
@@ -119,7 +119,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_logout_writes_auth_logout_before_session_is_destroyed() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/auth/logout');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/auth/logout');
         $res = rest_do_request($req);
 
         $this->assertEquals(200, $res->get_status(), 'Logout must succeed.');
@@ -137,7 +137,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_settings_post_writes_settings_updated_entry() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode(['theme' => 'default-light']));
         $res = rest_do_request($req);
@@ -151,7 +151,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_settings_post_entry_includes_changed_key_in_summary() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode(['theme' => 'default-light']));
         rest_do_request($req);
@@ -165,7 +165,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_settings_patch_writes_settings_updated_entry() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('PATCH', '/wp-super-gallery/v1/settings');
+        $req = new WP_REST_Request('PATCH', '/mullion-gallery/v1/settings');
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode(['enableLightbox' => false]));
         $res = rest_do_request($req);
@@ -180,11 +180,11 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
         $this->set_admin();
 
         // Read current value and re-send it unchanged.
-        $get_req = new WP_REST_Request('GET', '/wp-super-gallery/v1/settings');
+        $get_req = new WP_REST_Request('GET', '/mullion-gallery/v1/settings');
         $current = rest_do_request($get_req)->get_data();
         $current_theme = $current['theme'] ?? 'default-dark';
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/settings');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/settings');
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode(['theme' => $current_theme]));
         rest_do_request($req);
@@ -200,7 +200,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_create_layout_template_writes_audit_entry() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/layout-templates');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/layout-templates');
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode([
             'name'  => 'SA1 Test Template',
@@ -216,7 +216,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_create_layout_template_entry_has_system_scope_and_summary() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/layout-templates');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/layout-templates');
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode(['name' => 'SA1 Summary Template', 'slots' => []]));
         rest_do_request($req);
@@ -232,7 +232,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
         $template = Mullion_Layout_Templates::create(['name' => 'SA1 Update Source', 'slots' => []]);
         $this->assertFalse(is_wp_error($template), 'Template must be created successfully.');
 
-        $req = new WP_REST_Request('PUT', "/wp-super-gallery/v1/admin/layout-templates/{$template['id']}");
+        $req = new WP_REST_Request('PUT', "/mullion-gallery/v1/admin/layout-templates/{$template['id']}");
         $req->set_param('templateId', $template['id']);
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode(['name' => 'SA1 Update Renamed', 'slots' => []]));
@@ -248,7 +248,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
         $template = Mullion_Layout_Templates::create(['name' => 'SA1 Delete Target', 'slots' => []]);
         $this->assertFalse(is_wp_error($template));
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/admin/layout-templates/{$template['id']}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/admin/layout-templates/{$template['id']}");
         $req->set_param('templateId', $template['id']);
         $res = rest_do_request($req);
         $this->assertEquals(200, $res->get_status(), 'Template delete must succeed.');
@@ -264,7 +264,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
         $template = Mullion_Layout_Templates::create(['name' => 'SA1 Dupe Source', 'slots' => []]);
         $this->assertFalse(is_wp_error($template));
 
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/layout-templates/{$template['id']}/duplicate");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/layout-templates/{$template['id']}/duplicate");
         $req->set_param('templateId', $template['id']);
         $req->add_header('Content-Type', 'application/json');
         $req->set_body(wp_json_encode(['name' => 'SA1 Dupe Copy']));
@@ -284,7 +284,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_create_campaign_category_writes_taxonomy_term_created() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaign-categories');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaign-categories');
         $req->set_param('name', 'SA1 Test Category');
         $res = rest_do_request($req);
         $this->assertEquals(201, $res->get_status(), 'Category create must succeed.');
@@ -300,7 +300,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
         $result = wp_insert_term('SA1 Cat To Update', 'mullion_campaign_category');
         $term_id = $result['term_id'];
 
-        $req = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaign-categories/{$term_id}");
+        $req = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaign-categories/{$term_id}");
         $req->set_param('id', $term_id);
         $req->set_param('name', 'SA1 Cat Updated');
         $res = rest_do_request($req);
@@ -317,7 +317,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
         $result = wp_insert_term('SA1 Cat To Delete', 'mullion_campaign_category');
         $term_id = $result['term_id'];
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaign-categories/{$term_id}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaign-categories/{$term_id}");
         $req->set_param('id', $term_id);
         $res = rest_do_request($req);
         $this->assertEquals(200, $res->get_status(), 'Category delete must succeed.');
@@ -331,7 +331,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_create_campaign_tag_writes_taxonomy_term_created() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/campaign');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/campaign');
         $req->set_param('name', 'sa1-campaign-tag');
         $res = rest_do_request($req);
         $this->assertEquals(201, $res->get_status(), 'Campaign tag create must succeed.');
@@ -348,7 +348,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
         $result  = wp_insert_term('sa1-tag-to-delete', 'mullion_campaign_tag');
         $term_id = $result['term_id'];
 
-        $req = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/tags/campaign/{$term_id}");
+        $req = new WP_REST_Request('DELETE', "/mullion-gallery/v1/tags/campaign/{$term_id}");
         $req->set_param('id', $term_id);
         $res = rest_do_request($req);
         $this->assertEquals(200, $res->get_status(), 'Campaign tag delete must succeed.');
@@ -361,7 +361,7 @@ class Mullion_P40_SA1_System_Coverage_Test extends WP_UnitTestCase {
     public function test_create_media_tag_writes_taxonomy_term_created() {
         $this->set_admin();
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/tags/media');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/tags/media');
         $req->set_param('name', 'sa1-media-tag');
         $res = rest_do_request($req);
         $this->assertEquals(201, $res->get_status(), 'Media tag create must succeed.');

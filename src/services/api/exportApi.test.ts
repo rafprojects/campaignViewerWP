@@ -29,7 +29,7 @@ describe('ExportApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ jobId: 'j1', status: 'pending' });
       const result = await api.startCampaignBinaryExport('a b');
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/a%20b/export/binary',
+        '/wp-json/mullion-gallery/v1/campaigns/a%20b/export/binary',
         {},
       );
       expect(result).toEqual({ jobId: 'j1', status: 'pending' });
@@ -41,7 +41,7 @@ describe('ExportApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ jobId: 'j', status: 'pending' });
       await api.startAuditLogBinaryExport();
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/admin/audit-log/export/binary',
+        '/wp-json/mullion-gallery/v1/admin/audit-log/export/binary',
         {},
       );
     });
@@ -58,7 +58,7 @@ describe('ExportApi', () => {
         space: '7',
       });
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/admin/audit-log/export/binary',
+        '/wp-json/mullion-gallery/v1/admin/audit-log/export/binary',
         {
           from: '2026-01-01',
           to: '2026-02-01',
@@ -77,7 +77,7 @@ describe('ExportApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ jobId: 'b', status: 'pending' });
       await api.startBulkBinaryExport(['1', '2', '3']);
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/campaigns/batch/export/binary',
+        '/wp-json/mullion-gallery/v1/campaigns/batch/export/binary',
         { ids: [1, 2, 3] },
       );
     });
@@ -88,7 +88,7 @@ describe('ExportApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ jobId: 'm', status: 'pending' });
       await api.startMediaLibraryBinaryExport();
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/admin/media/export/binary',
+        '/wp-json/mullion-gallery/v1/admin/media/export/binary',
         {},
       );
     });
@@ -97,7 +97,7 @@ describe('ExportApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ jobId: 'm', status: 'pending' });
       await api.startMediaLibraryBinaryExport({ campaignId: '9', mimeType: 'all', search: 'logo' });
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/admin/media/export/binary',
+        '/wp-json/mullion-gallery/v1/admin/media/export/binary',
         { campaign_id: 9, search: 'logo' },
       );
     });
@@ -106,7 +106,7 @@ describe('ExportApi', () => {
       vi.mocked(transport.post).mockResolvedValue({ jobId: 'm', status: 'pending' });
       await api.startMediaLibraryBinaryExport({ mimeType: 'image' });
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/admin/media/export/binary',
+        '/wp-json/mullion-gallery/v1/admin/media/export/binary',
         { mime_type: 'image' },
       );
     });
@@ -117,7 +117,7 @@ describe('ExportApi', () => {
       const job = { jobId: 'j', type: 'campaign', status: 'complete', createdAt: 't', error: null };
       vi.mocked(transport.get).mockResolvedValue(job);
       const result = await api.getExportJob('j');
-      expect(transport.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/export-jobs/j');
+      expect(transport.get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/export-jobs/j');
       expect(result).toBe(job);
     });
   });
@@ -126,7 +126,7 @@ describe('ExportApi', () => {
     it('DELETEs the export-jobs endpoint', async () => {
       vi.mocked(transport.delete).mockResolvedValue({ deleted: true });
       const result = await api.deleteExportJob('j x');
-      expect(transport.delete).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/export-jobs/j%20x');
+      expect(transport.delete).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/export-jobs/j%20x');
       expect(result).toEqual({ deleted: true });
     });
   });
@@ -149,7 +149,7 @@ describe('ExportApi', () => {
 
       expect(result).toEqual(payload);
       const [url, init] = fetchMock.mock.calls[0];
-      expect(url).toBe('https://example.test/wp-json/wp-super-gallery/v1/media/import/binary');
+      expect(url).toBe('https://example.test/wp-json/mullion-gallery/v1/media/import/binary');
       expect(init.method).toBe('POST');
       expect(init.headers).toEqual({ 'X-WP-Nonce': 'n' });
       expect(init.body).toBeInstanceOf(FormData);
@@ -185,7 +185,7 @@ describe('ExportApi', () => {
       await api.downloadExportJob('j1', 'my.zip');
 
       const [url, init] = fetchMock.mock.calls[0];
-      expect(url).toBe('https://example.test/wp-json/wp-super-gallery/v1/export-jobs/j1/download');
+      expect(url).toBe('https://example.test/wp-json/mullion-gallery/v1/export-jobs/j1/download');
       expect(init.headers).toMatchObject({ 'X-WP-Nonce': 'n', Accept: 'application/zip' });
       expect(clickSpy).toHaveBeenCalledOnce();
       // The temporary anchor is cleaned up after the click.

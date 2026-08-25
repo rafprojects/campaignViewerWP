@@ -501,7 +501,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
 
     public function test_rest_list_endpoints_returns_empty() {
         wp_set_current_user($this->factory->user->create(['role' => 'administrator']));
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/webhooks');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/webhooks');
         $response = rest_do_request($request);
         $this->assertSame(200, $response->get_status());
         $this->assertSame([], $response->get_data());
@@ -509,7 +509,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
 
     public function test_rest_create_endpoint_returns_secret_once() {
         wp_set_current_user($this->factory->user->create(['role' => 'administrator']));
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/webhooks');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/webhooks');
         $request->set_param('url', 'https://hooks.test/new');
         $request->set_param('events', ['campaign.created']);
         $response = rest_do_request($request);
@@ -521,7 +521,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
 
     public function test_rest_create_endpoint_rejects_invalid_url() {
         wp_set_current_user($this->factory->user->create(['role' => 'administrator']));
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/webhooks');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/webhooks');
         $request->set_param('url', 'ftp://bad.url/hook');
         $response = rest_do_request($request);
         $this->assertSame(400, $response->get_status());
@@ -535,7 +535,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
         }
         Mullion_Webhooks::save_endpoints($endpoints);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/webhooks');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/webhooks');
         $request->set_param('url', 'https://hooks.test/overflow');
         $response = rest_do_request($request);
         $this->assertSame(400, $response->get_status());
@@ -547,7 +547,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
             'url' => 'https://old.test/hook', 'secret' => 'sec', 'events' => [], 'enabled' => true,
         ]]);
 
-        $request = new WP_REST_Request('PUT', '/wp-super-gallery/v1/webhooks/0');
+        $request = new WP_REST_Request('PUT', '/mullion-gallery/v1/webhooks/0');
         $request->set_param('url', 'https://new.test/hook');
         $response = rest_do_request($request);
         $this->assertSame(200, $response->get_status());
@@ -560,7 +560,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
             'url' => 'https://to-delete.test/hook', 'secret' => 'sec', 'events' => [], 'enabled' => true,
         ]]);
 
-        $request  = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/webhooks/0');
+        $request  = new WP_REST_Request('DELETE', '/mullion-gallery/v1/webhooks/0');
         $response = rest_do_request($request);
         $this->assertSame(200, $response->get_status());
         $this->assertEmpty(Mullion_Webhooks::get_endpoints());
@@ -573,7 +573,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
             'url' => 'https://hooks.test/rotate', 'secret' => $original, 'events' => [], 'enabled' => true,
         ]]);
 
-        $request  = new WP_REST_Request('POST', '/wp-super-gallery/v1/webhooks/0/rotate-secret');
+        $request  = new WP_REST_Request('POST', '/mullion-gallery/v1/webhooks/0/rotate-secret');
         $response = rest_do_request($request);
         $this->assertSame(200, $response->get_status());
         $new_secret = $response->get_data()['secret'];
@@ -601,7 +601,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
 
         remove_all_filters('pre_http_request');
 
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/webhooks/delivery-log');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/webhooks/delivery-log');
         $response = rest_do_request($request);
         $this->assertSame(200, $response->get_status());
         $this->assertCount(1, $response->get_data());
@@ -609,7 +609,7 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
 
     public function test_rest_endpoints_require_admin() {
         wp_set_current_user($this->factory->user->create(['role' => 'subscriber']));
-        $request  = new WP_REST_Request('GET', '/wp-super-gallery/v1/webhooks');
+        $request  = new WP_REST_Request('GET', '/mullion-gallery/v1/webhooks');
         $response = rest_do_request($request);
         $this->assertSame(403, $response->get_status());
     }

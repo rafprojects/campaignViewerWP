@@ -79,7 +79,7 @@ class Mullion_P50I_Universal_Assets_Test extends WP_UnitTestCase {
         $universal = $this->add_overlay('P50I Universal Overlay', true);
         $regular   = $this->add_overlay('P50I Regular Overlay', false);
 
-        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space);
+        $scoped = $this->list_asset_ids('/mullion-gallery/v1/admin/asset-library', $space);
 
         $this->assertContains($universal, $scoped, 'Universal overlay must appear without an association row.');
         $this->assertNotContains($regular, $scoped, 'Non-universal, unassociated overlay must stay hidden.');
@@ -90,7 +90,7 @@ class Mullion_P50I_Universal_Assets_Test extends WP_UnitTestCase {
         $space   = $this->make_space('open');
         $regular = $this->add_overlay('P50I Open Regular', false);
 
-        $scoped = $this->list_asset_ids('/wp-super-gallery/v1/admin/asset-library', $space);
+        $scoped = $this->list_asset_ids('/mullion-gallery/v1/admin/asset-library', $space);
         $this->assertContains($regular, $scoped, 'Open-mode spaces still see the full library.');
     }
 
@@ -133,7 +133,7 @@ class Mullion_P50I_Universal_Assets_Test extends WP_UnitTestCase {
         $this->set_super_admin();
         $id = $this->add_overlay('P50I Rest Toggle', false);
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/asset-library/{$id}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/asset-library/{$id}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'is_universal' => true ]));
         $response = rest_do_request($request);
@@ -147,7 +147,7 @@ class Mullion_P50I_Universal_Assets_Test extends WP_UnitTestCase {
         $this->set_super_admin();
         $missing = '11111111-1111-1111-1111-111111111111';
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/admin/asset-library/{$missing}");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/admin/asset-library/{$missing}");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([ 'is_universal' => true ]));
         $response = rest_do_request($request);
@@ -162,7 +162,7 @@ class Mullion_P50I_Universal_Assets_Test extends WP_UnitTestCase {
     public function test_rest_upload_overlay_persists_universal_flag() {
         $this->set_super_admin();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/asset-library');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/asset-library');
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'url'          => 'https://example.com/p50i-upload-universal.png',

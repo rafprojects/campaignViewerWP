@@ -8,14 +8,14 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
         // P18-G: Media usage — summary before parameterised route.
-        register_rest_route('wp-super-gallery/v1', '/media/usage-summary', [
+        register_rest_route('mullion-gallery/v1', '/media/usage-summary', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_media_usage_summary'],
                 'permission_callback' => Mullion_Permissions::gate('media.usage_summary.read'),
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/media/(?P<mediaId>[a-zA-Z0-9_.-]+)/usage', [
+        register_rest_route('mullion-gallery/v1', '/media/(?P<mediaId>[a-zA-Z0-9_.-]+)/usage', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'get_media_usage'],
@@ -23,7 +23,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/media', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_media'],
@@ -64,7 +64,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/batch', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/media/batch', [
             [
                 'methods' => 'POST',
                 // P33-C: editor and owner can batch-add media.
@@ -74,7 +74,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         ]);
 
         // Register specific sub-routes BEFORE the generic mediaId route to avoid pattern conflicts
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/reorder', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/media/reorder', [
             [
                 'methods' => 'PUT',
                 // P33-C: editor and owner can reorder media.
@@ -83,7 +83,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/rescan', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/media/rescan', [
             [
                 'methods' => 'POST',
                 // P33-C: editor and owner can rescan media types.
@@ -93,7 +93,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         ]);
 
         // Generic mediaId route must come AFTER specific sub-routes
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/media/(?P<mediaId>[a-zA-Z0-9_-]+(?:\.[a-zA-Z0-9_-]+)*)', [
             [
                 'methods' => 'PUT',
                 // P33-C: editor and owner can update media items.
@@ -108,7 +108,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/media/rescan-all', [
+        register_rest_route('mullion-gallery/v1', '/media/rescan-all', [
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'rescan_all_media_types'],
@@ -116,7 +116,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/media/library', [
+        register_rest_route('mullion-gallery/v1', '/media/library', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_media_library'],
@@ -131,7 +131,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/media/upload', [
+        register_rest_route('mullion-gallery/v1', '/media/upload', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'upload_media'],
@@ -149,7 +149,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/tags/media', [
+        register_rest_route('mullion-gallery/v1', '/tags/media', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_media_tags'],
@@ -162,7 +162,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/tags/media/(?P<id>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/tags/media/(?P<id>\d+)', [
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'delete_media_tag'],
@@ -171,7 +171,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
         ]);
 
         // P48-F: media library binary export / import.
-        register_rest_route('wp-super-gallery/v1', '/admin/media/export/binary', [
+        register_rest_route('mullion-gallery/v1', '/admin/media/export/binary', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'export_media_library_binary'],
@@ -183,7 +183,7 @@ class Mullion_Media_Controller extends Mullion_REST_Base {
                 ],
             ],
         ]);
-        register_rest_route('wp-super-gallery/v1', '/media/import/binary', [
+        register_rest_route('mullion-gallery/v1', '/media/import/binary', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'import_media_library_binary'],

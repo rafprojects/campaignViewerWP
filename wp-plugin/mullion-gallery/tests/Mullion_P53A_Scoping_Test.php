@@ -65,7 +65,7 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
 
     /** @return string[] campaign ids returned by GET /campaigns for the current user */
     private function list_campaign_ids(): array {
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $req->set_param('per_page', 50);
         $res = rest_do_request($req);
         $this->assertSame(200, $res->get_status());

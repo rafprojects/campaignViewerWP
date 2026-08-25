@@ -69,7 +69,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         global $wpdb;
         $table = Mullion_DB::get_analytics_table();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $request->set_param('campaign_id', $campaign_id);
         $request->set_param('event_type', 'view');
         $request->set_param('media_id', 'media-abc-123');
@@ -87,7 +87,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         global $wpdb;
         $table = Mullion_DB::get_analytics_table();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $request->set_param('campaign_id', $campaign_id);
         $response = rest_do_request($request);
 
@@ -102,7 +102,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         global $wpdb;
         $table = Mullion_DB::get_analytics_table();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $request->set_param('campaign_id', $campaign_id);
         $request->set_param('event_type', 'lightbox_open');
         $request->set_param('media_id', 'media-xyz');
@@ -123,7 +123,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
             $fired_args = $args;
         }, 10, 4);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $request->set_param('campaign_id', $campaign_id);
         $request->set_param('event_type', 'view');
         $request->set_param('media_id', 'hook-test-media');
@@ -155,7 +155,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         // Row with NULL media_id should NOT appear.
         $wpdb->insert($table, [ 'campaign_id' => $campaign_id, 'event_type' => 'view', 'visitor_hash' => 'e', 'occurred_at' => $now ]);
 
-        $request = new WP_REST_Request('GET', "/wp-super-gallery/v1/analytics/campaigns/{$campaign_id}/media");
+        $request = new WP_REST_Request('GET', "/mullion-gallery/v1/analytics/campaigns/{$campaign_id}/media");
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -171,7 +171,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
     public function test_get_campaign_media_analytics_404_for_missing_campaign() {
         $this->set_admin_user();
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/analytics/campaigns/999999/media');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/analytics/campaigns/999999/media');
         $response = rest_do_request($request);
 
         $this->assertEquals(404, $response->get_status());
@@ -196,7 +196,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         // Campaign B: 1 view event.
         $wpdb->insert($table, [ 'campaign_id' => $campaign_b, 'event_type' => 'view', 'visitor_hash' => 'v3', 'occurred_at' => $now ]);
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/analytics/summary');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/analytics/summary');
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -226,7 +226,7 @@ class Mullion_P28H_Analytics_Test extends WP_UnitTestCase {
         // Request for last 7 days only — the old event should not count.
         $from = gmdate('Y-m-d', strtotime('-7 days'));
         $to   = gmdate('Y-m-d');
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/analytics/summary');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/analytics/summary');
         $request->set_param('from', $from);
         $request->set_param('to', $to);
         $response = rest_do_request($request);

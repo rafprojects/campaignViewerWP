@@ -202,7 +202,7 @@ class Mullion_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
     // ── Completeness / no-bypass ──────────────────────────────────────────
 
     /**
-     * Every registered wp-super-gallery/v1 route MUST resolve its permission
+     * Every registered mullion-gallery/v1 route MUST resolve its permission
      * through Mullion_Permissions::gate() — proving the map is the single wired
      * source of truth and that no route is left public-by-omission.
      */
@@ -211,8 +211,8 @@ class Mullion_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
         $found_actions = [];
 
         foreach ($routes as $route => $endpoints) {
-            // Skip the auto-registered namespace index (`/wp-super-gallery/v1`).
-            if (!preg_match('#^/wp-super-gallery/v1/.+#', $route)) {
+            // Skip the auto-registered namespace index (`/mullion-gallery/v1`).
+            if (!preg_match('#^/mullion-gallery/v1/.+#', $route)) {
                 continue;
             }
 
@@ -315,7 +315,7 @@ class Mullion_P52A_Permission_Matrix_Test extends WP_UnitTestCase {
 
     public function test_public_strategy_allows_anonymous() {
         wp_set_current_user(0);
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $this->assertTrue(
             Mullion_Permissions::check('campaigns.list', $req) === true,
             'rate_limit_public must allow an anonymous request within the limit'

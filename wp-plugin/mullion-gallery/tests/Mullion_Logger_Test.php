@@ -142,7 +142,7 @@ class Mullion_Logger_Test extends WP_UnitTestCase {
         $payload = [
             'type'    => E_ERROR,
             'message' => 'Allowed memory size exhausted',
-            'file'    => '/var/www/html/wp-content/plugins/wp-super-gallery/test.php',
+            'file'    => '/var/www/html/wp-content/plugins/mullion-gallery/test.php',
             'line'    => 42,
         ];
 

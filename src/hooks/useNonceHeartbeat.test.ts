@@ -62,7 +62,7 @@ describe('useNonceHeartbeat', () => {
 
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
     expect(globalThis.fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/wp-json/wp-super-gallery/v1/nonce'),
+      expect.stringContaining('/wp-json/mullion-gallery/v1/nonce'),
       expect.objectContaining({
         credentials: 'same-origin',
         headers: { 'X-WP-Nonce': 'initial-nonce' },

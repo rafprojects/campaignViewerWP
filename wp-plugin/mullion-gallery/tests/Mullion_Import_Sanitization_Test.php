@@ -311,7 +311,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
         Mullion_CPT::register();
 
         $payload = $this->build_payload();
-        $request = new WP_REST_Request( 'POST', '/wp-super-gallery/v1/campaigns/import' );
+        $request = new WP_REST_Request( 'POST', '/mullion-gallery/v1/campaigns/import' );
         $request->set_body( wp_json_encode( $payload ) );
         $request->set_header( 'Content-Type', 'application/json' );
 
@@ -344,7 +344,7 @@ class Mullion_Import_Sanitization_Test extends WP_UnitTestCase {
                 [ 'id' => 'ref-1', 'url' => 'https://example.com/x.jpg', 'title' => 'X' ],
             ],
         ] );
-        $request = new WP_REST_Request( 'POST', '/wp-super-gallery/v1/campaigns/import' );
+        $request = new WP_REST_Request( 'POST', '/mullion-gallery/v1/campaigns/import' );
         $request->set_body( wp_json_encode( $payload ) );
         $request->set_header( 'Content-Type', 'application/json' );
 

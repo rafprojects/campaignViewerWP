@@ -8,7 +8,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
         // P28-J: Access totals summary — specific name before (?P<id>\d+) siblings.
-        register_rest_route('wp-super-gallery/v1', '/campaigns/access-summary', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/access-summary', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'access_summary'],
@@ -16,7 +16,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/access', [
             [
                 'methods'             => 'GET',
                 // P33-C: owner can read the access list for their campaign.
@@ -59,7 +59,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access/(?P<userId>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/access/(?P<userId>\d+)', [
             [
                 'methods' => 'DELETE',
                 // P33-C: only owner can revoke access.
@@ -69,7 +69,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         ]);
 
         // P18-I: Access Request Workflow
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests', [
             [
                 'methods'             => 'POST',
                 'callback'            => [self::class, 'submit_access_request'],
@@ -91,7 +91,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/approve', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/approve', [
             [
                 'methods'             => 'POST',
                 // P33-C: only owner can approve access requests.
@@ -109,7 +109,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/deny', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/deny', [
             [
                 'methods' => 'POST',
                 // P33-C: only owner can deny access requests.
@@ -118,7 +118,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/magic-approve', [
+        register_rest_route('mullion-gallery/v1', '/campaigns/(?P<id>\d+)/access-requests/(?P<token>[a-f0-9\-]{36})/magic-approve', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'magic_approve_access_request'],
@@ -126,7 +126,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/access', [
+        register_rest_route('mullion-gallery/v1', '/companies/(?P<id>\d+)/access', [
             [
                 'methods' => 'GET',
                 'callback' => [self::class, 'list_company_access'],
@@ -148,7 +148,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/access/(?P<userId>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/companies/(?P<id>\d+)/access/(?P<userId>\d+)', [
             [
                 'methods' => 'DELETE',
                 'callback' => [self::class, 'revoke_company_access'],
@@ -156,7 +156,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/companies/(?P<id>\d+)/archive', [
+        register_rest_route('mullion-gallery/v1', '/companies/(?P<id>\d+)/archive', [
             [
                 'methods' => 'POST',
                 'callback' => [self::class, 'archive_company'],
@@ -449,7 +449,7 @@ class Mullion_Access_Controller extends Mullion_REST_Base {
         // One-click magic link for the admin email.
         $magic_link = rest_url(
             sprintf(
-                'wp-super-gallery/v1/campaigns/%d/access-requests/%s/magic-approve?magic_key=%s',
+                'mullion-gallery/v1/campaigns/%d/access-requests/%s/magic-approve?magic_key=%s',
                 $post_id,
                 rawurlencode($token),
                 rawurlencode($raw_magic_key)

@@ -42,7 +42,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->set_admin_user();
 
         // Create campaign
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Test Campaign');
         $create->set_param('description', 'Initial description');
         $create->set_param('visibility', 'private');
@@ -58,7 +58,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertGreaterThan(0, $campaign_id);
 
         // Update campaign
-        $update = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $update = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $update->set_param('title', 'Updated Campaign');
         $update->set_param('description', 'Updated description');
         $update->set_param('visibility', 'public');
@@ -68,13 +68,13 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('Updated Campaign', $updated['title'] ?? null);
 
         // Archive campaign
-        $archive = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $archive = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $archive_response = rest_do_request($archive);
         $this->assertEquals(200, $archive_response->get_status());
         $this->assertEquals('archived', get_post_meta($campaign_id, 'status', true));
 
         // Restore campaign
-        $restore = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/restore");
+        $restore = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/restore");
         $restore_response = rest_do_request($restore);
         $this->assertEquals(200, $restore_response->get_status());
         $this->assertEquals('active', get_post_meta($campaign_id, 'status', true));
@@ -86,7 +86,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->set_admin_user();
 
         // Use a very large ID that won't exist.
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns/999999999');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns/999999999');
         $response = rest_do_request($req);
 
         // Handler returns 404 for a non-existent campaign ID.
@@ -97,7 +97,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         // Unauthenticated (no user set).
         wp_set_current_user(0);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $req->set_param('title', 'Should Fail');
         $response = rest_do_request($req);
 
@@ -108,18 +108,18 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->set_admin_user();
 
         // Create a campaign.
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Idempotent Archive Test');
         $create->set_param('status', 'active');
         $id = intval(rest_do_request($create)->get_data()['id']);
 
         // Archive it once.
-        $req1 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$id}/archive");
+        $req1 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$id}/archive");
         $r1   = rest_do_request($req1);
         $this->assertEquals(200, $r1->get_status());
 
         // Archive it again — should still succeed (idempotent).
-        $req2 = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$id}/archive");
+        $req2 = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$id}/archive");
         $r2   = rest_do_request($req2);
         $this->assertEquals(200, $r2->get_status());
         $this->assertEquals('archived', get_post_meta($id, 'status', true));
@@ -130,13 +130,13 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
 
         // Create two campaigns.
         foreach (['Alpha', 'Beta'] as $title) {
-            $c = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+            $c = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
             $c->set_param('title', $title);
             $c->set_param('status', 'active');
             rest_do_request($c);
         }
 
-        $list     = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaigns');
+        $list     = new WP_REST_Request('GET', '/mullion-gallery/v1/campaigns');
         $response = rest_do_request($list);
 
         $this->assertEquals(200, $response->get_status());
@@ -159,11 +159,11 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
 
         wp_set_current_user(0);
 
-        $campaign_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $campaign_request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $campaign_response = rest_do_request($campaign_request);
         $this->assertEquals(403, $campaign_response->get_status());
 
-        $media_request = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media");
+        $media_request = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/media");
         $media_response = rest_do_request($media_request);
         $this->assertEquals(403, $media_response->get_status());
     }
@@ -177,7 +177,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
 
         wp_set_current_user($viewer_id);
 
-        $request = new WP_REST_Request('GET', '/wp-super-gallery/v1/permissions');
+        $request = new WP_REST_Request('GET', '/mullion-gallery/v1/permissions');
         $response = rest_do_request($request);
 
         $this->assertEquals(200, $response->get_status());
@@ -190,7 +190,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_campaign_gallery_overrides_round_trip() {
         $this->set_admin_user();
 
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Campaign Overrides');
         $create->set_param('status', 'active');
         $create->set_param('galleryOverrides', [
@@ -229,7 +229,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->assertEquals('masonry', $stored['breakpoints']['desktop']['image']['adapterId'] ?? null);
         $this->assertEquals(24, $stored['breakpoints']['desktop']['image']['common']['sectionPadding'] ?? null);
 
-        $update = new WP_REST_Request('PUT', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $update = new WP_REST_Request('PUT', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $update->set_param('galleryOverrides', []);
         $update_response = rest_do_request($update);
 
@@ -242,7 +242,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_campaign_gallery_overrides_round_trip_from_json_body() {
         $this->set_admin_user();
 
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_header('Content-Type', 'application/json');
         $create->set_body(wp_json_encode([
             'title' => 'Campaign Overrides JSON',
@@ -389,7 +389,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_update_campaign_returns_404_for_unknown_id() {
         $this->set_admin_user();
 
-        $req = new WP_REST_Request('PUT', '/wp-super-gallery/v1/campaigns/999999999');
+        $req = new WP_REST_Request('PUT', '/mullion-gallery/v1/campaigns/999999999');
         $req->set_param('title', 'Ghost Update');
         $response = rest_do_request($req);
 
@@ -402,13 +402,13 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->set_admin_user();
 
         // Create a campaign and leave it as active (never archive).
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Restore Test');
         $create->set_param('status', 'active');
         $id = intval(rest_do_request($create)->get_data()['id']);
 
         // Restore without prior archive — endpoint must not error (200 or graceful).
-        $restore   = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$id}/restore");
+        $restore   = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$id}/restore");
         $response  = rest_do_request($restore);
 
         // Restore without prior archive — restore_campaign() sets status=active
@@ -544,7 +544,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         Mullion_DB::maybe_create_media_refs_table();
 
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Doomed Campaign');
         $create->set_param('status', 'active');
         $campaign_id = intval(rest_do_request($create)->get_data()['id']);
@@ -558,7 +558,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
             'created_at'  => current_time('mysql', true),
         ], ['%s', '%d', '%s']);
 
-        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $delete = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $delete->set_param('confirm', 'true');
         $response = rest_do_request($delete);
 
@@ -578,12 +578,12 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_delete_campaign_requires_confirm_param() {
         $this->set_admin_user();
 
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Should Survive');
         $create->set_param('status', 'active');
         $campaign_id = intval(rest_do_request($create)->get_data()['id']);
 
-        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $delete = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $response = rest_do_request($delete);
 
         $this->assertEquals(400, $response->get_status());
@@ -593,7 +593,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_delete_campaign_returns_404_for_unknown_id() {
         $this->set_admin_user();
 
-        $delete = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/campaigns/999999999');
+        $delete = new WP_REST_Request('DELETE', '/mullion-gallery/v1/campaigns/999999999');
         $delete->set_param('confirm', 'true');
         $response = rest_do_request($delete);
 
@@ -604,7 +604,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         Mullion_DB::maybe_create_analytics_table();
 
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Analytics Campaign');
         $create->set_param('status', 'active');
         $campaign_id = intval(rest_do_request($create)->get_data()['id']);
@@ -622,7 +622,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
             $campaign_id
         ))));
 
-        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $delete = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $delete->set_param('confirm', 'true');
         $delete->set_param('purge_analytics', 'true');
         $response = rest_do_request($delete);
@@ -638,7 +638,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
         $this->set_admin_user();
         Mullion_DB::maybe_create_analytics_table();
 
-        $create = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns');
+        $create = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns');
         $create->set_param('title', 'Analytics Preserved');
         $create->set_param('status', 'active');
         $campaign_id = intval(rest_do_request($create)->get_data()['id']);
@@ -652,7 +652,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
             'occurred_at'  => current_time('mysql', true),
         ], ['%d', '%s', '%s', '%s']);
 
-        $delete = new WP_REST_Request('DELETE', "/wp-super-gallery/v1/campaigns/{$campaign_id}");
+        $delete = new WP_REST_Request('DELETE', "/mullion-gallery/v1/campaigns/{$campaign_id}");
         $delete->set_param('confirm', 'true');
         $response = rest_do_request($delete);
 
@@ -669,7 +669,7 @@ class Mullion_Campaign_Rest_Test extends WP_UnitTestCase {
     public function test_delete_campaign_requires_admin_capability() {
         wp_set_current_user(0);
 
-        $delete = new WP_REST_Request('DELETE', '/wp-super-gallery/v1/campaigns/123');
+        $delete = new WP_REST_Request('DELETE', '/mullion-gallery/v1/campaigns/123');
         $delete->set_param('confirm', 'true');
         $response = rest_do_request($delete);
 

@@ -56,11 +56,11 @@ class Mullion_P40_BS1_Audit_Baseline_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('P40-BS1 Archive Audit Campaign');
 
-        $archive_req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $archive_req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $archive_res = rest_do_request($archive_req);
         $this->assertEquals(200, $archive_res->get_status(), 'Archive mutation must succeed before checking audit.');
 
-        $audit_req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $audit_req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $audit_req->set_param('id', $campaign_id);
         $data = rest_do_request($audit_req)->get_data();
 
@@ -77,10 +77,10 @@ class Mullion_P40_BS1_Audit_Baseline_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('P40-BS1 Global Audit Campaign');
 
-        $archive_req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $archive_req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $this->assertEquals(200, rest_do_request($archive_req)->get_status());
 
-        $global_req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/audit-log');
+        $global_req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/audit-log');
         $global_req->set_param('campaign_id', $campaign_id);
         $data = rest_do_request($global_req)->get_data();
 
@@ -103,14 +103,14 @@ class Mullion_P40_BS1_Audit_Baseline_Test extends WP_UnitTestCase {
         $this->set_admin();
         $campaign_id = $this->create_campaign('P40-BS1 Route Agreement Campaign');
 
-        $archive_req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/archive");
+        $archive_req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/archive");
         $this->assertEquals(200, rest_do_request($archive_req)->get_status());
 
-        $campaign_req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $campaign_req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $campaign_req->set_param('id', $campaign_id);
         $campaign_data = rest_do_request($campaign_req)->get_data();
 
-        $global_req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/audit-log');
+        $global_req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/audit-log');
         $global_req->set_param('campaign_id', $campaign_id);
         $global_data = rest_do_request($global_req)->get_data();
 

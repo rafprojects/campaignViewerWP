@@ -133,7 +133,7 @@ describe('App', () => {
         return Promise.resolve({ ok: true, status: 200, json: async () => ({}) } as Response);
       }
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/permissions')) {
+      if (url.includes('/wp-json/mullion-gallery/v1/permissions')) {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -141,7 +141,7 @@ describe('App', () => {
         } as Response);
       }
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -192,7 +192,7 @@ describe('App', () => {
       const url = String(input);
       const method = (init?.method ?? 'GET').toUpperCase();
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         return {
           ok: true,
           status: 200,
@@ -243,7 +243,7 @@ describe('App', () => {
     expect(await screen.findByText('Campaign Alpha')).toBeInTheDocument();
 
     const calledPerCampaignMedia = fetchMock.mock.calls.some(([url]) =>
-      String(url).includes('/wp-json/wp-super-gallery/v1/campaigns/101/media'),
+      String(url).includes('/wp-json/mullion-gallery/v1/campaigns/101/media'),
     );
     expect(calledPerCampaignMedia).toBe(false);
   });
@@ -270,7 +270,7 @@ describe('App', () => {
       const url = String(input);
       const method = (init?.method ?? 'GET').toUpperCase();
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         const pageMatch = url.match(/[?&]page=(\d+)/);
         const page = pageMatch ? Number(pageMatch[1]) : 1;
         const items =
@@ -297,7 +297,7 @@ describe('App', () => {
 
     // Exactly two campaign-list requests were made (page 1 and page 2).
     const listCalls = fetchMock.mock.calls.filter(([url]) =>
-      String(url).includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1'),
+      String(url).includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1'),
     );
     expect(listCalls).toHaveLength(2);
     expect(String(listCalls[0][0])).toContain('page=1');
@@ -317,7 +317,7 @@ describe('App', () => {
       const url = String(input);
       const method = (init?.method ?? 'GET').toUpperCase();
 
-      if (url.includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1') && method === 'GET') {
+      if (url.includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1') && method === 'GET') {
         return {
           ok: true,
           status: 200,
@@ -336,7 +336,7 @@ describe('App', () => {
 
     const listCallCount = () =>
       fetchMock.mock.calls.filter(([url]) =>
-        String(url).includes('/wp-json/wp-super-gallery/v1/campaigns?include_media=1'),
+        String(url).includes('/wp-json/mullion-gallery/v1/campaigns?include_media=1'),
       ).length;
 
     const afterLoad = listCallCount();

@@ -91,7 +91,7 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
         $tmp_bad = tempnam(sys_get_temp_dir(), 'mullion-bad-');
         file_put_contents($tmp_bad, 'not-an-image');
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/upload');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/media/upload');
         $request->set_file_params($this->build_batch_file_params([
             [
                 'name' => 'one.gif',
@@ -150,7 +150,7 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
         $tmp_two = $this->create_temp_gif();
         $tmp_three = $this->create_temp_gif();
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/media/upload');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/media/upload');
         $request->set_file_params($this->build_batch_file_params([
             [
                 'name' => 'one.gif',
@@ -190,7 +190,7 @@ class Mullion_P28D_Batch_Media_Upload_Test extends WP_UnitTestCase {
     public function test_create_media_batch_adds_multiple_items_and_reports_failures() {
         $campaign_id = $this->create_campaign();
 
-        $request = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$campaign_id}/media/batch");
+        $request = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$campaign_id}/media/batch");
         $request->set_header('Content-Type', 'application/json');
         $request->set_body(wp_json_encode([
             'items' => [

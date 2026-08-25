@@ -96,7 +96,7 @@ describe('useLayoutTemplate', () => {
     });
 
     expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('/wp-json/wp-super-gallery/v1/layout-templates/tpl-1'),
+      expect.stringContaining('/wp-json/mullion-gallery/v1/layout-templates/tpl-1'),
     );
     expect(result.current.template!.name).toBe('Test Layout');
     expect(result.current.error).toBeNull();

@@ -517,7 +517,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         setIsSpaceSaving(true);
         try {
           const spaceResponse = await apiClient.put<{ settings?: Record<string, unknown> }>(
-            `/wp-json/wp-super-gallery/v1/spaces/${spaceId}/settings`, payload
+            `/wp-json/mullion-gallery/v1/spaces/${spaceId}/settings`, payload
           );
           const saved = mapResponseToSettings(
             normalizeSettingsResponse(spaceResponse?.settings as Parameters<typeof normalizeSettingsResponse>[0])

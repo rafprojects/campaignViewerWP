@@ -17,7 +17,7 @@ class Mullion_Monitoring {
 
     public static function start_timer($result, $server, $request) {
         $route = $request->get_route();
-        if (strpos($route, '/wp-super-gallery/v1/') !== 0) {
+        if (strpos($route, '/mullion-gallery/v1/') !== 0) {
             return $result;
         }
 
@@ -27,7 +27,7 @@ class Mullion_Monitoring {
 
     public static function attach_metrics($response, $server, $request) {
         $route = $request->get_route();
-        if (strpos($route, '/wp-super-gallery/v1/') !== 0) {
+        if (strpos($route, '/mullion-gallery/v1/') !== 0) {
             return $response;
         }
 
@@ -102,12 +102,12 @@ class Mullion_Monitoring {
 
     private static function is_mullion_request() {
         $route = isset($_GET['rest_route']) ? sanitize_text_field(wp_unslash($_GET['rest_route'])) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only REST-route detection for request metrics; no state change, no nonce.
-        if (strpos($route, '/wp-super-gallery/v1/') === 0) {
+        if (strpos($route, '/mullion-gallery/v1/') === 0) {
             return true;
         }
 
         $uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
-        return strpos($uri, '/wp-json/wp-super-gallery/v1/') !== false;
+        return strpos($uri, '/wp-json/mullion-gallery/v1/') !== false;
     }
 
     // --- P14-D: Per-provider oEmbed failure tracking ---

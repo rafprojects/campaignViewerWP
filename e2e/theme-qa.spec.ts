@@ -81,14 +81,14 @@ async function installThemeSession(
   await page.route('**/wp-json/jwt-auth/v1/token/validate', (r) =>
     r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
   );
-  await page.route('**/wp-json/wp-super-gallery/v1/permissions', (r) =>
+  await page.route('**/wp-json/mullion-gallery/v1/permissions', (r) =>
     r.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ campaignIds: ['101'], isAdmin: true }),
     }),
   );
-  await page.route('**/wp-json/wp-super-gallery/v1/settings', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/settings', async (route) => {
     if (route.request().method() === 'POST') {
       const body = route.request().postDataJSON() as Record<string, unknown>;
       currentSettings = { ...currentSettings, ...body };
@@ -99,14 +99,14 @@ async function installThemeSession(
       body: JSON.stringify(currentSettings),
     });
   });
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns?**', (r) =>
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns?**', (r) =>
     r.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ items: [] }),
     }),
   );
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns', (r) =>
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns', (r) =>
     r.fulfill({
       status: 200,
       contentType: 'application/json',

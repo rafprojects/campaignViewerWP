@@ -61,7 +61,7 @@ class Mullion_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
         $space_id    = $this->make_space();
         $campaign_id = $this->create_campaign_in_space($space_id);
 
-        $request = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+        $request = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
         $request->set_param('campaign_id', $campaign_id);
         $request->set_param('event_type', 'view');
         $this->assertSame(201, rest_do_request($request)->get_status());
@@ -118,13 +118,13 @@ class Mullion_P66C_Scoped_Space_Id_Test extends WP_UnitTestCase {
         $campaign_id = $this->create_campaign_in_space($space_id);
 
         for ($i = 0; $i < 3; $i++) {
-            $ev = new WP_REST_Request('POST', '/wp-super-gallery/v1/analytics/event');
+            $ev = new WP_REST_Request('POST', '/mullion-gallery/v1/analytics/event');
             $ev->set_param('campaign_id', $campaign_id);
             $ev->set_param('event_type', 'view');
             rest_do_request($ev);
         }
 
-        $summary = new WP_REST_Request('GET', '/wp-super-gallery/v1/analytics/summary');
+        $summary = new WP_REST_Request('GET', '/mullion-gallery/v1/analytics/summary');
         $summary->set_param('space', $space_id);
         $data = rest_do_request($summary)->get_data();
 

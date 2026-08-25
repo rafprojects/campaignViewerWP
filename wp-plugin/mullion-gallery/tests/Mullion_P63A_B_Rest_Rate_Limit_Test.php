@@ -54,7 +54,7 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
 
     public function test_transient_backend_throttles_without_persistent_cache() {
         $ip    = '198.51.100.10';
-        $route = '/wp-super-gallery/v1/p63a-throttle';
+        $route = '/mullion-gallery/v1/p63a-throttle';
         $_SERVER['REMOTE_ADDR'] = $ip;
         add_filter( 'mullion_rate_limit_public', fn() => 2 );
 
@@ -83,7 +83,7 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
 
     public function test_buckets_per_client_ip_behind_trusted_proxy() {
         $proxy = '10.10.0.9';
-        $route = '/wp-super-gallery/v1/p63b-proxy';
+        $route = '/mullion-gallery/v1/p63b-proxy';
         $_SERVER['REMOTE_ADDR'] = $proxy;
         add_filter( 'mullion_rate_limiter_trusted_proxies', fn() => [ $proxy ] );
         add_filter( 'mullion_rate_limit_public', fn() => 1 ); // one request allowed per window
@@ -123,10 +123,10 @@ class Mullion_P63A_B_Rest_Rate_Limit_Test extends WP_UnitTestCase {
         }, 10, 2 );
 
         $_SERVER['REMOTE_ADDR'] = '198.51.100.30';
-        Mullion_REST_Base::rate_limit_public( new WP_REST_Request( 'GET', '/wp-super-gallery/v1/p63b-filter' ) );
+        Mullion_REST_Base::rate_limit_public( new WP_REST_Request( 'GET', '/mullion-gallery/v1/p63b-filter' ) );
 
         $this->assertContains( 'public', $seen_scopes, 'REST-base window is tuned via mullion_rest_rate_limit_window with a scope arg' );
 
-        delete_transient( $this->public_key( '198.51.100.30', '/wp-super-gallery/v1/p63b-filter' ) );
+        delete_transient( $this->public_key( '198.51.100.30', '/mullion-gallery/v1/p63b-filter' ) );
     }
 }

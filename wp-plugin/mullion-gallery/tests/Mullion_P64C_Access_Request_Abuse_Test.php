@@ -41,7 +41,7 @@ class Mullion_P64C_Access_Request_Abuse_Test extends WP_UnitTestCase {
     }
 
     private function submit(int $cid, string $email): WP_REST_Response {
-        $req = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests");
+        $req = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests");
         $req->set_body_params(['email' => $email]);
         return rest_do_request($req);
     }
@@ -77,7 +77,7 @@ class Mullion_P64C_Access_Request_Abuse_Test extends WP_UnitTestCase {
         get_user_by('id', $admin)->add_cap('manage_mullion');
         wp_set_current_user($admin);
 
-        $approve = new WP_REST_Request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
+        $approve = new WP_REST_Request('POST', "/mullion-gallery/v1/campaigns/{$cid}/access-requests/{$token}/approve");
         $this->assertSame(200, rest_do_request($approve)->get_status());
         $this->assertContains('approve-me@example.com', $this->mailed_to, 'requester IS emailed once the request is approved');
     }

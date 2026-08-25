@@ -77,7 +77,7 @@ export function useAdminAccessState({
       setUserSearchLoading(true);
       try {
         const response = await apiClient.get<{ users: WpUser[]; total: number }>(
-          `/wp-json/wp-super-gallery/v1/users/search?search=${encodeURIComponent(debouncedSearch)}`,
+          `/wp-json/mullion-gallery/v1/users/search?search=${encodeURIComponent(debouncedSearch)}`,
           { signal: controller.signal },
         );
         setUserSearchResults(response.users ?? []);
@@ -117,7 +117,7 @@ export function useAdminAccessState({
     setAccessSaving(true);
     try {
       if (accessViewMode === 'campaign') {
-        await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access`, {
+        await apiClient.post(`/wp-json/mullion-gallery/v1/campaigns/${accessCampaignId}/access`, {
           userId,
           source: accessSource,
           action: accessSource === 'company' ? 'grant' : accessAction,
@@ -126,7 +126,7 @@ export function useAdminAccessState({
           ...(expiresAt ? { expires_at: expiresAt } : {}),
         });
       } else {
-        await apiClient.post(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access`, {
+        await apiClient.post(`/wp-json/mullion-gallery/v1/companies/${selectedCompanyId}/access`, {
           userId,
           access_level: accessLevel,
           ...(expiresAt ? { expires_at: expiresAt } : {}),
@@ -155,11 +155,11 @@ export function useAdminAccessState({
     try {
       if (accessViewMode === 'campaign') {
         if (!accessCampaignId) return;
-        await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access/${entry.userId}`);
+        await apiClient.delete(`/wp-json/mullion-gallery/v1/campaigns/${accessCampaignId}/access/${entry.userId}`);
       } else if (entry.source === 'company' && selectedCompanyId) {
-        await apiClient.delete(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access/${entry.userId}`);
+        await apiClient.delete(`/wp-json/mullion-gallery/v1/companies/${selectedCompanyId}/access/${entry.userId}`);
       } else if (entry.source === 'campaign' && entry.campaignId) {
-        await apiClient.delete(`/wp-json/wp-super-gallery/v1/campaigns/${entry.campaignId}/access/${entry.userId}`);
+        await apiClient.delete(`/wp-json/mullion-gallery/v1/campaigns/${entry.campaignId}/access/${entry.userId}`);
       }
       await mutateAccess();
       onNotify({ type: 'success', text: 'Access revoked.' });
@@ -185,7 +185,7 @@ export function useAdminAccessState({
       const expiresPayload = entry.expires_at ? { expires_at: entry.expires_at } : {};
       if (accessViewMode === 'campaign') {
         if (!accessCampaignId) return;
-        await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${accessCampaignId}/access`, {
+        await apiClient.post(`/wp-json/mullion-gallery/v1/campaigns/${accessCampaignId}/access`, {
           userId: entry.userId,
           source: entry.source,
           action: 'grant',
@@ -193,13 +193,13 @@ export function useAdminAccessState({
           ...expiresPayload,
         });
       } else if (entry.source === 'company' && selectedCompanyId) {
-        await apiClient.post(`/wp-json/wp-super-gallery/v1/companies/${selectedCompanyId}/access`, {
+        await apiClient.post(`/wp-json/mullion-gallery/v1/companies/${selectedCompanyId}/access`, {
           userId: entry.userId,
           access_level: newLevel,
           ...expiresPayload,
         });
       } else if (entry.source === 'campaign' && entry.campaignId) {
-        await apiClient.post(`/wp-json/wp-super-gallery/v1/campaigns/${entry.campaignId}/access`, {
+        await apiClient.post(`/wp-json/mullion-gallery/v1/campaigns/${entry.campaignId}/access`, {
           userId: entry.userId,
           source: 'campaign',
           action: 'grant',
@@ -224,7 +224,7 @@ export function useAdminAccessState({
     setAccessSaving(true);
     try {
       const response = await apiClient.post<{ archivedCount: number }>(
-        `/wp-json/wp-super-gallery/v1/companies/${confirmArchiveCompany.id}/archive`,
+        `/wp-json/mullion-gallery/v1/companies/${confirmArchiveCompany.id}/archive`,
         { revokeAccess: archiveRevokeAccess }
       );
       onNotify({ type: 'success', text: `Archived ${response.archivedCount} campaigns.` });
@@ -248,7 +248,7 @@ export function useAdminAccessState({
     try {
       const response = await apiClient.post<{
         message: string; userId: number; emailSent: boolean; accessGranted: boolean; resetUrl?: string; emailFailed?: boolean;
-      }>('/wp-json/wp-super-gallery/v1/users', {
+      }>('/wp-json/mullion-gallery/v1/users', {
         email: quickAddEmail,
         displayName: quickAddName,
         role: quickAddRole,

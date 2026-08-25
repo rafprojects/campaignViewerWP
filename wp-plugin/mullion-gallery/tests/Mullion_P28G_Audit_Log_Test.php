@@ -68,7 +68,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         ];
         update_post_meta($campaign_id, 'audit_log', $legacy);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req->set_param('id', $campaign_id);
         $data = rest_do_request($req)->get_data();
 
@@ -91,7 +91,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         Mullion_DB::insert_audit_entry(['campaign_id' => $campaign_id, 'action' => 'mid.event', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-02-15 09:00:00']);
         Mullion_DB::insert_audit_entry(['campaign_id' => $campaign_id, 'action' => 'late.event', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-03-20 09:00:00']);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req->set_param('id', $campaign_id);
         $req->set_param('from', '2026-02-01');
         $req->set_param('to', '2026-02-28');
@@ -114,7 +114,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         Mullion_DB::insert_audit_entry(['campaign_id' => $campaign_id, 'action' => 'access.granted', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-01-02 10:00:00']);
         Mullion_DB::insert_audit_entry(['campaign_id' => $campaign_id, 'action' => 'media.added', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-01-03 10:00:00']);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req->set_param('id', $campaign_id);
         $req->set_param('action', 'media.added');
         $data = rest_do_request($req)->get_data();
@@ -139,7 +139,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         }
         Mullion_DB::insert_audit_entry(['campaign_id' => $campaign_id, 'action' => 'access.granted', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-01-06 10:00:00']);
 
-        $req1 = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req1 = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req1->set_param('id', $campaign_id);
         $req1->set_param('action', 'media.added');
         $req1->set_param('per_page', 3);
@@ -150,7 +150,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         $this->assertEquals(5, $data1['total']);
         $this->assertEquals(2, $data1['total_pages']);
 
-        $req2 = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req2 = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req2->set_param('id', $campaign_id);
         $req2->set_param('action', 'media.added');
         $req2->set_param('per_page', 3);
@@ -172,7 +172,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         Mullion_DB::insert_audit_entry(['campaign_id' => $c1, 'action' => 'media.created', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-01-01 10:00:00']);
         Mullion_DB::insert_audit_entry(['campaign_id' => $c2, 'action' => 'access.granted', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-01-02 10:00:00']);
 
-        $req  = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/audit-log');
+        $req  = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/audit-log');
         $data = rest_do_request($req)->get_data();
 
         $this->assertArrayHasKey('items', $data);
@@ -191,7 +191,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         Mullion_DB::insert_audit_entry(['campaign_id' => $c1, 'action' => 'media.created', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-01-01 10:00:00']);
         Mullion_DB::insert_audit_entry(['campaign_id' => $c2, 'action' => 'access.granted', 'actor_id' => 1, 'actor_login' => 'admin', 'details' => [], 'created_at' => '2026-01-02 10:00:00']);
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/audit-log');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/audit-log');
         $req->set_param('campaign_id', $c1);
         $data = rest_do_request($req)->get_data();
 
@@ -213,7 +213,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
         // Simulate the Accept: text/csv header via $_SERVER.
         $_SERVER['HTTP_ACCEPT'] = 'text/csv';
 
-        $req      = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/audit-log');
+        $req      = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/audit-log');
         $response = rest_do_request($req);
 
         unset($_SERVER['HTTP_ACCEPT']);
@@ -247,7 +247,7 @@ class Mullion_P28G_Audit_Log_Test extends WP_UnitTestCase {
 
         // Call the handler directly (the permission_callback is System-Admin-gated;
         // we're exercising the manifest logic, not the gate).
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/audit-log/export/binary');
         $res = Mullion_Campaign_Controller::export_audit_log_binary($req);
         $this->assertInstanceOf(WP_REST_Response::class, $res);
         $this->assertSame(202, $res->get_status());

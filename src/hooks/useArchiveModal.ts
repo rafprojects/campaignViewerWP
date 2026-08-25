@@ -36,7 +36,7 @@ export function useArchiveModal({
     if (!archiveModalCampaign) return;
     try {
       await apiClient.post(
-        `/wp-json/wp-super-gallery/v1/campaigns/${archiveModalCampaign.id}/archive`,
+        `/wp-json/mullion-gallery/v1/campaigns/${archiveModalCampaign.id}/archive`,
         {},
       );
       onNotify({ type: 'success', text: 'Campaign archived.' });

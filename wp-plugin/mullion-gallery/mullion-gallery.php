@@ -494,7 +494,7 @@ add_filter('rest_pre_serve_request', 'mullion_add_rest_security_headers', 9, 4);
 
 function mullion_add_cors_headers($served, $result, $request, $server) {
     $route = $request->get_route();
-    if (strpos($route, '/wp-super-gallery/v1/') !== 0) {
+    if (strpos($route, '/mullion-gallery/v1/') !== 0) {
         return $served;
     }
 
@@ -584,7 +584,7 @@ function mullion_maybe_send_security_headers() {
  * place for REST headers, since send_headers never fires for REST requests (P63-C).
  */
 function mullion_add_rest_security_headers($served, $result, $request, $server) {
-    if ($request instanceof WP_REST_Request && strpos((string) $request->get_route(), '/wp-super-gallery/v1/') === 0) {
+    if ($request instanceof WP_REST_Request && strpos((string) $request->get_route(), '/mullion-gallery/v1/') === 0) {
         mullion_emit_security_headers();
     }
     return $served;

@@ -59,7 +59,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
             wp_insert_term("Cat $i", 'mullion_campaign_category', ['slug' => "cat-$i"]);
         }
 
-        $req1 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
+        $req1 = new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-categories');
         $req1->set_param('per_page', 2);
         $req1->set_param('page', 1);
         $data1 = rest_do_request($req1)->get_data();
@@ -69,7 +69,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->assertGreaterThanOrEqual(3, $data1['total']);
         $this->assertGreaterThanOrEqual(2, $data1['total_pages']);
 
-        $req2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
+        $req2 = new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-categories');
         $req2->set_param('per_page', 2);
         $req2->set_param('page', 2);
         $data2 = rest_do_request($req2)->get_data();
@@ -86,7 +86,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->set_admin();
         wp_insert_term('Solo Cat', 'mullion_campaign_category', ['slug' => 'solo-cat']);
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/campaign-categories');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/campaign-categories');
         $req->set_param('per_page', 50);
         $req->set_param('page', 999);
         $data = rest_do_request($req)->get_data();
@@ -106,7 +106,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
             wp_insert_term("Tag $i", 'mullion_campaign_tag', ['slug' => "ctag-$i"]);
         }
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/campaign');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/tags/campaign');
         $req->set_param('per_page', 2);
         $req->set_param('page', 1);
         $data = rest_do_request($req)->get_data();
@@ -114,7 +114,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->assert_paginated_shape($data, 'tags/campaign page 1');
         $this->assertCount(2, $data['items']);
 
-        $req2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/campaign');
+        $req2 = new WP_REST_Request('GET', '/mullion-gallery/v1/tags/campaign');
         $req2->set_param('per_page', 2);
         $req2->set_param('page', 2);
         $data2 = rest_do_request($req2)->get_data();
@@ -127,7 +127,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->set_admin();
         wp_insert_term('One Tag', 'mullion_campaign_tag', ['slug' => 'one-tag']);
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/campaign');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/tags/campaign');
         $req->set_param('page', 999);
         $data = rest_do_request($req)->get_data();
 
@@ -146,7 +146,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
             wp_insert_term("MTag $i", 'mullion_media_tag', ['slug' => "mtag-$i"]);
         }
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/media');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/tags/media');
         $req->set_param('per_page', 2);
         $req->set_param('page', 1);
         $data = rest_do_request($req)->get_data();
@@ -154,7 +154,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->assert_paginated_shape($data, 'tags/media page 1');
         $this->assertCount(2, $data['items']);
 
-        $req2 = new WP_REST_Request('GET', '/wp-super-gallery/v1/tags/media');
+        $req2 = new WP_REST_Request('GET', '/mullion-gallery/v1/tags/media');
         $req2->set_param('per_page', 2);
         $req2->set_param('page', 999);
         $data2 = rest_do_request($req2)->get_data();
@@ -170,7 +170,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
     public function test_roles_returns_paginated_shape() {
         $this->set_admin();
 
-        $req  = new WP_REST_Request('GET', '/wp-super-gallery/v1/roles');
+        $req  = new WP_REST_Request('GET', '/mullion-gallery/v1/roles');
         $data = rest_do_request($req)->get_data();
 
         $this->assert_paginated_shape($data, 'roles');
@@ -193,7 +193,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         }
         update_post_meta($campaign_id, 'access_grants', $grants);
 
-        $req1 = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $req1 = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $req1->set_param('id', $campaign_id);
         $req1->set_param('per_page', 3);
         $req1->set_param('page', 1);
@@ -204,7 +204,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->assertEquals(5, $data1['total']);
         $this->assertEquals(2, $data1['total_pages']);
 
-        $req2 = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $req2 = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $req2->set_param('id', $campaign_id);
         $req2->set_param('per_page', 3);
         $req2->set_param('page', 2);
@@ -220,7 +220,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $uid = $this->make_user();
         update_post_meta($campaign_id, 'access_grants', [['userId' => $uid, 'source' => 'campaign', 'grantedAt' => gmdate('c')]]);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/access");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/access");
         $req->set_param('id', $campaign_id);
         $req->set_param('page', 999);
         $data = rest_do_request($req)->get_data();
@@ -245,7 +245,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         }
         update_term_meta($term_id, 'access_grants', $grants);
 
-        $req1 = new WP_REST_Request('GET', "/wp-super-gallery/v1/companies/{$term_id}/access");
+        $req1 = new WP_REST_Request('GET', "/mullion-gallery/v1/companies/{$term_id}/access");
         $req1->set_param('id', $term_id);
         $req1->set_param('per_page', 2);
         $req1->set_param('page', 1);
@@ -255,7 +255,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->assertCount(2, $data1['items']);
         $this->assertEquals(4, $data1['total']);
 
-        $req2 = new WP_REST_Request('GET', "/wp-super-gallery/v1/companies/{$term_id}/access");
+        $req2 = new WP_REST_Request('GET', "/mullion-gallery/v1/companies/{$term_id}/access");
         $req2->set_param('id', $term_id);
         $req2->set_param('per_page', 2);
         $req2->set_param('page', 2);
@@ -285,7 +285,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         }
         update_post_meta($campaign_id, 'audit_log', $entries);
 
-        $req1 = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req1 = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req1->set_param('id', $campaign_id);
         $req1->set_param('per_page', 3);
         $req1->set_param('page', 1);
@@ -295,7 +295,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->assertCount(3, $data1['items']);
         $this->assertEquals(5, $data1['total']);
 
-        $req2 = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req2 = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req2->set_param('id', $campaign_id);
         $req2->set_param('per_page', 3);
         $req2->set_param('page', 2);
@@ -312,7 +312,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
             ['id' => wp_generate_uuid4(), 'action' => 'test', 'details' => [], 'userId' => 1, 'createdAt' => gmdate('c')],
         ]);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req->set_param('id', $campaign_id);
         $req->set_param('page', 999);
         $data = rest_do_request($req)->get_data();
@@ -329,7 +329,7 @@ class Mullion_P28F_Pagination_Test extends WP_UnitTestCase {
         $this->set_admin();
         wp_insert_term('P28F Corp', 'mullion_company', ['slug' => 'p28f-corp']);
 
-        $req  = new WP_REST_Request('GET', '/wp-super-gallery/v1/companies');
+        $req  = new WP_REST_Request('GET', '/mullion-gallery/v1/companies');
         $data = rest_do_request($req)->get_data();
 
         $this->assert_paginated_shape($data, 'companies');

@@ -51,7 +51,7 @@ class Mullion_P48E_Audit_Export_Test extends WP_UnitTestCase {
             $this->markTestSkipped('ZipArchive is available; 503 path not reachable in this environment.');
         }
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/audit-log/export/binary');
         $res = rest_do_request($req);
         $this->assertSame(503, $res->get_status());
     }
@@ -69,7 +69,7 @@ class Mullion_P48E_Audit_Export_Test extends WP_UnitTestCase {
         ]);
         $this->insert_audit_entry($campaign_id);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/audit-log/export/binary');
         $res = rest_do_request($req);
 
         $this->assertSame(202, $res->get_status(), 'Expected 202 Accepted.');
@@ -86,7 +86,7 @@ class Mullion_P48E_Audit_Export_Test extends WP_UnitTestCase {
             $this->markTestSkipped('ext-zip required for this test.');
         }
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/audit-log/export/binary');
         $req->set_param('from', '2020-01-01');
         $req->set_param('to', '2020-01-31');
         $res = rest_do_request($req);
@@ -103,7 +103,7 @@ class Mullion_P48E_Audit_Export_Test extends WP_UnitTestCase {
             $this->markTestSkipped('ext-zip required for this test.');
         }
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/audit-log/export/binary');
         $res = rest_do_request($req);
 
         $this->assertSame(202, $res->get_status());
@@ -120,7 +120,7 @@ class Mullion_P48E_Audit_Export_Test extends WP_UnitTestCase {
         $subscriber = self::factory()->user->create(['role' => 'subscriber']);
         wp_set_current_user($subscriber);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/admin/audit-log/export/binary');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/admin/audit-log/export/binary');
         $res = rest_do_request($req);
 
         $this->assertSame(403, $res->get_status());

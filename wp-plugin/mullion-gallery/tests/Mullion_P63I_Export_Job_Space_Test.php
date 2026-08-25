@@ -57,7 +57,7 @@ class Mullion_P63I_Export_Job_Space_Test extends WP_UnitTestCase {
 
     private function poll( int $user_id, string $job_id ) {
         wp_set_current_user( $user_id );
-        $req = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/export-jobs/' . $job_id );
+        $req = new WP_REST_Request( 'GET', '/mullion-gallery/v1/export-jobs/' . $job_id );
         $req->set_param( 'job_id', $job_id );
         return Mullion_Export_Controller::get_export_job( $req );
     }
@@ -203,7 +203,7 @@ class Mullion_P63I_Export_Job_Space_Test extends WP_UnitTestCase {
         wp_set_current_user( $editor );
         $id = Mullion_Export_Engine::create_job( 'campaign', '{}', [], space_ids: [ $space ] );
 
-        $req = new WP_REST_Request( 'GET', '/wp-super-gallery/v1/export-jobs/' . $id . '/download' );
+        $req = new WP_REST_Request( 'GET', '/mullion-gallery/v1/export-jobs/' . $id . '/download' );
         $req->set_param( 'job_id', $id );
         $resp = Mullion_Export_Controller::download_export_job( $req );
 

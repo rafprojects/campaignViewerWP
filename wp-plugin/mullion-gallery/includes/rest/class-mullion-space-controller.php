@@ -7,7 +7,7 @@ if (!defined('ABSPATH')) {
 class Mullion_Space_Controller extends Mullion_REST_Base {
 
     public static function register_routes(): void {
-        register_rest_route('wp-super-gallery/v1', '/spaces', [
+        register_rest_route('mullion-gallery/v1', '/spaces', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_spaces'],
@@ -36,7 +36,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/spaces/(?P<id>\d+)', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_space_item'],
@@ -70,7 +70,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/access', [
+        register_rest_route('mullion-gallery/v1', '/spaces/(?P<id>\d+)/access', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'list_access'],
@@ -100,7 +100,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/access/(?P<userId>\d+)', [
+        register_rest_route('mullion-gallery/v1', '/spaces/(?P<id>\d+)/access/(?P<userId>\d+)', [
             [
                 'methods'             => 'DELETE',
                 'callback'            => [self::class, 'revoke_access'],
@@ -108,7 +108,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/resolve-user', [
+        register_rest_route('mullion-gallery/v1', '/spaces/(?P<id>\d+)/resolve-user', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'resolve_user'],
@@ -123,7 +123,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
             ],
         ]);
 
-        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/settings', [
+        register_rest_route('mullion-gallery/v1', '/spaces/(?P<id>\d+)/settings', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_space_settings'],
@@ -137,7 +137,7 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         ]);
 
         // P50-B: per-space shared-asset (overlay/font) library associations.
-        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/library', [
+        register_rest_route('mullion-gallery/v1', '/spaces/(?P<id>\d+)/library', [
             [
                 'methods'             => 'GET',
                 'callback'            => [self::class, 'get_space_library'],

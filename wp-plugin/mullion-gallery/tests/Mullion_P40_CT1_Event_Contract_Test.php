@@ -155,7 +155,7 @@ class Mullion_P40_CT1_Event_Contract_Test extends WP_UnitTestCase {
         $this->insert($campaign_id, 'campaign.archived', ['scope' => 'campaign']);
         $this->insert($campaign_id, 'plugin.settings_updated', ['scope' => 'system']);
 
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         $req->set_param('id', $campaign_id);
         $req->set_param('scope', 'campaign');
         $data = rest_do_request($req)->get_data();
@@ -174,7 +174,7 @@ class Mullion_P40_CT1_Event_Contract_Test extends WP_UnitTestCase {
         $this->insert($campaign_id, 'campaign.archived', ['severity' => 'info']);
         $this->insert($campaign_id, 'access.failed', ['severity' => 'warning']);
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/admin/audit-log');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/admin/audit-log');
         $req->set_param('campaign_id', $campaign_id);
         $req->set_param('severity', 'warning');
         $data = rest_do_request($req)->get_data();

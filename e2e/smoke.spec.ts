@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test('renders campaign gallery with mocked API', async ({ page }) => {
-  await page.route('**/wp-json/wp-super-gallery/v1/campaigns**', async (route) => {
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns**', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

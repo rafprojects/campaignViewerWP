@@ -185,7 +185,7 @@ export function useSpaces(apiClient: ApiClient) {
   const query = useQuery({
     queryKey: getSpacesQueryKey(apiClient),
     queryFn: async () => {
-      const res = await apiClient.get<SpaceInfo[]>('/wp-json/wp-super-gallery/v1/spaces');
+      const res = await apiClient.get<SpaceInfo[]>('/wp-json/mullion-gallery/v1/spaces');
       return Array.isArray(res) ? res : [];
     },
     staleTime: ADMIN_QUERY_STALE_TIME,
@@ -278,7 +278,7 @@ async function fetchAdminCampaigns(
   if (filters?.templateId) params.set('template_id', filters.templateId);
 
   const response = await apiClient.get<ApiCampaignResponse>(
-    `/wp-json/wp-super-gallery/v1/campaigns?${params.toString()}`,
+    `/wp-json/mullion-gallery/v1/campaigns?${params.toString()}`,
   );
 
   return {
@@ -299,7 +299,7 @@ async function fetchAllCampaignOptions(apiClient: ApiClient, spaceId = 'all'): P
   // (fetchAllPages defaults to DEFAULT_MAX_PAGES = 20, formerly MAX_SELECTOR_PAGES).
   const pages = await fetchAllPages<ApiCampaignResponse>((page) =>
     apiClient.get<ApiCampaignResponse>(
-      `/wp-json/wp-super-gallery/v1/campaigns?per_page=50&page=${page}&include_archived=true${spaceParam}`,
+      `/wp-json/mullion-gallery/v1/campaigns?per_page=50&page=${page}&include_archived=true${spaceParam}`,
     ),
   );
 
@@ -315,7 +315,7 @@ async function fetchAccessGrants(
   if (mode === 'campaign') {
     const qs = includeExpired ? '?include_expired=true' : '';
     const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
-      `/wp-json/wp-super-gallery/v1/campaigns/${targetId}/access${qs}`,
+      `/wp-json/mullion-gallery/v1/campaigns/${targetId}/access${qs}`,
     );
     return normalizeListResponse(response);
   }
@@ -326,7 +326,7 @@ async function fetchAccessGrants(
   if (includeExpired) params.set('include_expired', 'true');
   const qs = params.toString() ? `?${params.toString()}` : '';
   const response = await apiClient.get<ListResponse<CompanyAccessGrant>>(
-    `/wp-json/wp-super-gallery/v1/companies/${targetId}/access${qs}`,
+    `/wp-json/mullion-gallery/v1/companies/${targetId}/access${qs}`,
   );
   return normalizeListResponse(response);
 }
@@ -334,7 +334,7 @@ async function fetchAccessGrants(
 async function fetchCompanies(apiClient: ApiClient, spaceId = 'all'): Promise<CompanyInfo[]> {
   const spaceParam = spaceId !== 'all' ? `?space=${encodeURIComponent(spaceId)}` : '';
   const response = await apiClient.get<ListResponse<CompanyInfo>>(
-    `/wp-json/wp-super-gallery/v1/companies${spaceParam}`,
+    `/wp-json/mullion-gallery/v1/companies${spaceParam}`,
   );
   return normalizeListResponse(response);
 }
@@ -348,7 +348,7 @@ async function fetchAuditEntries(apiClient: ApiClient, campaignId: string, filte
   if (filters.severity) params.set('severity', filters.severity);
   const qs = params.toString() ? `?${params}` : '';
   const response = await apiClient.get<ListResponse<AuditEntry>>(
-    `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/audit${qs}`,
+    `/wp-json/mullion-gallery/v1/campaigns/${campaignId}/audit${qs}`,
   );
   return normalizeListResponse(response);
 }
@@ -368,14 +368,14 @@ async function fetchGlobalAuditEntries(
   if (filters.severity) params.set('severity', filters.severity);
   const qs = params.toString() ? `?${params}` : '';
   const response = await apiClient.get<ListResponse<AuditEntry>>(
-    `/wp-json/wp-super-gallery/v1/admin/audit-log${qs}`,
+    `/wp-json/mullion-gallery/v1/admin/audit-log${qs}`,
   );
   return normalizeListResponse(response);
 }
 
 async function fetchMediaItems(apiClient: ApiClient, campaignId: string): Promise<MediaItem[]> {
   const response = await apiClient.get<MediaItem[] | { items?: MediaItem[] }>(
-    `/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media`,
+    `/wp-json/mullion-gallery/v1/campaigns/${campaignId}/media`,
   );
   const items = Array.isArray(response) ? response : response.items ?? [];
   return sortByOrder(items);
@@ -494,7 +494,7 @@ export function getAllCompaniesQueryKey(apiClient: ApiClient, spaceId = 'all') {
 async function fetchAllCompanies(apiClient: ApiClient, spaceId = 'all'): Promise<CompanyInfo[]> {
   const spaceParam = spaceId !== 'all' ? `&space=${encodeURIComponent(spaceId)}` : '';
   const first = await apiClient.get<{ items: CompanyInfo[]; totalPages: number }>(
-    `/wp-json/wp-super-gallery/v1/companies?per_page=100&page=1${spaceParam}`,
+    `/wp-json/mullion-gallery/v1/companies?per_page=100&page=1${spaceParam}`,
   );
   const items = first.items ?? [];
   const totalPages = first.totalPages ?? 1;
@@ -502,7 +502,7 @@ async function fetchAllCompanies(apiClient: ApiClient, spaceId = 'all'): Promise
   const rest = await Promise.all(
     Array.from({ length: totalPages - 1 }, (_, i) =>
       apiClient
-        .get<{ items: CompanyInfo[] }>(`/wp-json/wp-super-gallery/v1/companies?per_page=100&page=${i + 2}${spaceParam}`)
+        .get<{ items: CompanyInfo[] }>(`/wp-json/mullion-gallery/v1/companies?per_page=100&page=${i + 2}${spaceParam}`)
         .then((r) => r.items ?? []),
     ),
   );
@@ -532,7 +532,7 @@ export function usePatchCampaign(apiClient: ApiClient) {
 
   return useMutation<unknown, Error, CampaignPatchVars, { snapshots: [unknown, unknown][] }>({
     mutationFn: ({ id, apiPatch }) =>
-      apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${id}`, apiPatch),
+      apiClient.put(`/wp-json/mullion-gallery/v1/campaigns/${id}`, apiPatch),
 
     onMutate: async ({ id, optimisticPatch }) => {
       if (!optimisticPatch) return { snapshots: [] };

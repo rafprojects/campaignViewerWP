@@ -41,7 +41,7 @@ function makeTransport(overrides: Partial<ConstructorParameters<typeof HttpTrans
     // [P51-D] Nonce is now injected; default to a refresh path so the 403 →
     // refresh → retry tests exercise that branch. Individual tests override
     // getNonce/setNonce to assert header injection and persistence.
-    noncePath: '/wp-json/wp-super-gallery/v1/nonce',
+    noncePath: '/wp-json/mullion-gallery/v1/nonce',
     ...overrides,
   });
 }

@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 
 // ── Constants mirrored from public/sw.js ────────────────────────────────────
 // If you change META_ENDPOINT_RE or META_MAX_ENTRIES there, update here too.
-const META_ENDPOINT_RE = /\/wp-json\/wp-super-gallery\/v1\/campaigns(\/\d+\/media)?$/;
+const META_ENDPOINT_RE = /\/wp-json\/mullion-gallery\/v1\/campaigns(\/\d+\/media)?$/;
 const META_TTL_MS = 5 * 60 * 1000;
 const META_MAX_ENTRIES = 50;
 
@@ -70,36 +70,36 @@ describe('META_ENDPOINT_RE', () => {
   const match = (path: string) => META_ENDPOINT_RE.test(path);
 
   it('matches the campaign list endpoint', () => {
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns')).toBe(true);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns')).toBe(true);
   });
 
   it('matches the media list endpoint for a numeric campaign id', () => {
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns/42/media')).toBe(true);
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns/1/media')).toBe(true);
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns/9999/media')).toBe(true);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns/42/media')).toBe(true);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns/1/media')).toBe(true);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns/9999/media')).toBe(true);
   });
 
   it('does not match admin endpoints', () => {
-    expect(match('/wp-json/wp-super-gallery/v1/admin/asset-library')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/admin/font-library')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/admin/audit-log')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/admin/asset-library')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/admin/font-library')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/admin/audit-log')).toBe(false);
   });
 
   it('does not match individual campaign detail endpoint', () => {
     // GET /campaigns/{id} — not in the SWR set (returns partial data for admin)
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns/42')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns/42')).toBe(false);
   });
 
   it('does not match unrelated wp-json paths', () => {
     expect(match('/wp-json/wp/v2/posts')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/settings')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/spaces')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/settings')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/spaces')).toBe(false);
   });
 
   it('does not match mutation sub-paths', () => {
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns/42/media/batch')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns/42/media/reorder')).toBe(false);
-    expect(match('/wp-json/wp-super-gallery/v1/campaigns/42/archive')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns/42/media/batch')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns/42/media/reorder')).toBe(false);
+    expect(match('/wp-json/mullion-gallery/v1/campaigns/42/archive')).toBe(false);
   });
 });
 

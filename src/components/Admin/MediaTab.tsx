@@ -167,7 +167,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
         needs.map(async (it) => {
           try {
             const data = await apiClient.get<OEmbedResponse>(
-              `/wp-json/wp-super-gallery/v1/oembed?url=${encodeURIComponent(it.url)}`,
+              `/wp-json/mullion-gallery/v1/oembed?url=${encodeURIComponent(it.url)}`,
             );
             if (data) {
               const nextThumb = it.thumbnail || data.thumbnail_url;
@@ -176,7 +176,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
                 prev.map((p) => (p.id === it.id ? { ...p, thumbnail: nextThumb ?? p.thumbnail, caption: nextCaption } : p)),
               );
               if (nextThumb || nextCaption) {
-                await apiClient.put(`/wp-json/wp-super-gallery/v1/campaigns/${campaignId}/media/${it.id}`, {
+                await apiClient.put(`/wp-json/mullion-gallery/v1/campaigns/${campaignId}/media/${it.id}`, {
                   thumbnail: nextThumb,
                   caption: nextCaption,
                 });

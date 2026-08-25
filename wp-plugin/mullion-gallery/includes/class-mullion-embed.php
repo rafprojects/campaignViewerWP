@@ -12,7 +12,7 @@ class Mullion_Embed {
     }
 
     public static function register_assets() {
-        $handle = 'wp-super-gallery-app';
+        $handle = 'mullion-gallery-app';
         $base_url = MULLION_PLUGIN_URL . 'assets/';
         $manifest = self::get_manifest();
         $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
@@ -42,7 +42,7 @@ class Mullion_Embed {
             return;
         }
 
-        $script_url = $base_url . 'wp-super-gallery.js';
+        $script_url = $base_url . 'mullion-gallery.js';
         wp_register_script($handle, $script_url, [], MULLION_VERSION, true);
     }
 
@@ -172,7 +172,7 @@ class Mullion_Embed {
      * Add type="module" to the script tag for ES module support.
      */
     public static function add_module_type($tag, $handle, $src) {
-        if ($handle !== 'wp-super-gallery-app') {
+        if ($handle !== 'mullion-gallery-app') {
             return $tag;
         }
         // Replace the script tag to use type="module"
@@ -236,7 +236,7 @@ class Mullion_Embed {
             $classes[] = 'mullion-gallery--compact';
         }
 
-        wp_enqueue_script('wp-super-gallery-app');
+        wp_enqueue_script('mullion-gallery-app');
 
         // Get effective settings for this space (falls back to global defaults).
         // Page-global config (auth/api/nonce) is emitted via self::page_config_js().
@@ -278,7 +278,7 @@ class Mullion_Embed {
         $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
         if ($entry && !empty($entry['css'])) {
             foreach ($entry['css'] as $index => $css_file) {
-                $style_handle = 'wp-super-gallery-app-style-' . $index;
+                $style_handle = 'mullion-gallery-app-style-' . $index;
                 if (!wp_style_is($style_handle, 'enqueued')) {
                     wp_enqueue_style($style_handle);
                 }

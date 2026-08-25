@@ -57,7 +57,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
 
     /** GET /campaigns/{id}/audit — a per-campaign admin endpoint (campaign.audit.read). */
     private function audit_status(int $campaign_id): int {
-        $req = new WP_REST_Request('GET', "/wp-super-gallery/v1/campaigns/{$campaign_id}/audit");
+        $req = new WP_REST_Request('GET', "/mullion-gallery/v1/campaigns/{$campaign_id}/audit");
         return rest_do_request($req)->get_status();
     }
 
@@ -124,7 +124,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
         $theirs   = $this->campaign_in_space($foreign);
         wp_set_current_user($editor);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/batch');
         $req->set_param('action', 'archive');
         $req->set_param('ids', [$mine, $theirs]);
         $this->assertSame(403, rest_do_request($req)->get_status(), 'a cross-space id must deny the whole batch');
@@ -139,7 +139,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
         $b = $this->campaign_in_space($granted);
         wp_set_current_user($editor);
 
-        $req = new WP_REST_Request('POST', '/wp-super-gallery/v1/campaigns/batch');
+        $req = new WP_REST_Request('POST', '/mullion-gallery/v1/campaigns/batch');
         $req->set_param('action', 'archive');
         $req->set_param('ids', [$a, $b]);
         $this->assertSame(200, rest_do_request($req)->get_status(), 'batch within explicitly-accessible spaces proceeds');
@@ -156,7 +156,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
         $this->grant_space($granted, $editor, 'viewer');
         wp_set_current_user($editor);
 
-        $req  = new WP_REST_Request('GET', '/wp-super-gallery/v1/spaces');
+        $req  = new WP_REST_Request('GET', '/mullion-gallery/v1/spaces');
         $ids  = array_map(fn($s) => intval($s['id']), rest_do_request($req)->get_data());
 
         $this->assertNotContains($open,      $ids, 'editor must NOT see an ungranted open space');
@@ -169,7 +169,7 @@ class Mullion_P52A5b_Campaign_Space_Scoping_Test extends WP_UnitTestCase {
         $delegated = $this->make_space('delegated');
         $this->set_super_admin();
 
-        $req = new WP_REST_Request('GET', '/wp-super-gallery/v1/spaces');
+        $req = new WP_REST_Request('GET', '/mullion-gallery/v1/spaces');
         $ids = array_map(fn($s) => intval($s['id']), rest_do_request($req)->get_data());
 
         $this->assertContains($open, $ids);

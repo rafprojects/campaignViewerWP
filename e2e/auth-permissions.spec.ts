@@ -29,7 +29,7 @@ test.describe('auth and permissions', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
 
-    await page.route('**/wp-json/wp-super-gallery/v1/permissions', async (route) => {
+    await page.route('**/wp-json/mullion-gallery/v1/permissions', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -37,7 +37,7 @@ test.describe('auth and permissions', () => {
       });
     });
 
-    await page.route('**/wp-json/wp-super-gallery/v1/campaigns**', async (route) => {
+    await page.route('**/wp-json/mullion-gallery/v1/campaigns**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -74,7 +74,7 @@ test.describe('auth and permissions', () => {
       });
     });
 
-    await page.route('**/wp-json/wp-super-gallery/v1/campaigns/2/media', async (route) => {
+    await page.route('**/wp-json/mullion-gallery/v1/campaigns/2/media', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
     });
 
@@ -121,7 +121,7 @@ test.describe('auth and permissions', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
     });
 
-    await page.route('**/wp-json/wp-super-gallery/v1/permissions', async (route) => {
+    await page.route('**/wp-json/mullion-gallery/v1/permissions', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -129,7 +129,7 @@ test.describe('auth and permissions', () => {
       });
     });
 
-    await page.route('**/wp-json/wp-super-gallery/v1/campaigns**', async (route) => {
+    await page.route('**/wp-json/mullion-gallery/v1/campaigns**', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

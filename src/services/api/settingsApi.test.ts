@@ -36,14 +36,14 @@ describe('SettingsApi', () => {
   });
 
   describe('getSettings', () => {
-    it('calls GET /wp-json/wp-super-gallery/v1/settings', async () => {
+    it('calls GET /wp-json/mullion-gallery/v1/settings', async () => {
       const mockSettings = { theme: 'dark', enableLightbox: true };
       vi.mocked(transport.get).mockResolvedValue(mockSettings);
 
       const result = await api.getSettings();
 
       expect(transport.get).toHaveBeenCalledOnce();
-      expect(transport.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/settings');
+      expect(transport.get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/settings');
       expect(result).toEqual(mockSettings);
     });
 
@@ -56,7 +56,7 @@ describe('SettingsApi', () => {
   });
 
   describe('updateSettings', () => {
-    it('calls POST /wp-json/wp-super-gallery/v1/settings with the payload', async () => {
+    it('calls POST /wp-json/mullion-gallery/v1/settings with the payload', async () => {
       const update = { theme: 'modern', enableAnimations: false };
       const response = { ...update, authProvider: 'cookie' };
       vi.mocked(transport.post).mockResolvedValue(response);
@@ -65,7 +65,7 @@ describe('SettingsApi', () => {
 
       expect(transport.post).toHaveBeenCalledOnce();
       expect(transport.post).toHaveBeenCalledWith(
-        '/wp-json/wp-super-gallery/v1/settings',
+        '/wp-json/mullion-gallery/v1/settings',
         update,
       );
       expect(result).toEqual(response);
@@ -74,17 +74,17 @@ describe('SettingsApi', () => {
     it('passes an empty object without error', async () => {
       vi.mocked(transport.post).mockResolvedValue({});
       await expect(api.updateSettings({})).resolves.toEqual({});
-      expect(transport.post).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/settings', {});
+      expect(transport.post).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/settings', {});
     });
   });
 
   describe('testConnection', () => {
-    it('calls GET /wp-json/wp-super-gallery/v1/campaigns', async () => {
+    it('calls GET /wp-json/mullion-gallery/v1/campaigns', async () => {
       vi.mocked(transport.get).mockResolvedValue({ success: true, message: 'ok' });
 
       const result = await api.testConnection();
 
-      expect(transport.get).toHaveBeenCalledWith('/wp-json/wp-super-gallery/v1/campaigns');
+      expect(transport.get).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/campaigns');
       expect(result.success).toBe(true);
     });
   });
