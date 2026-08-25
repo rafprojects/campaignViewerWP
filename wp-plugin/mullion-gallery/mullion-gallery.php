@@ -19,9 +19,9 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('WPSG_VERSION', '0.90.0');
-define('WPSG_PLUGIN_DIR', plugin_dir_path(__FILE__));
-define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
+define('MULLION_VERSION', '0.90.0');
+define('MULLION_PLUGIN_DIR', plugin_dir_path(__FILE__));
+define('MULLION_PLUGIN_URL', plugin_dir_url(__FILE__));
 
 // ── Freemius SDK bootstrap (P62-B) ──────────────────────────────────────────
 // Deliberately a distinct block before the require_once list: Freemius's own
@@ -30,9 +30,9 @@ define('WPSG_PLUGIN_URL', plugin_dir_url(__FILE__));
 // Credential-ready: until a real Plugin ID + public key are injected via the
 // `wpsg_freemius_config` filter (outside this repo — a site-specific mu-plugin
 // or wp-config.php-backed constant), this is a safe no-op. wpsg_fs() returns
-// null, makes zero network calls, and WPSG_License falls back to its stub
+// null, makes zero network calls, and Mullion_License falls back to its stub
 // (default free tier). This mirrors the wpsg_sentry_dsn pattern in
-// class-wpsg-sentry.php.
+// class-mullion-sentry.php.
 if (!function_exists('wpsg_fs')) {
     /**
      * Freemius SDK instance, or null when no credentials are configured.
@@ -59,7 +59,7 @@ if (!function_exists('wpsg_fs')) {
             return null;
         }
 
-        $sdk_entry = WPSG_PLUGIN_DIR . 'vendor/freemius/wordpress-sdk/start.php';
+        $sdk_entry = MULLION_PLUGIN_DIR . 'vendor/freemius/wordpress-sdk/start.php';
         if (!file_exists($sdk_entry)) {
             $wpsg_fs = null;
             return null;
@@ -100,43 +100,43 @@ if (!function_exists('wpsg_fs')) {
     do_action('wpsg_fs_loaded');
 }
 
-require_once WPSG_PLUGIN_DIR . 'includes/wpsg-cron-hooks.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-license.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cpt.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rest.php';
-require_once WPSG_PLUGIN_DIR . 'includes/i18n/class-wpsg-frontend-strings.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-embed.php';
-require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-registry.php';
-require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-core-fields.php';
-require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-renderer.php';
-require_once WPSG_PLUGIN_DIR . 'includes/schema/class-wpsg-adapter-field-schema.php';
-require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-sanitizer.php';
-require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-service.php';
-require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-typography.php';
-require_once WPSG_PLUGIN_DIR . 'includes/settings/class-wpsg-settings-utils.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-settings.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-db.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-maintenance.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-privacy.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-logger.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-monitoring.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-alerts.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-sentry.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-thumbnail-cache.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-rate-limiter.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-image-optimizer.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-phash.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-layout-templates.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-duplicator.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-templates.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-status.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-asset-library.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-font-library.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-webhooks.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-export-engine.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-campaign-io.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-space-admin-renderer.php';
-require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-asset-admin-renderer.php';
+require_once MULLION_PLUGIN_DIR . 'includes/wpsg-cron-hooks.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-license.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-cpt.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-rest.php';
+require_once MULLION_PLUGIN_DIR . 'includes/i18n/class-mullion-frontend-strings.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-embed.php';
+require_once MULLION_PLUGIN_DIR . 'includes/settings/class-mullion-settings-registry.php';
+require_once MULLION_PLUGIN_DIR . 'includes/settings/class-mullion-settings-core-fields.php';
+require_once MULLION_PLUGIN_DIR . 'includes/settings/class-mullion-settings-renderer.php';
+require_once MULLION_PLUGIN_DIR . 'includes/schema/class-mullion-adapter-field-schema.php';
+require_once MULLION_PLUGIN_DIR . 'includes/settings/class-mullion-settings-sanitizer.php';
+require_once MULLION_PLUGIN_DIR . 'includes/settings/class-mullion-settings-service.php';
+require_once MULLION_PLUGIN_DIR . 'includes/settings/class-mullion-settings-typography.php';
+require_once MULLION_PLUGIN_DIR . 'includes/settings/class-mullion-settings-utils.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-settings.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-db.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-maintenance.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-privacy.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-logger.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-monitoring.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-alerts.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-sentry.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-thumbnail-cache.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-rate-limiter.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-image-optimizer.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-phash.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-layout-templates.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-campaign-duplicator.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-campaign-templates.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-campaign-status.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-asset-library.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-font-library.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-webhooks.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-export-engine.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-campaign-io.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-space-admin-renderer.php';
+require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-asset-admin-renderer.php';
 
 // Activation hook - trigger setup on next load
 register_activation_hook(__FILE__, 'wpsg_activate');
@@ -170,7 +170,7 @@ function wpsg_setup_roles_and_caps() {
         // caps that drive the wp-admin gallery screens.
         if ($admin_role) {
             $admin_role->add_cap('manage_wpsg');
-            foreach (WPSG_CPT::CPT_CAPS as $cap) {
+            foreach (Mullion_CPT::CPT_CAPS as $cap) {
                 $admin_role->add_cap($cap);
             }
         }
@@ -228,7 +228,7 @@ function wpsg_ensure_editor_role() {
         $role->add_cap($cap);
     }
     // Editors never hold the custom CPT caps — those gate the wp-admin Campaigns UI.
-    foreach (WPSG_CPT::CPT_CAPS as $cap) {
+    foreach (Mullion_CPT::CPT_CAPS as $cap) {
         if ($role->has_cap($cap)) {
             $role->remove_cap($cap);
         }
@@ -270,35 +270,35 @@ function wpsg_maybe_migrate_roles() {
 add_action('init', function () {
     load_plugin_textdomain('mullion-gallery', false, dirname(plugin_basename(__FILE__)) . '/languages');
 }, 0);
-add_action('init', ['WPSG_CPT', 'register']);
-add_action('rest_api_init', ['WPSG_REST', 'register_routes']);
+add_action('init', ['Mullion_CPT', 'register']);
+add_action('rest_api_init', ['Mullion_REST', 'register_routes']);
 // Register early (at plugin load, not inside rest_api_init) so WP's test-framework
 // _restore_hooks() does not strip it after the first REST request initialises the server.
-add_filter('rest_request_after_callbacks', ['WPSG_REST', 'inject_rate_limit_headers'], 10, 3);
-add_action('init', ['WPSG_Embed', 'register_shortcode']);
+add_filter('rest_request_after_callbacks', ['Mullion_REST', 'inject_rate_limit_headers'], 10, 3);
+add_action('init', ['Mullion_Embed', 'register_shortcode']);
 // P50-F: serve sw.js at home_url('/sw.js') with Service-Worker-Allowed: / header.
-add_action('init', ['WPSG_Embed', 'maybe_serve_service_worker'], 1);
-add_action('wp_enqueue_scripts', ['WPSG_Embed', 'register_assets']);
-add_action('init', ['WPSG_DB', 'maybe_upgrade']);
-add_action('init', ['WPSG_Maintenance', 'register']);
-add_action('init', ['WPSG_Privacy', 'register']);
-add_action('init', ['WPSG_Monitoring', 'register']);
-add_action('init', ['WPSG_Alerts', 'register']);
-add_action('init', ['WPSG_Webhooks', 'register']);
-add_action('init', ['WPSG_Export_Engine', 'register']);
+add_action('init', ['Mullion_Embed', 'maybe_serve_service_worker'], 1);
+add_action('wp_enqueue_scripts', ['Mullion_Embed', 'register_assets']);
+add_action('init', ['Mullion_DB', 'maybe_upgrade']);
+add_action('init', ['Mullion_Maintenance', 'register']);
+add_action('init', ['Mullion_Privacy', 'register']);
+add_action('init', ['Mullion_Monitoring', 'register']);
+add_action('init', ['Mullion_Alerts', 'register']);
+add_action('init', ['Mullion_Webhooks', 'register']);
+add_action('init', ['Mullion_Export_Engine', 'register']);
 
 // P20-I-2: Automatically sync media refs whenever media_items meta changes.
 // P67-E: one named handler for all three meta hooks (was three near-identical
 // closures). On delete the meta value is gone, so all refs for the post are
 // cleared — detected via current_action() rather than the closure's body.
 function wpsg_sync_media_refs_on_meta_change($meta_id_or_ids, $post_id, $meta_key, $meta_value) {
-    if ($meta_key !== 'media_items' || get_post_type($post_id) !== WPSG_CPT::POST_TYPE) {
+    if ($meta_key !== 'media_items' || get_post_type($post_id) !== Mullion_CPT::POST_TYPE) {
         return;
     }
     $items = (current_action() === 'deleted_post_meta')
         ? []
         : (is_array($meta_value) ? $meta_value : []);
-    WPSG_DB::sync_media_refs((int) $post_id, $items);
+    Mullion_DB::sync_media_refs((int) $post_id, $items);
 }
 add_action('updated_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
 add_action('added_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
@@ -307,11 +307,11 @@ add_action('deleted_post_meta', 'wpsg_sync_media_refs_on_meta_change', 10, 4);
 // P67-I: stamp _wpsg_filesize on every new attachment so the media-library "size"
 // sort has a real numeric value to order by. Covers native WP / other-plugin
 // uploads; the plugin's own upload path stamps it directly from the known file path.
-add_action('add_attachment', ['WPSG_Media_Controller', 'stamp_filesize_meta']);
-// P67-I: the one-time backfill is bounded per run (see WPSG_DB); this hook resumes
+add_action('add_attachment', ['Mullion_Media_Controller', 'stamp_filesize_meta']);
+// P67-I: the one-time backfill is bounded per run (see Mullion_DB); this hook resumes
 // it until every pre-existing attachment is stamped.
-add_action(WPSG_DB::FILESIZE_BACKFILL_HOOK, ['WPSG_DB', 'run_filesize_backfill_batch']);
-add_action('init', ['WPSG_Sentry', 'init']);
+add_action(Mullion_DB::FILESIZE_BACKFILL_HOOK, ['Mullion_DB', 'run_filesize_backfill_batch']);
+add_action('init', ['Mullion_Sentry', 'init']);
 
 // P13-D: Campaign schedule auto-archive cron.
 add_action('init', 'wpsg_register_schedule_cron');
@@ -335,7 +335,7 @@ function wpsg_archive_campaign_status_batch_fallback(array $post_ids) {
     foreach ($post_ids as $post_id) {
         // P66-A: set() writes `status` and stamps archived_at (reading the prior
         // status), so the maintenance auto-purge (P66-B) can key off it.
-        WPSG_Campaign_Status::set((int) $post_id, 'archived');
+        Mullion_Campaign_Status::set((int) $post_id, 'archived');
         $processed++;
     }
 
@@ -417,7 +417,7 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
         if ($inserted === false) {
             // UPDATE already succeeded for $existing_ids; stamp those (P66-A),
             // then only retry the missing rows through the metadata-API fallback.
-            WPSG_Campaign_Status::stamp_archived_batch($existing_ids);
+            Mullion_Campaign_Status::stamp_archived_batch($existing_ids);
             return count($existing_ids) + wpsg_archive_campaign_status_batch_fallback($missing_ids);
         }
     }
@@ -425,7 +425,7 @@ function wpsg_archive_campaign_status_batch(array $post_ids) {
     // P66-A: stamp archived_at for every campaign whose status was just written
     // via the batched SQL above. The selection query guarantees each id was not
     // already archived, so every one is a genuine fresh archival.
-    WPSG_Campaign_Status::stamp_archived_batch($post_ids);
+    Mullion_Campaign_Status::stamp_archived_batch($post_ids);
 
     foreach ($post_ids as $post_id) {
         clean_post_cache($post_id);
@@ -474,7 +474,7 @@ function wpsg_run_schedule_auto_archive() {
 
     // Bump cache version once after all updates (no LIKE queries needed).
     if ($archived_count > 0) {
-        WPSG_REST::bump_cache_version();
+        Mullion_REST::bump_cache_version();
     }
 }
 
@@ -592,17 +592,17 @@ function wpsg_add_rest_security_headers($served, $result, $request, $server) {
 
 // Initialize settings (admin only).
 if (is_admin()) {
-    WPSG_Settings::init();
-    WPSG_Space_Admin_Renderer::init();
-    WPSG_Asset_Admin_Renderer::init();
+    Mullion_Settings::init();
+    Mullion_Space_Admin_Renderer::init();
+    Mullion_Asset_Admin_Renderer::init();
 }
 
 // P14-C/D/E/F: Register infrastructure.
-WPSG_Thumbnail_Cache::register();
-WPSG_Image_Optimizer::register();
+Mullion_Thumbnail_Cache::register();
+Mullion_Image_Optimizer::register();
 
 // P19-C: WP-CLI command surface — only loaded when running under WP-CLI.
 if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
-    require_once WPSG_PLUGIN_DIR . 'includes/class-wpsg-cli.php';
-    WP_CLI::add_command( 'wpsg', 'WPSG_CLI' );
+    require_once MULLION_PLUGIN_DIR . 'includes/class-mullion-cli.php';
+    WP_CLI::add_command( 'wpsg', 'Mullion_CLI' );
 }

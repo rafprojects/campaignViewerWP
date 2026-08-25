@@ -171,7 +171,7 @@ foreach ( $tables as $table ) {
 }
 
 // ── 6b. Drop custom indexes added to CORE WP tables ─────────
-// P66-F: WPSG_DB::add_indexes() adds these to wp_postmeta / wp_termmeta; they
+// P66-F: Mullion_DB::add_indexes() adds these to wp_postmeta / wp_termmeta; they
 // must be removed on uninstall or they outlive the plugin. Guarded via
 // INFORMATION_SCHEMA so a DROP on an absent index is a no-op, not an error.
 $core_indexes = [

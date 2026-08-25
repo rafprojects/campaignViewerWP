@@ -2,7 +2,7 @@
 /**
  * Stub for WP_CLI\Utils\format_items().
  *
- * Loaded by WPSG_CLI_Test.php so the namespaced function resolves at runtime
+ * Loaded by Mullion_CLI_Test.php so the namespaced function resolves at runtime
  * without using eval().
  */
 

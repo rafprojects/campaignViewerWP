@@ -1,9 +1,9 @@
 /**
  * useWpsgLicense — read pro/free license state (P62-A).
  *
- * Reads `window.__WPSG_CONFIG__.license`, emitted by WPSG_Embed::page_config_js()
+ * Reads `window.__WPSG_CONFIG__.license`, emitted by Mullion_Embed::page_config_js()
  * on both the front-end shortcode page and the wp-admin Spaces/Admin pages.
- * The value flows from the PHP entitlement seam (WPSG_License), which defaults
+ * The value flows from the PHP entitlement seam (Mullion_License), which defaults
  * to the free tier (isPro=false) until real Freemius credentials are wired via
  * the `wpsg_freemius_config` filter.
  *
@@ -28,7 +28,7 @@ export function useWpsgLicense(): WpsgLicenseInfo {
   return {
     isPro: license?.isPro ?? false,
     tier: license?.tier ?? null,
-    // `||` so an empty string (WPSG_License unavailable) also falls back.
+    // `||` so an empty string (Mullion_License unavailable) also falls back.
     upgradeUrl: license?.upgradeUrl || DEFAULT_UPGRADE_URL,
   };
 }

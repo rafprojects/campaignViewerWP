@@ -1,0 +1,609 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Mullion_Space_Controller extends Mullion_REST_Base {
+
+    public static function register_routes(): void {
+        register_rest_route('wp-super-gallery/v1', '/spaces', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_spaces'],
+                'permission_callback' => Mullion_Permissions::gate('spaces.list'),
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'create_space'],
+                'permission_callback' => Mullion_Permissions::gate('spaces.create'),
+                'args'                => [
+                    'name' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'slug' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_title',
+                    ],
+                    'isolation_mode' => [
+                        'type'    => 'string',
+                        'enum'    => ['open', 'delegated'],
+                        'default' => 'open',
+                    ],
+                ],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_space_item'],
+                'permission_callback' => Mullion_Permissions::gate('space.read'),
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'update_space'],
+                'permission_callback' => Mullion_Permissions::gate('space.update'),
+                'args'                => [
+                    'name' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'isolation_mode' => [
+                        'type' => 'string',
+                        'enum' => ['open', 'delegated'],
+                    ],
+                ],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'delete_space_item'],
+                'permission_callback' => Mullion_Permissions::gate('space.delete'),
+                'args'                => [
+                    'force' => [
+                        'type'    => 'boolean',
+                        'default' => false,
+                    ],
+                ],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/access', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'list_access'],
+                'permission_callback' => Mullion_Permissions::gate('space.access.list'),
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'grant_access'],
+                'permission_callback' => Mullion_Permissions::gate('space.access.grant'),
+                'args'                => [
+                    'userId' => [
+                        'required' => true,
+                        'type'     => 'integer',
+                        'minimum'  => 1,
+                    ],
+                    'access_level' => [
+                        'type'    => 'string',
+                        // P53-D: managing comes from the wpsg_editor role; space grants are viewer-only.
+                        'enum'    => ['viewer'],
+                        'default' => 'viewer',
+                    ],
+                    'expires_at' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/access/(?P<userId>\d+)', [
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'revoke_access'],
+                'permission_callback' => Mullion_Permissions::gate('space.access.revoke'),
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/resolve-user', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'resolve_user'],
+                'permission_callback' => Mullion_Permissions::gate('space.resolve_user'),
+                'args'                => [
+                    'search' => [
+                        'required'          => true,
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ]);
+
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/settings', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_space_settings'],
+                'permission_callback' => Mullion_Permissions::gate('space.settings.read'),
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [self::class, 'update_space_settings'],
+                'permission_callback' => Mullion_Permissions::gate('space.settings.update'),
+            ],
+        ]);
+
+        // P50-B: per-space shared-asset (overlay/font) library associations.
+        register_rest_route('wp-super-gallery/v1', '/spaces/(?P<id>\d+)/library', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [self::class, 'get_space_library'],
+                'permission_callback' => Mullion_Permissions::gate('space.library.read'),
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [self::class, 'associate_library_asset'],
+                'permission_callback' => Mullion_Permissions::gate('space.library.associate'),
+                'args'                => [
+                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['asset', 'font']],
+                    'assetId'   => ['required' => true, 'type' => 'string'],
+                ],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [self::class, 'dissociate_library_asset'],
+                'permission_callback' => Mullion_Permissions::gate('space.library.dissociate'),
+                'args'                => [
+                    'assetType' => ['required' => true, 'type' => 'string', 'enum' => ['asset', 'font']],
+                    'assetId'   => ['required' => true, 'type' => 'string'],
+                ],
+            ],
+        ]);
+    }
+
+    // ── Handlers ──────────────────────────────────────────────────────────────
+
+    public static function list_spaces($request) {
+        $include_archived = filter_var($request->get_param('include_archived'), FILTER_VALIDATE_BOOLEAN);
+        $cv        = self::get_cache_version();
+        $user_id   = get_current_user_id();
+        $cache_key = 'wpsg_spaces_v' . $cv . '_' . $user_id . '_' . ($include_archived ? 'all' : 'active');
+        $cached    = get_transient($cache_key);
+        if (false !== $cached && is_array($cached)) {
+            return new WP_REST_Response($cached, 200);
+        }
+
+        $spaces   = Mullion_DB::list_spaces($include_archived ? [] : ['archived' => 0]);
+
+        // P52-A5b: a space editor (manage_wpsg, not manage_options) sees only the
+        // spaces they can access; System Admins see every space. The list cache
+        // key is already per-user, so the filtered view caches safely.
+        if (!current_user_can('manage_options')) {
+            $spaces = array_values(array_filter($spaces, function ($space) use ($user_id) {
+                return self::get_effective_space_level($user_id, intval($space->id)) !== '';
+            }));
+        }
+
+        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        $items    = array_map(function ($space) use ($default_id) {
+            return self::format_space($space, $default_id);
+        }, $spaces);
+
+        $ttl = max(60, intval(apply_filters('wpsg_cache_ttl', 300)));
+        set_transient($cache_key, $items, $ttl);
+        return new WP_REST_Response($items, 200);
+    }
+
+    public static function create_space($request) {
+        $name = sanitize_text_field($request->get_param('name'));
+        if ($name === '') {
+            return new WP_Error('wpsg_invalid_name', 'Space name is required', ['status' => 400]);
+        }
+
+        $slug_raw = sanitize_text_field($request->get_param('slug') ?? '');
+        $slug     = $slug_raw !== '' ? sanitize_title($slug_raw) : sanitize_title($name);
+        $iso_mode = sanitize_text_field($request->get_param('isolation_mode') ?: 'open');
+
+        $id = Mullion_DB::insert_space([
+            'name'           => $name,
+            'slug'           => $slug,
+            'isolation_mode' => $iso_mode,
+        ]);
+
+        if (!$id) {
+            return new WP_Error('wpsg_create_failed', 'Failed to create space', ['status' => 500]);
+        }
+
+        self::add_audit_entry(0, 'space.created', ['spaceName' => $name, 'isolationMode' => $iso_mode], [
+            'scope'          => 'system',
+            'summary'        => "Space created: {$name}",
+            'resource_type'  => 'space',
+            'resource_id'    => (string) $id,
+            'resource_label' => $name,
+        ]);
+        self::bump_cache_version();
+
+        $space = Mullion_DB::get_space($id);
+        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        return new WP_REST_Response(self::format_space($space, $default_id), 201);
+    }
+
+    public static function get_space_item($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+        $default_id     = intval(get_option('wpsg_default_space_id', 0));
+        $include_grants = current_user_can('manage_options') ||
+                          self::get_effective_space_level(get_current_user_id(), $space_id) === 'owner';
+        return new WP_REST_Response(self::format_space($space, $default_id, $include_grants), 200);
+    }
+
+    public static function update_space($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $data = [];
+        $name = $request->get_param('name');
+        if ($name !== null) {
+            $data['name'] = sanitize_text_field($name);
+        }
+        $iso_mode = $request->get_param('isolation_mode');
+        if ($iso_mode !== null) {
+            $data['isolation_mode'] = sanitize_text_field($iso_mode);
+        }
+
+        if (!empty($data)) {
+            Mullion_DB::update_space($space_id, $data);
+            self::add_audit_entry(0, 'space.updated', $data, [
+                'scope'          => 'system',
+                'summary'        => "Space updated: {$space->name}",
+                'resource_type'  => 'space',
+                'resource_id'    => (string) $space_id,
+                'resource_label' => $space->name,
+            ]);
+            self::bump_cache_version();
+        }
+
+        $updated    = Mullion_DB::get_space($space_id);
+        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        return new WP_REST_Response(self::format_space($updated, $default_id), 200);
+    }
+
+    public static function delete_space_item($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $default_id = intval(get_option('wpsg_default_space_id', 0));
+        if ($space_id === $default_id) {
+            return new WP_Error('wpsg_cannot_delete_default', 'The Default Space cannot be deleted', ['status' => 400]);
+        }
+
+        $has_campaigns = !empty(get_posts([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => 1,
+            'fields'         => 'ids',
+            'meta_query'     => [['key' => '_wpsg_space_id', 'value' => $space_id]],
+        ]));
+
+        $force = filter_var($request->get_param('force'), FILTER_VALIDATE_BOOLEAN);
+
+        if ($has_campaigns && $force) {
+            return new WP_Error('wpsg_space_has_campaigns', 'Cannot hard-delete a space with campaigns; move or delete campaigns first', ['status' => 400]);
+        }
+
+        if ($force && !$has_campaigns) {
+            Mullion_DB::delete_space($space_id);
+            $action = 'space.deleted';
+            $msg    = "Space deleted: {$space->name}";
+        } else {
+            Mullion_DB::archive_space($space_id);
+            $action = 'space.archived';
+            $msg    = "Space archived: {$space->name}";
+        }
+
+        self::add_audit_entry(0, $action, [], [
+            'scope'          => 'system',
+            'summary'        => $msg,
+            'resource_type'  => 'space',
+            'resource_id'    => (string) $space_id,
+            'resource_label' => $space->name,
+        ]);
+        self::bump_cache_version();
+
+        return new WP_REST_Response(['deleted' => true, 'archived' => !($force && !$has_campaigns)], 200);
+    }
+
+    // ── Space access grant management ─────────────────────────────────────────
+
+    public static function list_access($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $grants = json_decode($space->access_grants, true);
+        $grants = is_array($grants) ? $grants : [];
+
+        [$page, $per_page, $offset] = self::parse_pagination($request);
+        $total      = count($grants);
+        $page_items = array_slice($grants, $offset, $per_page);
+
+        // P64-A: shared page-slice enrichment (user objects + expiry flags).
+        $enriched = Mullion_Grants::enrich_users($page_items, true);
+
+        return self::paginated_response($enriched, $total, $page, $per_page);
+    }
+
+    public static function grant_access($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $user_id = intval($request->get_param('userId'));
+        if ($user_id <= 0) {
+            return new WP_Error('wpsg_missing_user_id', 'userId is required', ['status' => 400]);
+        }
+        if (!get_userdata($user_id)) {
+            return new WP_Error('wpsg_user_not_found', 'User not found', ['status' => 404]);
+        }
+
+        // P64-A: shared expiry-param parsing.
+        $expires_at = Mullion_Grants::parse_expiry_param($request->get_param('expires_at'));
+        if (is_wp_error($expires_at)) {
+            return $expires_at;
+        }
+
+        $access_level = self::validate_access_level($request->get_param('access_level') ?? 'viewer');
+
+        $grants  = json_decode($space->access_grants, true);
+        $grants  = is_array($grants) ? $grants : [];
+        $grants  = Mullion_Grants::upsert($grants, [
+            'userId'       => $user_id,
+            'access_level' => $access_level,
+            'grantedAt'    => gmdate('c'),
+            'expires_at'   => $expires_at,
+        ]);
+
+        Mullion_DB::update_space($space_id, ['access_grants' => $grants]);
+        self::add_audit_entry(0, 'space.access.granted', ['userId' => $user_id, 'accessLevel' => $access_level], [
+            'scope'          => 'system',
+            'summary'        => "Space access granted for user {$user_id}",
+            'resource_type'  => 'space',
+            'resource_id'    => (string) $space_id,
+            'resource_label' => $space->name,
+        ]);
+        self::bump_cache_version();
+        self::clear_accessible_campaigns_cache();
+
+        return new WP_REST_Response(['message' => 'Access granted'], 200);
+    }
+
+    public static function revoke_access($request) {
+        $space_id = intval($request->get_param('id'));
+        $user_id  = intval($request->get_param('userId'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space || $user_id <= 0) {
+            return new WP_Error('wpsg_invalid_request', 'Invalid request', ['status' => 400]);
+        }
+
+        $grants = json_decode($space->access_grants, true);
+        $grants = is_array($grants) ? $grants : [];
+        $grants = Mullion_Grants::remove($grants, $user_id);
+
+        Mullion_DB::update_space($space_id, ['access_grants' => $grants]);
+        self::add_audit_entry(0, 'space.access.revoked', ['userId' => $user_id], [
+            'scope'          => 'system',
+            'summary'        => "Space access revoked for user {$user_id}",
+            'resource_type'  => 'space',
+            'resource_id'    => (string) $space_id,
+            'resource_label' => $space->name,
+        ]);
+        self::bump_cache_version();
+        self::clear_accessible_campaigns_cache();
+
+        return new WP_REST_Response(['message' => 'Access revoked'], 200);
+    }
+
+    // ── Space settings ────────────────────────────────────────────────────────
+
+    public static function get_space_settings($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $effective  = Mullion_Settings::get_effective_settings($space_id);
+        $overrides  = json_decode($space->settings_overrides, true);
+        $is_admin   = current_user_can('manage_wpsg');
+
+        return new WP_REST_Response([
+            'settings'  => Mullion_Settings::to_js($effective, $is_admin),
+            'overrides' => is_array($overrides) ? $overrides : [],
+        ], 200);
+    }
+
+    public static function update_space_settings($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+
+        $body        = $request->get_json_params() ?? [];
+        $snake_input = Mullion_Settings::from_js($body);
+        $allowed     = array_flip(Mullion_Settings::get_overridable_keys());
+        $to_set      = array_intersect_key($snake_input, $allowed);
+
+        // P57-A: The settings panel sends one payload, but its "System & Admin"
+        // tab holds *global* (non-overridable) settings — settings-drawer chrome,
+        // cache, optimization, the magic-link page. Those keys are not space-
+        // overridable, so instead of silently dropping them, route the ones that
+        // actually changed to the global option. System-level writes require
+        // manage_options (the System & Admin tab is already gated to that tier
+        // client-side); editors writing only display keys are unaffected.
+        $global_input = array_diff_key($snake_input, $allowed);
+        // P72-C: unify the authorization boundary with /settings. Previously this
+        // branch required manage_options for *any* global key and silently dropped
+        // the write otherwise; now it routes through the shared guard, which 403s
+        // only when an admin-only (system) key would actually *change* and lets
+        // editors write the non-admin global keys they can already write via
+        // /settings. Guard runs before any write so a rejected request applies
+        // nothing (no partial override write).
+        if (!empty($global_input)) {
+            $denied = self::guard_admin_only_settings($global_input);
+            if (is_wp_error($denied)) {
+                return $denied;
+            }
+            // P67-D: route the changed global keys through the shared write path.
+            // Passing false for $bump_cache because bump_cache_version() is called
+            // once below after the override write.
+            self::write_global_settings(
+                $global_input,
+                'changed',
+                false,
+                'Global settings updated via space panel: ',
+                ['via' => 'space-panel']
+            );
+        }
+
+        $to_clear  = array_keys(array_filter($to_set, fn($v) => $v === null));
+        $to_update = array_filter($to_set, fn($v) => $v !== null);
+
+        $override_patch = [];
+        if (!empty($to_update)) {
+            $override_patch = Mullion_Settings::sanitize_overrides($to_update);
+        }
+
+        $existing      = json_decode($space->settings_overrides, true);
+        $existing      = is_array($existing) ? $existing : [];
+        $new_overrides = array_merge($existing, $override_patch);
+        foreach ($to_clear as $key) {
+            unset($new_overrides[$key]);
+        }
+
+        Mullion_DB::update_space($space_id, ['settings_overrides' => $new_overrides]);
+        self::add_audit_entry(0, 'space.settings.updated',
+            ['keys' => array_keys($override_patch), 'cleared' => $to_clear],
+            [
+                'scope'          => 'system',
+                'summary'        => "Space settings updated: {$space->name}",
+                'resource_type'  => 'space',
+                'resource_id'    => (string) $space_id,
+                'resource_label' => $space->name,
+            ]
+        );
+        self::bump_cache_version();
+
+        $updated_space = Mullion_DB::get_space($space_id);
+        $effective     = Mullion_Settings::get_effective_settings($space_id);
+        $raw_overrides = json_decode($updated_space->settings_overrides, true);
+        $is_admin      = current_user_can('manage_wpsg');
+
+        return new WP_REST_Response([
+            'settings'  => Mullion_Settings::to_js($effective, $is_admin),
+            'overrides' => is_array($raw_overrides) ? $raw_overrides : [],
+        ], 200);
+    }
+
+    public static function resolve_user(WP_REST_Request $request): WP_REST_Response {
+        $search = $request->get_param('search');
+        $users  = get_users([
+            'search'         => '*' . $search . '*',
+            'search_columns' => ['user_email', 'user_login', 'display_name'],
+            'number'         => 1,
+            'fields'         => ['ID', 'display_name', 'user_email'],
+        ]);
+        if (empty($users)) {
+            return new WP_REST_Response(['found' => false], 200);
+        }
+        $user = $users[0];
+        return new WP_REST_Response([
+            'found'        => true,
+            'id'           => intval($user->ID),
+            'display_name' => $user->display_name,
+        ], 200);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    // ── P50-B: Shared-asset library associations ──────────────────────────────
+
+    public static function get_space_library($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+        return new WP_REST_Response([
+            'asset' => Mullion_DB::get_space_library_assets($space_id, 'asset'),
+            'font'  => Mullion_DB::get_space_library_assets($space_id, 'font'),
+        ], 200);
+    }
+
+    public static function associate_library_asset($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+        $asset_type = sanitize_text_field($request->get_param('assetType'));
+        $asset_id   = sanitize_text_field($request->get_param('assetId'));
+        if (!Mullion_DB::associate_asset($space_id, $asset_type, $asset_id)) {
+            return new WP_Error('wpsg_library_assoc_failed', 'Failed to associate asset', ['status' => 400]);
+        }
+        return new WP_REST_Response(['associated' => true], 200);
+    }
+
+    public static function dissociate_library_asset($request) {
+        $space_id = intval($request->get_param('id'));
+        $space    = Mullion_DB::get_space($space_id);
+        if (!$space) {
+            return new WP_Error('wpsg_space_not_found', 'Space not found', ['status' => 404]);
+        }
+        $asset_type = sanitize_text_field($request->get_param('assetType'));
+        $asset_id   = sanitize_text_field($request->get_param('assetId'));
+        if (!Mullion_DB::dissociate_asset($space_id, $asset_type, $asset_id)) {
+            return new WP_Error('wpsg_library_assoc_failed', 'Failed to dissociate asset', ['status' => 400]);
+        }
+        return new WP_REST_Response(['dissociated' => true], 200);
+    }
+
+    private static function format_space(object $space, int $default_id, bool $include_grants = false): array {
+        $grants = json_decode($space->access_grants, true);
+        $grants = is_array($grants) ? $grants : [];
+        $out = [
+            'id'            => intval($space->id),
+            'slug'          => $space->slug,
+            'name'          => $space->name,
+            'isolationMode' => $space->isolation_mode,
+            'isDefault'     => intval($space->id) === $default_id,
+            'archived'      => (bool) $space->archived,
+            'grantCount'    => count($grants),
+            // P50-A: requesting user's level in this space ('' = no access).
+            // Safe to cache: the spaces list transient is keyed per user.
+            'effectiveLevel' => self::get_effective_space_level(get_current_user_id(), intval($space->id)),
+            'createdAt'     => $space->created_at,
+            'updatedAt'     => $space->updated_at,
+        ];
+        if ($include_grants) {
+            $out['grants'] = $grants;
+        }
+        return $out;
+    }
+}

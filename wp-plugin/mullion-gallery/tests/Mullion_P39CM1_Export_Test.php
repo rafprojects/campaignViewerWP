@@ -1,0 +1,550 @@
+<?php
+
+/**
+ * P39-CM1: Campaign binary export engine and REST/CLI integration tests.
+ */
+class Mullion_P39CM1_Export_Test extends WP_UnitTestCase {
+
+    private int $admin_id;
+
+    public function setUp(): void {
+        parent::setUp();
+        $this->admin_id = self::factory()->user->create(['role' => 'administrator']);
+        $user = get_user_by('id', $this->admin_id);
+        $user->add_cap('manage_wpsg');
+        foreach (Mullion_CPT::CPT_CAPS as $cap) {
+            $user->add_cap($cap);
+        }
+        wp_set_current_user($this->admin_id);
+        Mullion_CPT::register();
+
+        // Intercept all outbound HTTP requests.
+        add_filter('pre_http_request', [$this, 'stub_http_request'], 10, 3);
+    }
+
+    public function tearDown(): void {
+        remove_filter('pre_http_request', [$this, 'stub_http_request'], 10);
+        delete_option(Mullion_Export_Engine::JOB_INDEX_OPT);
+        parent::tearDown();
+    }
+
+    /**
+     * Stub wp_remote_get / wp_remote_head so tests never hit the network.
+     * Returns a 1×1 JPEG for any image URL, or a WP_Error for _fail_ URLs.
+     */
+    public function stub_http_request(bool|array $response, array $args, string $url) {
+        if (str_contains($url, '_fail_')) {
+            return new WP_Error('http_error', 'Stub failure');
+        }
+        $body = $args['method'] === 'HEAD' ? '' : file_get_contents(
+            __DIR__ . '/stubs/1x1.jpg'
+        );
+        return [
+            'headers'  => ['content-type' => 'image/jpeg', 'content-length' => (string) strlen($body)],
+            'body'     => $body,
+            'response' => ['code' => 200, 'message' => 'OK'],
+            'cookies'  => [],
+        ];
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function create_campaign(string $title = 'Test Campaign'): int {
+        $id = wp_insert_post([
+            'post_type'   => 'wpsg_campaign',
+            'post_title'  => $title,
+            'post_status' => 'publish',
+        ]);
+        update_post_meta($id, 'status', 'active');
+        update_post_meta($id, 'visibility', 'public');
+        update_post_meta($id, 'media_items', [
+            ['id' => 'm1', 'url' => 'https://example.com/img1.jpg', 'title' => 'Image 1'],
+            ['id' => 'm2', 'url' => 'https://example.com/img2.png', 'title' => 'Image 2'],
+        ]);
+        update_post_meta($id, 'tags', []);
+        return $id;
+    }
+
+    private function make_request(string $method, string $route, array $params = [], array $files = []): WP_REST_Response|WP_Error {
+        $request = new WP_REST_Request($method, $route);
+        if ($method === 'POST' || $method === 'PUT') {
+            $request->set_body_params($params);
+        } else {
+            $request->set_query_params($params);
+        }
+        if ($files) {
+            $request->set_file_params($files);
+        }
+        return rest_do_request($request);
+    }
+
+    // ── Mullion_Export_Engine unit tests ─────────────────────────────────────────
+
+    public function test_get_media_filename_uses_id_and_extension() {
+        $item = ['id' => 'abc', 'url' => 'https://example.com/photo.jpg'];
+        $this->assertSame('media-abc.jpg', Mullion_Export_Engine::get_media_filename($item));
+    }
+
+    public function test_get_media_filename_falls_back_to_md5_without_id() {
+        $item = ['id' => '', 'url' => 'https://example.com/photo.png'];
+        $name = Mullion_Export_Engine::get_media_filename($item);
+        $this->assertStringStartsWith('media-', $name);
+        $this->assertStringEndsWith('.png', $name);
+    }
+
+    public function test_check_zip_available_returns_bool() {
+        $this->assertIsBool(Mullion_Export_Engine::check_zip_available());
+    }
+
+    public function test_create_job_stores_transient_and_indexes() {
+        $manifest = wp_json_encode(['version' => 2, 'campaign' => ['title' => 'T']]);
+        $id       = Mullion_Export_Engine::create_job('campaign', $manifest, []);
+
+        $this->assertSame(32, strlen($id));
+        $job = Mullion_Export_Engine::get_job($id);
+        $this->assertIsArray($job);
+        $this->assertSame('pending', $job['status']);
+        $this->assertSame('campaign', $job['type']);
+        $this->assertSame($manifest, $job['manifest']);
+        $this->assertContains($id, get_option(Mullion_Export_Engine::JOB_INDEX_OPT, []));
+
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_get_job_returns_null_for_unknown_id() {
+        $this->assertNull(Mullion_Export_Engine::get_job('deadbeef00000000deadbeef00000000'));
+    }
+
+    public function test_delete_job_removes_transient_and_index() {
+        $id = Mullion_Export_Engine::create_job('campaign', '{}', []);
+        Mullion_Export_Engine::delete_job($id);
+        $this->assertNull(Mullion_Export_Engine::get_job($id));
+        $this->assertNotContains($id, get_option(Mullion_Export_Engine::JOB_INDEX_OPT, []));
+    }
+
+    public function test_process_job_transitions_to_complete_and_creates_zip() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $manifest = wp_json_encode([
+            'version'          => 2,
+            'campaign'         => ['title' => 'Test'],
+            'media_references' => [
+                ['id' => 'm1', 'url' => 'https://example.com/img1.jpg', 'title' => 'I1', 'filename' => 'media-m1.jpg'],
+            ],
+        ]);
+        $media_items = [['id' => 'm1', 'url' => 'https://example.com/img1.jpg', 'title' => 'I1']];
+
+        $id = Mullion_Export_Engine::create_job('campaign', $manifest, $media_items);
+        Mullion_Export_Engine::process_job($id);
+
+        $job = Mullion_Export_Engine::get_job($id);
+        $this->assertSame('complete', $job['status']);
+        $this->assertNotEmpty($job['zip_path']);
+        $this->assertFileExists($job['zip_path']);
+
+        // Verify manifest.json is inside the ZIP.
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $content = $zip->getFromName('manifest.json');
+        $zip->close();
+        $this->assertNotFalse($content);
+        $parsed = json_decode($content, true);
+        $this->assertSame(2, $parsed['version']);
+
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_process_job_fails_for_unknown_id() {
+        Mullion_Export_Engine::process_job('ffffffffffffffffffffffffffffffff');
+        // No exception — silent no-op is the expected behaviour.
+        $this->assertTrue(true);
+    }
+
+    public function test_process_job_does_not_reprocess_completed_job() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $id = Mullion_Export_Engine::create_job('campaign', '{"version":2}', []);
+        Mullion_Export_Engine::process_job($id);
+        $job_after_first = Mullion_Export_Engine::get_job($id);
+        $this->assertSame('complete', $job_after_first['status']);
+
+        // Manually flip back to pending to test the guard.
+        $job = Mullion_Export_Engine::get_job($id);
+        // The guard checks for 'pending' status — 'complete' should not be reprocessed.
+        // Calling again should be a no-op (status remains 'complete').
+        Mullion_Export_Engine::process_job($id);
+        $job_after_second = Mullion_Export_Engine::get_job($id);
+        $this->assertSame('complete', $job_after_second['status']);
+
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_size_limit_rejected() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        // The stub returns a real 1×1 JPEG (~631 bytes). Set limit to 1 byte.
+        $media_items = [['id' => 'm1', 'url' => 'https://example.com/img.jpg', 'title' => 'I1']];
+        $id = Mullion_Export_Engine::create_job('campaign', '{"version":2}', $media_items, 1);
+        Mullion_Export_Engine::process_job($id);
+
+        $job = Mullion_Export_Engine::get_job($id);
+        $this->assertSame('failed', $job['status']);
+        $this->assertStringContainsString('size limit', $job['error']);
+
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_process_job_catches_throwable_and_sets_failed_not_processing() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        // Inject a \TypeError (not RuntimeException) via pre_http_request so it
+        // fires inside build_zip() when wp_remote_head() is called.
+        // Only throws for our test URL to avoid interfering with WP internals.
+        $throw_error = function ( $response, $args, $url ) {
+            if (str_contains($url, 'example.com')) {
+                throw new \TypeError('Simulated PHP TypeError inside build_zip');
+            }
+            return $response;
+        };
+        add_filter('pre_http_request', $throw_error, 5, 3);
+
+        $media_items = [['id' => 'm1', 'url' => 'https://example.com/img.jpg', 'title' => 'I1']];
+        $id = Mullion_Export_Engine::create_job('campaign', '{"version":2}', $media_items);
+        Mullion_Export_Engine::process_job($id);
+
+        remove_filter('pre_http_request', $throw_error, 5);
+
+        $job = Mullion_Export_Engine::get_job($id);
+        $this->assertSame('failed', $job['status'], 'A PHP Throwable must not leave the job stuck in processing');
+        $this->assertNotEmpty($job['error']);
+        $this->assertStringContainsString('TypeError', $job['error']);
+
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_reset_job_allows_stuck_processing_job_to_be_retried() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $id = Mullion_Export_Engine::create_job('campaign', '{"version":2}', []);
+
+        // Simulate a crash mid-processing: flip status to processing without completing.
+        $job = Mullion_Export_Engine::get_job($id);
+        $job['status'] = 'processing';
+        set_transient('wpsg_export_job_' . $id, $job, Mullion_Export_Engine::JOB_TTL);
+
+        // process_job must be a no-op while stuck in processing.
+        Mullion_Export_Engine::process_job($id);
+        $this->assertSame('processing', Mullion_Export_Engine::get_job($id)['status']);
+
+        // reset_job restores the job to pending.
+        $this->assertTrue(Mullion_Export_Engine::reset_job($id));
+        $this->assertSame('pending', Mullion_Export_Engine::get_job($id)['status']);
+        $this->assertNull(Mullion_Export_Engine::get_job($id)['error']);
+
+        // process_job now runs to completion.
+        Mullion_Export_Engine::process_job($id);
+        $this->assertSame('complete', Mullion_Export_Engine::get_job($id)['status']);
+
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_reset_job_returns_false_for_unknown_id() {
+        $this->assertFalse(Mullion_Export_Engine::reset_job('deadbeef00000000deadbeef00000000'));
+    }
+
+    public function test_cleanup_removes_expired_jobs() {
+        $id  = Mullion_Export_Engine::create_job('campaign', '{}', []);
+        $job = Mullion_Export_Engine::get_job($id);
+
+        // Back-date creation to force expiry.
+        $job['created_at'] = gmdate('c', time() - (Mullion_Export_Engine::JOB_TTL + 60));
+        set_transient('wpsg_export_job_' . $id, $job, Mullion_Export_Engine::JOB_TTL);
+
+        Mullion_Export_Engine::cleanup_expired_jobs();
+        $this->assertNull(Mullion_Export_Engine::get_job($id));
+    }
+
+    // ── REST route tests ──────────────────────────────────────────────────────
+
+    public function test_export_binary_route_returns_job_id() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $cid      = $this->create_campaign();
+        $response = $this->make_request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/export/binary");
+        $this->assertSame(202, $response->get_status());
+        $data = $response->get_data();
+        $this->assertArrayHasKey('jobId', $data);
+        $this->assertSame(32, strlen($data['jobId']));
+        $this->assertSame('pending', $data['status']);
+
+        Mullion_Export_Engine::delete_job($data['jobId']);
+    }
+
+    public function test_export_binary_route_404_for_missing_campaign() {
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/999999/export/binary');
+        $this->assertSame(404, $response->get_status());
+    }
+
+    public function test_get_export_job_route_returns_status() {
+        $id  = Mullion_Export_Engine::create_job('campaign', '{"version":2}', []);
+        $response = $this->make_request('GET', "/wp-super-gallery/v1/export-jobs/{$id}");
+        $this->assertSame(200, $response->get_status());
+        $data = $response->get_data();
+        $this->assertSame('pending', $data['status']);
+        $this->assertSame($id, $data['jobId']);
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_get_export_job_route_includes_download_url_when_complete() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $id = Mullion_Export_Engine::create_job('campaign', '{"version":2}', []);
+        Mullion_Export_Engine::process_job($id);
+
+        $response = $this->make_request('GET', "/wp-super-gallery/v1/export-jobs/{$id}");
+        $data = $response->get_data();
+        $this->assertSame('complete', $data['status']);
+        $this->assertArrayHasKey('downloadUrl', $data);
+        $this->assertStringContainsString('/export-jobs/' . $id . '/download', $data['downloadUrl']);
+
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_get_export_job_route_404_for_unknown() {
+        $response = $this->make_request('GET', '/wp-super-gallery/v1/export-jobs/' . str_repeat('a', 32));
+        $this->assertSame(404, $response->get_status());
+    }
+
+    public function test_delete_export_job_route() {
+        $id = Mullion_Export_Engine::create_job('campaign', '{}', []);
+        $response = $this->make_request('DELETE', "/wp-super-gallery/v1/export-jobs/{$id}");
+        $this->assertSame(200, $response->get_status());
+        $this->assertNull(Mullion_Export_Engine::get_job($id));
+    }
+
+    public function test_download_route_409_when_not_complete() {
+        $id = Mullion_Export_Engine::create_job('campaign', '{}', []);
+        $response = $this->make_request('GET', "/wp-super-gallery/v1/export-jobs/{$id}/download");
+        $this->assertSame(409, $response->get_status());
+        Mullion_Export_Engine::delete_job($id);
+    }
+
+    public function test_binary_import_rejects_missing_file() {
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary');
+        $this->assertSame(400, $response->get_status());
+    }
+
+    public function test_binary_import_round_trip() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        // Build a valid v2 ZIP in memory.
+        $cid = $this->create_campaign('Round-Trip Campaign');
+        update_post_meta($cid, 'media_items', [
+            ['id' => 'm1', 'url' => 'https://example.com/img1.jpg', 'title' => 'Image 1'],
+        ]);
+
+        $manifest = wp_json_encode([
+            'version'          => 2,
+            'exported_at'      => gmdate('c'),
+            'campaign'         => ['title' => 'Round-Trip Campaign', 'description' => ''],
+            'layout_template'  => null,
+            'media_references' => [
+                ['id' => 'm1', 'url' => 'https://example.com/img1.jpg', 'title' => 'Image 1', 'filename' => 'media-m1.jpg'],
+            ],
+        ]);
+
+        // P65-A: use a real JPEG so the sideload actually succeeds and we can
+        // assert the imported media shape (source=upload, attachmentId set) —
+        // the old fixture used fake bytes and tolerated a 500.
+        $tmp_zip = wp_tempnam('test-export.zip');
+        $zip = new ZipArchive();
+        $zip->open($tmp_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('manifest.json', $manifest);
+        $zip->addFromString('media/media-m1.jpg', file_get_contents(__DIR__ . '/stubs/1x1.jpg'));
+        $zip->close();
+
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
+            'file' => [
+                'name'     => 'test-export.zip',
+                'tmp_name' => $tmp_zip,
+                'error'    => UPLOAD_ERR_OK,
+                'size'     => filesize($tmp_zip),
+            ],
+        ]);
+
+        @unlink($tmp_zip);
+
+        $this->assertSame(201, $response->get_status());
+        $data = $response->get_data();
+        $this->assertSame('Round-Trip Campaign', $data['title']);
+        $this->assertSame('draft', $data['status']);
+
+        $media = get_post_meta($data['id'], 'media_items', true);
+        $this->assertSame('upload', $media[0]['source']);
+        $this->assertGreaterThan(0, intval($media[0]['attachmentId']), 'Imported media must carry attachmentId.');
+        $this->assertSame('m1', $media[0]['id'], 'Source media id is preserved.');
+    }
+
+    public function test_binary_import_rejects_version_1_manifest() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $manifest = wp_json_encode(['version' => 1, 'campaign' => ['title' => 'Old']]);
+        $tmp_zip  = wp_tempnam('old.zip');
+        $zip      = new ZipArchive();
+        $zip->open($tmp_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('manifest.json', $manifest);
+        $zip->close();
+
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
+            'file' => ['name' => 'old.zip', 'tmp_name' => $tmp_zip, 'error' => UPLOAD_ERR_OK, 'size' => filesize($tmp_zip)],
+        ]);
+
+        @unlink($tmp_zip);
+        $this->assertSame(400, $response->get_status());
+    }
+
+    public function test_binary_import_rejects_missing_manifest() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $tmp_zip = wp_tempnam('no-manifest.zip');
+        $zip     = new ZipArchive();
+        $zip->open($tmp_zip, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        $zip->addFromString('readme.txt', 'no manifest here');
+        $zip->close();
+
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/import/binary', [], [
+            'file' => ['name' => 'no-manifest.zip', 'tmp_name' => $tmp_zip, 'error' => UPLOAD_ERR_OK, 'size' => filesize($tmp_zip)],
+        ]);
+
+        @unlink($tmp_zip);
+        $this->assertSame(400, $response->get_status());
+    }
+
+    // ── Manifest structure tests ───────────────────────────────────────────────
+
+    public function test_export_binary_manifest_contains_filenames() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $cid = $this->create_campaign('Filename Test');
+        $response = $this->make_request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/export/binary");
+        $this->assertSame(202, $response->get_status());
+        $job_id = $response->get_data()['jobId'];
+
+        Mullion_Export_Engine::process_job($job_id);
+        $job = Mullion_Export_Engine::get_job($job_id);
+        $this->assertSame('complete', $job['status']);
+
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $manifest = json_decode($zip->getFromName('manifest.json'), true);
+        $zip->close();
+
+        $this->assertSame(2, $manifest['version']);
+        foreach ($manifest['media_references'] as $ref) {
+            $this->assertArrayHasKey('filename', $ref);
+            $this->assertStringStartsWith('media-', $ref['filename']);
+        }
+
+        Mullion_Export_Engine::delete_job($job_id);
+    }
+
+    public function test_media_filename_is_consistent_between_manifest_and_zip() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        $cid = $this->create_campaign('Consistency Check');
+        $response = $this->make_request('POST', "/wp-super-gallery/v1/campaigns/{$cid}/export/binary");
+        $job_id   = $response->get_data()['jobId'];
+
+        Mullion_Export_Engine::process_job($job_id);
+        $job = Mullion_Export_Engine::get_job($job_id);
+
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $manifest = json_decode($zip->getFromName('manifest.json'), true);
+
+        foreach ($manifest['media_references'] as $ref) {
+            $filename  = $ref['filename'];
+            $zip_entry = $zip->getFromName('media/' . $filename);
+            $this->assertNotFalse($zip_entry, "media/{$filename} must exist in the ZIP");
+        }
+
+        $zip->close();
+        Mullion_Export_Engine::delete_job($job_id);
+    }
+
+    // ── batch_export_binary: cross-campaign shared-URL filenames ──────────────
+
+    public function test_batch_export_manifest_filenames_match_zip_for_shared_media() {
+        if (!Mullion_Export_Engine::check_zip_available()) {
+            $this->markTestSkipped('ext-zip not available');
+        }
+
+        // Two campaigns referencing the same URL under different item ids.
+        // The ZIP dedupes by URL and only writes one file (under campaign A's
+        // id); campaign B's manifest entry must be rewritten to point at that
+        // same filename instead of the one derived from its own item id.
+        $shared_url = 'https://example.com/shared.jpg';
+        $cid_a = $this->create_campaign('Batch A');
+        update_post_meta($cid_a, 'media_items', [
+            ['id' => 'a-item', 'url' => $shared_url, 'title' => 'Shared'],
+        ]);
+        $cid_b = $this->create_campaign('Batch B');
+        update_post_meta($cid_b, 'media_items', [
+            ['id' => 'b-item', 'url' => $shared_url, 'title' => 'Shared'],
+        ]);
+
+        $response = $this->make_request('POST', '/wp-super-gallery/v1/campaigns/batch/export/binary', [
+            'ids' => [$cid_a, $cid_b],
+        ]);
+        $this->assertSame(202, $response->get_status());
+        $job_id = $response->get_data()['jobId'];
+
+        Mullion_Export_Engine::process_job($job_id);
+        $job = Mullion_Export_Engine::get_job($job_id);
+        $this->assertSame('complete', $job['status']);
+
+        $zip = new ZipArchive();
+        $zip->open($job['zip_path']);
+        $manifest = json_decode($zip->getFromName('manifest.json'), true);
+
+        $filename_a = $manifest['campaigns'][0]['media_references'][0]['filename'];
+        $filename_b = $manifest['campaigns'][1]['media_references'][0]['filename'];
+
+        $this->assertSame(
+            $filename_a,
+            $filename_b,
+            'Both campaigns share one URL, so they must reference the single filename actually written to the ZIP.'
+        );
+        $this->assertNotFalse(
+            $zip->getFromName('media/' . $filename_b),
+            "media/{$filename_b} must exist in the ZIP — campaign B's own-id filename was never written."
+        );
+
+        $zip->close();
+        Mullion_Export_Engine::delete_job($job_id);
+    }
+}

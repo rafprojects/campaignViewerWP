@@ -89,8 +89,8 @@ if ( file_exists( $polyfill_autoload ) ) {
 // Allow nonce bypass in the test environment. verify_admin_auth() accepts
 // WP_TESTS_DOMAIN from the WordPress PHPUnit bootstrap as a valid test marker,
 // so we do not need to predefine WP_DEBUG here.
-if ( ! defined( 'WPSG_ALLOW_NONCE_BYPASS' ) ) {
-	define( 'WPSG_ALLOW_NONCE_BYPASS', true );
+if ( ! defined( 'MULLION_ALLOW_NONCE_BYPASS' ) ) {
+	define( 'MULLION_ALLOW_NONCE_BYPASS', true );
 }
 
 // Start up the WP testing environment.

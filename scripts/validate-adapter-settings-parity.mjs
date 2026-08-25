@@ -5,7 +5,7 @@
  * Reads SETTING_GROUP_DEFINITIONS from adapterRegistry.ts (via source
  * text parsing) and validates that every adapter setting key — including
  * unitKey companions from dimension controls — is present in the PHP
- * nested adapter field map in class-wpsg-settings-sanitizer.php.
+ * nested adapter field map in class-mullion-settings-sanitizer.php.
  *
  * Also demonstrates the camelCase → snake_case generator transformation
  * that a Phase 32 code-generator would use to produce the PHP map entries
@@ -60,7 +60,7 @@ const registryKeys = [
 const phpSource = readFileSync(
   resolve(
     root,
-    'wp-plugin/mullion-gallery/includes/settings/class-wpsg-settings-sanitizer.php',
+    'wp-plugin/mullion-gallery/includes/settings/class-mullion-settings-sanitizer.php',
   ),
   'utf8',
 );
@@ -69,7 +69,7 @@ const phpSource = readFileSync(
 const phpMapStart = phpSource.indexOf('$nested_adapter_field_map = [');
 const phpMapEnd   = phpSource.indexOf('\n    ];', phpMapStart);
 if (phpMapStart === -1 || phpMapEnd === -1) {
-  console.error('✗ Could not locate $nested_adapter_field_map in class-wpsg-settings-sanitizer.php');
+  console.error('✗ Could not locate $nested_adapter_field_map in class-mullion-settings-sanitizer.php');
   process.exit(1);
 }
 const phpMapBlock = phpSource.slice(phpMapStart, phpMapEnd);

@@ -6,13 +6,13 @@
  * gettext pipeline. Reads the canonical English source (src/i18n-strings.en.json)
  * and emits a generated PHP "strings manifest":
  *
- *   wp-plugin/mullion-gallery/includes/i18n/class-wpsg-frontend-strings.php
+ *   wp-plugin/mullion-gallery/includes/i18n/class-mullion-frontend-strings.php
  *
  * Each i18next key becomes an entry mapping to its English default wrapped in
  * __(), which achieves two things at once:
  *   1. `wp i18n make-pot` harvests the English defaults into the .pot, so a
  *      single .po/.mo per locale translates BOTH the PHP and React surfaces.
- *   2. WPSG_Frontend_Strings::get_translated() resolves the active-locale
+ *   2. Mullion_Frontend_Strings::get_translated() resolves the active-locale
  *      translation at runtime for injection into window.__WPSG_I18N__.strings.
  *
  * Usage:
@@ -33,7 +33,7 @@ const TARGET = path.join(
   'mullion-gallery',
   'includes',
   'i18n',
-  'class-wpsg-frontend-strings.php',
+  'class-mullion-frontend-strings.php',
 );
 const TEXT_DOMAIN = 'mullion-gallery';
 
@@ -52,7 +52,7 @@ function buildManifest(strings) {
 
   return `<?php
 /**
- * WPSG_Frontend_Strings — GENERATED FILE, DO NOT EDIT BY HAND.
+ * Mullion_Frontend_Strings — GENERATED FILE, DO NOT EDIT BY HAND.
  *
  * Regenerate with: npm run i18n:generate
  * Source of truth: src/i18n-strings.en.json
@@ -70,7 +70,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-class WPSG_Frontend_Strings {
+class Mullion_Frontend_Strings {
     /**
      * i18next key => translated string for the current locale.
      *
@@ -95,7 +95,7 @@ function main() {
     const existing = fs.existsSync(TARGET) ? fs.readFileSync(TARGET, 'utf8') : '';
     if (existing !== output) {
       console.error(
-        '✗ class-wpsg-frontend-strings.php is stale. Run `npm run i18n:generate` and commit the result.',
+        '✗ class-mullion-frontend-strings.php is stale. Run `npm run i18n:generate` and commit the result.',
       );
       process.exit(1);
     }

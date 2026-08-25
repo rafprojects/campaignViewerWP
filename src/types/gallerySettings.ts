@@ -279,7 +279,7 @@ export interface GalleryBehaviorSettings {
    * CSS media-query rules that apply negative margins (bleed ON) or re-constrain
    * (bleed OFF) at each breakpoint. Server-rendered — requires page refresh.
    *
-   * See: class-wpsg-embed.php render_shortcode() for the full implementation.
+   * See: class-mullion-embed.php render_shortcode() for the full implementation.
    */
   wpFullBleedDesktop: boolean; // ≥ 1024px
   wpFullBleedTablet: boolean;  // 768–1023px

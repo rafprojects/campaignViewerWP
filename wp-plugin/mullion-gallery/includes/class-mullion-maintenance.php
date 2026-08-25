@@ -1,0 +1,420 @@
+<?php
+
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+class Mullion_Maintenance {
+    const CLEANUP_HOOK              = 'wpsg_archive_cleanup';
+    const TRASH_PURGE_HOOK          = 'wpsg_trash_purge';
+    const ANALYTICS_PURGE_HOOK      = 'wpsg_analytics_purge';
+    const EXPIRED_GRANTS_HOOK       = 'wpsg_expired_grants_cleanup';
+    // P72-F: opt-in retention purge for the two PII tables.
+    const ACCESS_REQUESTS_PURGE_HOOK = 'wpsg_access_requests_purge';
+    const AUDIT_LOG_PURGE_HOOK       = 'wpsg_audit_log_purge';
+
+    /**
+     * Hook cron actions and schedule events based on settings.
+     */
+    public static function register() {
+        add_action(self::CLEANUP_HOOK, [self::class, 'trash_archived_campaigns']);
+        add_action(self::TRASH_PURGE_HOOK, [self::class, 'purge_trashed_campaigns']);
+        add_action(self::ANALYTICS_PURGE_HOOK, [self::class, 'purge_old_analytics']);
+        add_action(self::EXPIRED_GRANTS_HOOK, [self::class, 'purge_expired_grants']);
+        add_action(self::ACCESS_REQUESTS_PURGE_HOOK, [self::class, 'purge_old_access_requests']);
+        add_action(self::AUDIT_LOG_PURGE_HOOK, [self::class, 'purge_old_audit_log']);
+
+        // Register a weekly interval — core only ships hourly/twicedaily/daily.
+        add_filter('cron_schedules', [self::class, 'add_weekly_schedule']);
+
+        $archive_days = self::get_setting('archive_purge_days');
+        if ($archive_days > 0) {
+            if (!wp_next_scheduled(self::CLEANUP_HOOK)) {
+                wp_schedule_event(time(), 'daily', self::CLEANUP_HOOK);
+            }
+        } else {
+            wp_clear_scheduled_hook(self::CLEANUP_HOOK);
+        }
+
+        // Schedule trash purge independently — it depends on grace_days, not archive_purge_days.
+        $grace_days = self::get_setting('archive_purge_grace_days');
+        if ($grace_days > 0) {
+            if (!wp_next_scheduled(self::TRASH_PURGE_HOOK)) {
+                wp_schedule_event(time(), 'daily', self::TRASH_PURGE_HOOK);
+            }
+        } else {
+            wp_clear_scheduled_hook(self::TRASH_PURGE_HOOK);
+        }
+
+        $analytics_days = self::get_setting('analytics_retention_days');
+        if ($analytics_days > 0) {
+            if (!wp_next_scheduled(self::ANALYTICS_PURGE_HOOK)) {
+                wp_schedule_event(time(), 'weekly', self::ANALYTICS_PURGE_HOOK);
+            }
+        } else {
+            wp_clear_scheduled_hook(self::ANALYTICS_PURGE_HOOK);
+        }
+
+        // P72-F: opt-in PII retention. Both default to 0 (never purge) so existing
+        // installs are never surprised by unexpected data loss; a non-zero window
+        // schedules a weekly purge, mirroring the analytics job above.
+        $access_requests_days = self::get_setting('access_requests_retention_days');
+        if ($access_requests_days > 0) {
+            if (!wp_next_scheduled(self::ACCESS_REQUESTS_PURGE_HOOK)) {
+                wp_schedule_event(time(), 'weekly', self::ACCESS_REQUESTS_PURGE_HOOK);
+            }
+        } else {
+            wp_clear_scheduled_hook(self::ACCESS_REQUESTS_PURGE_HOOK);
+        }
+
+        $audit_log_days = self::get_setting('audit_log_retention_days');
+        if ($audit_log_days > 0) {
+            if (!wp_next_scheduled(self::AUDIT_LOG_PURGE_HOOK)) {
+                wp_schedule_event(time(), 'weekly', self::AUDIT_LOG_PURGE_HOOK);
+            }
+        } else {
+            wp_clear_scheduled_hook(self::AUDIT_LOG_PURGE_HOOK);
+        }
+
+        // P28-B: always schedule the expired grants cleanup — no setting gate needed.
+        if (!wp_next_scheduled(self::EXPIRED_GRANTS_HOOK)) {
+            wp_schedule_event(time(), 'daily', self::EXPIRED_GRANTS_HOOK);
+        }
+    }
+
+    // ── D-4: Trash archived campaigns (phase 1) ─────────────────────────────
+
+    /**
+     * Move archived campaigns past the retention threshold to the trash.
+     *
+     * Previously this permanently deleted them — now it uses wp_trash_post()
+     * so they sit in trash for a grace period before permanent deletion.
+     */
+    public static function trash_archived_campaigns() {
+        $days = self::get_setting('archive_purge_days');
+        if ($days <= 0) {
+            return;
+        }
+
+        $before = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
+
+        // P66-B: key the purge clock off when the campaign was *archived*
+        // (archived_at, written by Mullion_Campaign_Status since P66-A), not its
+        // creation date. A two-year-old campaign archived yesterday must not be
+        // trashed on the next cron run. Campaigns with no archived_at stamp are
+        // excluded (conservative) — the P66-B migration seeds it for every
+        // already-archived campaign, so this only shields anomalies.
+        $query = new WP_Query([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => 100,
+            'meta_query'     => [
+                'relation' => 'AND',
+                [
+                    'key'   => 'status',
+                    'value' => 'archived',
+                ],
+                [
+                    'key'     => 'archived_at',
+                    'value'   => $before,
+                    'compare' => '<=',
+                    'type'    => 'DATETIME',
+                ],
+            ],
+        ]);
+
+        foreach ($query->posts as $post) {
+            do_action('wpsg_before_trash_campaign', $post->ID);
+            wp_trash_post($post->ID);
+        }
+    }
+
+    // ── D-4: Permanently delete trashed campaigns (phase 2) ─────────────────
+
+    /**
+     * Permanently delete trashed campaigns that have been in the trash
+     * longer than the grace period.
+     */
+    public static function purge_trashed_campaigns() {
+        $grace_days = self::get_setting('archive_purge_grace_days');
+        if ($grace_days <= 0) {
+            return;
+        }
+
+        $before = gmdate('Y-m-d H:i:s', strtotime("-{$grace_days} days"));
+
+        $query = new WP_Query([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'trash',
+            'posts_per_page' => 100,
+            'date_query'     => [
+                [
+                    'before'    => $before,
+                    'inclusive' => true,
+                    'column'    => 'post_modified_gmt',
+                ],
+            ],
+        ]);
+
+        foreach ($query->posts as $post) {
+            do_action('wpsg_before_purge_campaign', $post->ID);
+            self::cleanup_campaign_data($post->ID);
+            wp_delete_post($post->ID, true);
+        }
+    }
+
+    // ── D-20: Purge old analytics events ────────────────────────────────────
+
+    /**
+     * Delete analytics events older than the configured retention period.
+     * Runs in batches of 1000 to limit memory usage.
+     */
+    public static function purge_old_analytics() {
+        $days = self::get_setting('analytics_retention_days');
+        if ($days <= 0) {
+            return;
+        }
+
+        if (!class_exists('Mullion_DB')) {
+            return;
+        }
+
+        global $wpdb;
+        $table = Mullion_DB::get_analytics_table();
+        $before = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
+
+        // Delete in batches to avoid locking the table for too long.
+        $batch_size = 1000;
+        do {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $deleted = $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$table} WHERE occurred_at < %s LIMIT %d",
+                    $before,
+                    $batch_size
+                )
+            );
+        } while ($deleted === $batch_size);
+    }
+
+    // ── P72-F: Opt-in retention purge for the PII tables ────────────────────
+
+    /**
+     * Delete access-request rows (visitor emails) older than the configured
+     * retention window. Keyed off requested_at. Opt-in: a zero/unset window
+     * (the default) purges nothing. Batched to avoid long table locks, exactly
+     * like purge_old_analytics().
+     */
+    public static function purge_old_access_requests() {
+        $days = self::get_setting('access_requests_retention_days');
+        if ($days <= 0 || !class_exists('Mullion_DB')) {
+            return;
+        }
+
+        global $wpdb;
+        $table  = Mullion_DB::get_access_requests_table();
+        $before = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
+
+        $batch_size = 1000;
+        do {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $deleted = $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$table} WHERE requested_at < %s LIMIT %d",
+                    $before,
+                    $batch_size
+                )
+            );
+        } while ($deleted === $batch_size);
+    }
+
+    /**
+     * Delete audit-log rows (staff usernames / attempted logins) older than the
+     * configured retention window. Keyed off created_at. Opt-in: a zero/unset
+     * window (the default) purges nothing — audit trails carry a legitimate-
+     * interest retention purpose, so this is deliberately never on by default.
+     * Batched, like purge_old_analytics().
+     */
+    public static function purge_old_audit_log() {
+        $days = self::get_setting('audit_log_retention_days');
+        if ($days <= 0 || !class_exists('Mullion_DB')) {
+            return;
+        }
+
+        global $wpdb;
+        $table  = Mullion_DB::get_audit_log_table();
+        $before = gmdate('Y-m-d H:i:s', strtotime("-{$days} days"));
+
+        $batch_size = 1000;
+        do {
+            // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $deleted = $wpdb->query(
+                $wpdb->prepare(
+                    "DELETE FROM {$table} WHERE created_at < %s LIMIT %d",
+                    $before,
+                    $batch_size
+                )
+            );
+        } while ($deleted === $batch_size);
+    }
+
+    // ── P28-B: Expired access grants cleanup ────────────────────────────────
+
+    /**
+     * Remove grants whose expires_at has passed from campaign and company meta.
+     * Runs daily via WP-Cron. Expired grants are logged to the audit trail
+     * before removal so the record is preserved.
+     */
+    public static function purge_expired_grants() {
+        $now = time();
+
+        // --- Campaign-level grants ---
+        $campaigns = get_posts([
+            'post_type'      => 'wpsg_campaign',
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'no_found_rows'  => true,
+        ]);
+
+        // P67-G: prime post-meta in bounded batches so the per-campaign
+        // get_post_meta('access_grants') reads below are cache hits, not N+1
+        // queries. Chunked so each priming query's IN(...) list stays bounded.
+        foreach (array_chunk($campaigns, 200) as $chunk) {
+            update_meta_cache('post', $chunk);
+        }
+
+        foreach ($campaigns as $campaign_id) {
+            $grants = get_post_meta($campaign_id, 'access_grants', true);
+            if (!is_array($grants) || empty($grants)) {
+                continue;
+            }
+
+            $kept    = [];
+            $removed = [];
+            foreach ($grants as $entry) {
+                if (Mullion_Grants::is_expired($entry, $now)) {
+                    $removed[] = $entry;
+                } else {
+                    $kept[] = $entry;
+                }
+            }
+
+            if (empty($removed)) {
+                continue;
+            }
+
+            update_post_meta($campaign_id, 'access_grants', $kept);
+
+            foreach ($removed as $entry) {
+                if (class_exists('Mullion_REST')) {
+                    Mullion_REST::add_audit_entry($campaign_id, 'access.expired', [
+                        'userId'     => $entry['userId'] ?? null,
+                        'expires_at' => $entry['expires_at'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        // --- Company-level grants (stored in term meta) ---
+        $terms = get_terms([
+            'taxonomy'   => 'wpsg_company',
+            'hide_empty' => false,
+            'fields'     => 'ids',
+        ]);
+
+        if (is_wp_error($terms)) {
+            return;
+        }
+
+        // P67-G: prime term-meta in bounded batches so the per-term
+        // get_term_meta('access_grants') reads below are cache hits, not N+1
+        // queries — same pattern as the campaign loop above.
+        foreach (array_chunk($terms, 200) as $chunk) {
+            update_termmeta_cache($chunk);
+        }
+
+        foreach ($terms as $term_id) {
+            $grants = get_term_meta($term_id, 'access_grants', true);
+            if (!is_array($grants) || empty($grants)) {
+                continue;
+            }
+
+            $kept    = [];
+            $removed = [];
+            foreach ($grants as $entry) {
+                if (Mullion_Grants::is_expired($entry, $now)) {
+                    $removed[] = $entry;
+                } else {
+                    $kept[] = $entry;
+                }
+            }
+
+            if (empty($removed)) {
+                continue;
+            }
+
+            update_term_meta($term_id, 'access_grants', $kept);
+        }
+    }
+
+    // ── Helpers ─────────────────────────────────────────────────────────────
+
+    /**
+     * Clean up associated data (analytics, media refs) when permanently
+     * deleting a campaign.
+     */
+    private static function cleanup_campaign_data($campaign_id) {
+        if (!class_exists('Mullion_DB')) {
+            return;
+        }
+
+        global $wpdb;
+
+        // Remove analytics events for this campaign.
+        $analytics_table = Mullion_DB::get_analytics_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->delete($analytics_table, ['campaign_id' => $campaign_id], ['%d']);
+
+        // Remove media refs for this campaign.
+        $media_table = Mullion_DB::get_media_refs_table();
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->delete($media_table, ['campaign_id' => $campaign_id], ['%d']);
+
+        // Remove access requests for this campaign.
+        Mullion_DB::delete_access_requests_for_campaign($campaign_id);
+    }
+
+    /**
+     * Register a weekly cron interval (core only ships hourly/twicedaily/daily).
+     */
+    public static function add_weekly_schedule(array $schedules): array {
+        if (!isset($schedules['weekly'])) {
+            $schedules['weekly'] = [
+                'interval' => WEEK_IN_SECONDS,
+                'display'  => 'Once Weekly',
+            ];
+        }
+        return $schedules;
+    }
+
+    /**
+     * Read a maintenance setting, falling back to the wpsg_archive_retention_days
+     * filter for backward compatibility.
+     */
+    private static function get_setting($key) {
+        if (class_exists('Mullion_Settings')) {
+            $settings = Mullion_Settings::get_settings();
+            if (isset($settings[$key]) && intval($settings[$key]) > 0) {
+                return intval($settings[$key]);
+            }
+        }
+
+        // Backward compat: honor the legacy filter for archive_purge_days.
+        if ($key === 'archive_purge_days') {
+            return intval(apply_filters('wpsg_archive_retention_days', 0));
+        }
+
+        return 0;
+    }
+}

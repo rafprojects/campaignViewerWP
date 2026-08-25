@@ -1,6 +1,6 @@
 /**
  * The caller's app-level tier (P53-A). Mirrors the backend
- * {@link WPSG_Permissions::actor_has_tier} seam:
+ * {@link Mullion_Permissions::actor_has_tier} seam:
  *   - `viewer` — logged in, read-only
  *   - `editor` — `wpsg_editor` (manage_wpsg): space-scoped app admin
  *   - `admin`  — system admin (manage_options): full control, superset of editor

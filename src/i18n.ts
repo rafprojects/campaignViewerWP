@@ -25,7 +25,7 @@ declare global {
 const injected = window.__WPSG_I18N__ ?? {};
 const locale = injected.locale ?? 'en';
 
-// P60-G: PHP (WPSG_Frontend_Strings) injects the active-locale translation of the
+// P60-G: PHP (Mullion_Frontend_Strings) injects the active-locale translation of the
 // whole front-end catalogue, keyed identically to enStrings. Merge it over the
 // bundled English defaults so any key missing from the injection degrades to
 // English per-key (belt-and-suspenders alongside fallbackLng below).

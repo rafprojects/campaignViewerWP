@@ -49,7 +49,7 @@ const SettingsPanel = lazy(() => import('./components/Admin/SettingsPanel').then
 
 const getAuthProvider = (apiBaseUrl: string) => {
   // [P20-K] JWT auth is now opt-in. Only instantiate WpJwtProvider when the
-  // WordPress site defines WPSG_ENABLE_JWT_AUTH (surfaced as enableJwt in config).
+  // WordPress site defines MULLION_ENABLE_JWT_AUTH (surfaced as enableJwt in config).
   const enableJwt = window.__WPSG_CONFIG__?.enableJwt === true;
   if (enableJwt && window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
     return new WpJwtProvider({ apiBaseUrl });
@@ -67,7 +67,7 @@ interface ApiCampaignResponse {
   items: ApiCampaign[];
   mediaByCampaign?: Record<string, MediaItem[]>;
   // [P68-A] The server already returns these on every campaigns.list response
-  // (WPSG_Campaign_Controller::list_campaigns); they were simply undeclared
+  // (Mullion_Campaign_Controller::list_campaigns); they were simply undeclared
   // here, which is why the public fetch never paged. `totalPages` drives the
   // shared fetchAllPages loop below.
   total?: number;

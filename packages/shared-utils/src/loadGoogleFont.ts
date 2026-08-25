@@ -85,7 +85,7 @@ export function getFailedFonts(): ReadonlySet<string> {
  * whose reverse proxy or security rules interfere with cross-origin fetches.
  *
  * NOTE: Server-side Google Font enqueueing via wp_enqueue_style (in
- * class-wpsg-embed.php) handles the shortcode output.  This function is
+ * class-mullion-embed.php) handles the shortcode output.  This function is
  * only needed for live-preview contexts (admin SettingsPanel, etc.)
  * where fonts are selected dynamically after the page has loaded.
  */

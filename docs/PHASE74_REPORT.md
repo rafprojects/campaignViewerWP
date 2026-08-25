@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-L landed, remaining tracks Planned
+**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-G, P74-L landed, remaining tracks Planned
 **Created:** 2026-08-23
-**Last updated:** 2026-08-24 (P74-C landed — text domain renamed, header-only .po/.pot metadata fix rather than a full make-pot re-harvest)
+**Last updated:** 2026-08-24 (P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
 
 ### Tracks
 
@@ -14,14 +14,14 @@
 | P74-D | Shortcode rename, outright (no backward-compat alias) | Done | Low |
 | P74-E | CPT + taxonomy + capability rename, paired with a data-migration routine | Planned | High (data migration) |
 | P74-F | DB option key rename (276 occurrences), paired with the same migration routine | Planned | High (data migration) |
-| P74-G | PHP class + file rename (56 classes, 56 files) | Planned | Medium (large, mechanical) |
+| P74-G | PHP class + file rename (56 classes, 56 files) | Done | Medium (large, mechanical) |
 | P74-H | Function + hook/filter rename (20 functions, ~50+ extension points) | Planned | Medium |
 | P74-I | CSS custom-property prefix rename (`--wpsg-*` → `--mullion-*`) | Planned | Medium |
 | P74-J | Remaining JS/TS identifier cleanup | Planned | Low-Medium |
 | P74-K | Freemius slug wiring | Planned | Low (hard sequencing dependency on Phase 75) |
 | P74-L | Build/CI/tooling string literals (+ npm workspace package scope rename, folded in) | Done | Low |
 | P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Planned | Low (volume) |
-| P74-N | New default theme: Mullion / Rig Cyan | Planned — partially blocked | Low-Medium |
+| P74-N | New default theme: Mullion / Rig Cyan | Planned — palette finalized, `primaryShade` blocked on Phase 75 P75-F | Low-Medium |
 | P74-O | CSS fallback-color reconciliation (depends on P74-N) | Planned | Low |
 
 ---
@@ -304,6 +304,15 @@ Rename each class to `Mullion_*` (TitleCase, per Key Decision B) and each file t
 - Full PHPUnit suite run post-rename.
 - `grep -rn "class-wpsg-\|WPSG_"` across `wp-plugin/mullion-gallery/` returns zero results outside comments/changelogs intentionally preserving history.
 
+### Implementation Notes (2026-08-24)
+
+- **Scope grew beyond the doc's own count**, all found by extracting every literal `WPSG_*` token from the tree rather than trusting the doc's list: an interface file the Fix section didn't mention (`interface-wpsg-provider-handler.php`, declaring `WPSG_Provider_Handler`, implemented by 3 of the 56 classes), and 98 PHPUnit test files bearing the `WPSG_*_Test` convention (not "~91" — recounted directly). Total: 57 include/interface files + 98 test files = 155 files renamed, 162 distinct `WPSG_*` identifiers touched.
+- **Folded in 6 orphaned PHP constants, confirmed with the user first.** `WPSG_VERSION`, `WPSG_PLUGIN_DIR`, `WPSG_PLUGIN_URL` (`mullion-gallery.php`), `WPSG_ALLOW_NONCE_BYPASS` (`tests/bootstrap.php` + REST base), and two site-admin-overridable constants the identifier scan surfaced, `WPSG_DEBUG_COMPONENT_MARKERS` and `WPSG_ENABLE_JWT_AUTH` — none were assigned to any Phase 74 track (not G/classes, not H/functions, not J/JS-TS), a real gap against the phase's own "every wpsg/WPSG identifier" success criterion. Renamed to `MULLION_*`, keeping the SCREAMING_SNAKE convention — Key Decision B's TitleCase-for-classes carve-out is about the class-prefix style specifically and doesn't extend to constants; WordPress-ecosystem precedent for a real product name (e.g. WooCommerce's `WC_VERSION`) keeps constants uppercase regardless of class-prefix style.
+- **Mechanical approach:** built a single word-boundary regex substitution map (`WPSG_X` → `Mullion_X` for the 156 class/interface/test-class identifiers, `WPSG_X` → `MULLION_X` for the 6 constants) and applied it across every `.php` file in `wp-plugin/mullion-gallery` (excluding `vendor/`). Regex `\b` word boundaries correctly disambiguate prefix collisions (e.g. `WPSG_REST` vs. `WPSG_REST_Base`) for free, since `_` counts as a word character in regex — no manual ordering or conflict resolution was needed. File renames (`class-wpsg-*.php` → `class-mullion-*.php`, `interface-wpsg-*.php` → `interface-mullion-*.php`, `tests/WPSG_*.php` → `tests/Mullion_*.php`) via `git mv`, preserving history.
+- **Fixed real staleness outside the plugin tree**, same standard P74-A set: `scripts/validate-adapter-settings-parity.mjs` and `src/components/Galleries/Adapters/adapterSettingsParity.test.ts` both `readFileSync` PHP source by literal path (`class-wpsg-cpt.php`, `class-wpsg-settings-sanitizer.php`, etc.) and string-compare against `WPSG_CPT::VALID_ADAPTERS` / `WPSG_Adapter_Field_Schema::get_map()` — left unpatched, these would ENOENT or silently stop verifying the intended string. Updated paths and identifiers in both, plus `scripts/generate-frontend-i18n.mjs` (path comment + literal) and `packages/shared-utils/src/loadGoogleFont.ts` / `src/types/gallerySettings.ts` (doc-comment path references). A further seven `src/` files had comments naming a since-renamed PHP class or constant by its exact old identifier — `src/i18n.ts`, `src/App.tsx`, `src/components/Admin/SpaceManagementView.tsx`, `src/components/Admin/LayoutBuilder/LayoutBuilderPropertiesPanel.test.tsx`, `src/hooks/useWpsgLicense.ts`, `src/services/auth/WpJwtProvider.ts`, `src/services/auth/AuthProvider.ts` — updated as comment/string-literal-only edits, no logic changes.
+- **Held back on purpose**, matching P74-A's boundary discipline: every `docs/*.md` reference (30 files, ~180 identifier occurrences found) stays untouched for P74-M's full sweep; every lowercase `wpsg_*` token (DB option keys, capability names like `manage_wpsg`, directory names `wpsg-exports/`/`wpsg-fonts/`, the procedural `includes/wpsg-cron-hooks.php` file itself, and JS-side `window.__WPSG_CONFIG__`-style globals) stays untouched — those belong to P74-E/F/H/J, not to class names. Fixed one comment inside `wpsg-cron-hooks.php` itself ("WPSG_\* class constants" → "Mullion_\* class constants") since it directly describes the constants this track *did* rename. `CHANGELOG.md` also carries stale references, left for P74-M; the gitignored `repomix-output*.md` snapshots are regenerated output, not source.
+- Verification: `php -l` across every file in `wp-plugin/mullion-gallery` (excluding `vendor/`) — zero syntax errors. Full PHPUnit suite (Haiku subagent, wp-env container, isolated from implementation) — 1,304 tests / 13,683 assertions, 0 failures, 0 errors, 2 pre-existing skips, no output referencing `WPSG`. Frontend verification (separate Haiku subagent): `tsc --noEmit` clean, `eslint` clean on all 10 touched frontend files, `adapterSettingsParity.test.ts` (the one genuinely at risk, since it reads the renamed PHP files by path) 8/8 passing, full Vitest suite 3,775/3,775 passing.
+
 ---
 
 ## Track P74-H - Function + hook/filter rename
@@ -466,45 +475,51 @@ Roughly 149 files under `docs/` mention "WP Super Gallery" or `wpsg` in prose. T
 
 ### Problem
 
-The current default theme (`default-dark.json`, id `default-dark`) carries the old brand's navy-blue palette (`#0f172a` / `#3b82f6`). The designer's replacement, "Rig Cyan," supplies four of the roles the theme schema requires (`background`, `surface`, `text`, `primary`) plus a fifth ("ink-safe") that — per Key Decision G — fails this repo's own WCAG AA gate as submitted and has been sent back.
+The current default theme (`default-dark.json`, id `default-dark`) carries the old brand's navy-blue palette (`#0f172a` / `#3b82f6`). The designer's original submission ("ink-safe," `#0f857c`) failed this repo's own WCAG AA gate — see Key Decision G. Since then, two further review rounds with the designer produced a complete, self-verified palette (`.wordpress-org/COLOR-SPEC.md`), superseding everything below the original four-role submission.
 
 ### Fix
 
-Overwrite `packages/theme-engine/src/definitions/default-dark.json`'s `colors` block in place (id and `DEFAULT_THEME_ID` unchanged — see Key Decision F):
+Overwrite `packages/theme-engine/src/definitions/default-dark.json`'s `colors` block in place (id and `DEFAULT_THEME_ID` unchanged — see Key Decision F), using the finished palette from `COLOR-SPEC.md` §1:
 
 ```json
 {
   "background": "#08141b",
   "surface": "#102530",
+  "surfaceRaised": "#1a3542",
   "surface2": "<derived>",
   "surface3": "<derived>",
-  "text": "#e8f7fc",
-  "textMuted": "<derived>",
+  "text": "#eef8fb",
+  "textMuted": "#9db4bf",
   "textMuted2": "<derived>",
-  "border": "<derived>",
+  "border": "#22414f",
+  "borderStrong": "#577577",
   "primary": "#1ad1c4",
-  "primaryShade": { "light": "<TBD>", "dark": "<TBD>" },
-  "success": "#22c55e",
-  "warning": "#f59e0b",
-  "error": "#ef4444",
+  // primaryShade intentionally absent — see _primaryShade note below.
+  "success": "#56b93e",
+  "warning": "#f5b12b",
+  "error": "#ff6b5e",
   "info": "#1ad1c4",
   "accent": "#1ad1c4",
-  "accentGreen": "#22c55e",
-  "accentPurple": "#a855f7"
+  "accentGreen": "#56b93e",
+  "accentPurple": "<no brand signal — placeholder>"
 }
 ```
 
-- `surface2`/`surface3`/`textMuted`/`textMuted2`/`border` — derived via LAB-space interpolation between `surface` (`#102530`) and `text` (`#e8f7fc`), reusing the technique [colorGen.ts](../packages/theme-engine/src/colorGen.ts)'s `deriveDarkTuple` already applies to Mantine's `dark[]` tuple, rather than hand-picked.
-- `primaryShade` — set once a corrected ink-safe (or equivalent) value establishes which rung of the auto-generated 10-step accent ramp should back filled buttons; until then, defaults to the same index `default-dark.json` currently uses.
-- `success`/`warning`/`error` carried over unchanged — not part of the designer's three-way comparison, so presumed stable.
-- `accentPurple` kept as a neutral placeholder (`#a855f7`) pending any brand-specific signal.
-- `theme-catalog.json`'s `default-dark` entry — `name` and `description` updated to describe Mullion/Rig Cyan rather than "Clean dark baseline."
+- **`success`/`warning`/`error` changed from the original plan.** The earlier draft of this track assumed these would carry over unchanged from the old blue theme (`#22c55e`/`#f59e0b`/`#ef4444`) — the designer's finished spec instead gives Rig Cyan-specific values, verified AA-clean against the palette's own surfaces. Use the new values, not the old-theme carryover.
+- **`surfaceRaised` and `borderStrong` are new `ThemeColors` fields, not previously in the schema.** Per user decision, adopted as **optional fields with a fallback** (mirroring how `accent`/`accentGreen`/`accentPurple` already default from `primary` today) rather than required on every theme — so Rig Cyan gets the real distinction without forcing an immediate pass over the other 22 shipped themes. Requires touching `types.ts` (`ThemeColors`/`ResolvedColors`/`ThemeCatalogEntry` as applicable), `colorGen.ts`'s `resolveColors`, `cssVariables.ts` (emit `--mullion-color-surface-raised` / `--mullion-color-border-strong`), and `adapter.ts` (wire into whichever Mantine component overrides currently use `border`/`surface2` for an affordance/input-outline role — the ones P75-E's spike will identify as needing the "strong" variant). The rationale is the same WCAG 1.4.11 distinction P75-E is auditing: `border` (1.46:1, decorative dividers, exempt) vs. `borderStrong` (3:1, input outlines and focusable edges — an affordance, not decoration).
+  - **The two fallbacks are not equivalent risk, per designer review round 5** (`.wordpress-org/color-response-from-designer.md.md`) — verified directly, not taken on faith: `surfaceRaised` → `surface2` when unset is harmless (a theme without it just reads flatter). `borderStrong` → `border` when unset is **not** a safe fallback — `border` measures 1.46:1 against Rig Cyan's surface (confirmed) while `borderStrong` measures 3.17:1 (confirmed); aliasing one to the other would reinstate exactly the WCAG 1.4.11 failure the field exists to prevent, for every theme that doesn't explicitly author it. **`borderStrong`'s fallback must be derived, not aliased**: step the surface color's own lightness toward mid-grey (holding hue, easing chroma slightly) until it clears 3:1 against that same surface. Verified against 4 surfaces (Rig Cyan `#102530`→`#5b707c` 3.05:1, tokyo-night `#1a1b26`→`#6e6f7c` 3.44:1, sunset-boulevard `#fffbeb`→`#8c887b` 3.42:1, forest-whisper `#f3f5f4`→`#818382` 3.49:1) — all four reproduce exactly against real contrast calculations. A theme that authors `borderStrong` explicitly overrides the derivation; one that doesn't gets a value that passes rather than one that doesn't.
+- `surface2`/`surface3`/`textMuted2` — not given by the designer's 11-role spec (which uses a leaner 2-tier text hierarchy and a 2-tier raised-surface model rather than this schema's 3-tier one). Still derived via LAB-space interpolation, reusing [colorGen.ts](../packages/theme-engine/src/colorGen.ts)'s `deriveDarkTuple` technique, between the now-fixed anchor points (`surface`/`surfaceRaised` for surface2/3, `text`/`textMuted` for textMuted2).
+- **`primaryShade` is absent, not TBD-with-a-placeholder, per final designer review (round 6).** Matching the theme JSON they now ship: no `primaryShade` value at all, replaced with a `_primaryShade` note carrying the criterion (first array index from the dark end clearing 4.5:1 against the lightest surface and under white text — expressed as a plain array index, not a Tailwind-style rung name; see the note below on why), the measured current-HSL values, and an explicit "pending P75-F." Nothing sits in the file that could be copied out and used by mistake. Under the current HSL generator the criterion resolves at **index 7** (`#0f7971`, 4.79:1 on text, 5.26:1 under white) — verified directly against `generateColorScale()`, not modeled. The OKLCH-side answer is not yet derivable at all; it depends on lightness stops P75-F hasn't chosen. Blocked on [PHASE75_REPORT.md](PHASE75_REPORT.md)'s P75-F.
+- **Naming convention, settled after four rounds of ambiguity:** ramp positions are expressed as plain array indices (0–9) only, never Tailwind-style rung names (50/100/…/950). The two conventions don't map cleanly onto a 10-element array at either end, and the mismatch went unnoticed for several rounds of this design collaboration before being caught. Use indices everywhere in this codebase and in any future spec exchange.
+- `accentPurple` still has no brand signal — stays a placeholder pending direction.
+- `theme-catalog.json`'s `default-dark` entry — `name`/`description` updated to describe Mullion/Rig Cyan.
 
 **Explicitly deferred:** `default-light.json` — no light-scheme values were supplied, left untouched as a known gap rather than guessed at.
 
 ### Acceptance criteria
 
 - `auditThemeContrast()` reports zero failures against the finalized (derived-fields-included) palette, run directly against the JSON before this is considered done — the same check the CI gate runs.
+- `surfaceRaised`/`borderStrong` resolve correctly (explicit value for Rig Cyan, fallback for every other theme) through `resolveColors`, `cssVariables.ts`, and the Mantine adapter.
 - Every existing theme-registry/`ThemeContext`/`useTheme` test that asserts *behavior* (not literal old hex values) continues to pass; tests asserting the old blue hex values are updated to the new ones.
 - Visual regression baselines are regenerated for the default theme's snapshots (an intentional visual change, unlike P74-I).
 
@@ -512,8 +527,9 @@ Overwrite `packages/theme-engine/src/definitions/default-dark.json`'s `colors` b
 
 - Run `auditThemeContrast` directly against the candidate JSON, independent of the CI test suite, before committing — catches an AA failure before it's baked into a snapshot.
 - Full Vitest suite, including a regenerate-and-review pass on visual-regression snapshots for the default theme specifically.
+- Confirm the `surfaceRaised`/`borderStrong` fallback path with a theme that omits them (any of the other 22) — should resolve to `surface2`/`border` unchanged, zero visual regression for themes that don't specify the new fields.
 
-**Blocked sub-item:** finalizing `primaryShade` and confirming whether a distinct "ink-safe"-equivalent role is needed at all — pending the designer's corrected submission, per Key Decision G and the color-system explanation appended to the design brief.
+**Blocked sub-item:** `primaryShade`'s final value — pending [PHASE75_REPORT.md](PHASE75_REPORT.md)'s P75-F (OKLCH ramp migration). Everything else in this track is unblocked.
 
 ---
 

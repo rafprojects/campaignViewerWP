@@ -277,7 +277,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
   }, [handleRevokeAccess, t]);
 
   // P51-H: change an existing grant's role inline. POST /access upserts the grant
-  // (see WPSG_Space_Controller::upsert_space_grant), so re-posting with the new
+  // (see Mullion_Space_Controller::upsert_space_grant), so re-posting with the new
   // access_level updates it in place.
   const handleChangeRole = useCallback(async (userId: number, newLevel: string) => {
     if (!selectedSpaceId) return;
