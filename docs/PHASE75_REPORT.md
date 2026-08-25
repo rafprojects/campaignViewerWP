@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-07-27
-**Last updated:** 2026-08-24 (color-system design collaboration closed out, round 6 — designer independently confirmed our index-7 correction, retracted the unverified value from the delivered theme JSON, and standardized spec numbers into two explicit reliability classes; P75-F scoped as a data migration — 16/23 themes' `primaryShade` must be re-derived in the same change the generator swaps, not after; P75-D/E/F are now the sole blocker on continuing the designer engagement — see Outcome)
+**Last updated:** 2026-08-25 (P74-N's Rig Cyan `primaryShade` sub-item moved here into P75-F — Phase 74 closes without waiting on the OKLCH ramp; F sets `default-dark`'s index in the same commit that re-derives the other 16 themes.)
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Planned | Small |
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
-| P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping) — gates P74-N's `primaryShade` value and P75-E's step 3 repair layer | Planned | Small-Medium |
+| P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Planned | Small-Medium |
 
 ---
 
@@ -260,7 +260,7 @@ The spike carries two methodology requirements from a second designer review rou
 
 `packages/theme-engine/src/colorGen.ts`'s `generateColorScale` steps lightness linearly in HSL space; a stale code comment elsewhere in the module claims LAB, which was never true of this function (it describes an unrelated dark-tuple helper, `deriveDarkTuple`). Confirmed independently by the designer during color-system review (`.wordpress-org/color-response-from-designer.md.md`, round 3) — flagged as worth fixing on its own terms (an accurate ramp is foundational to every theme's generated 10-step scale, not just Rig Cyan's), and it turns out to gate two other pieces of work already in this phase:
 
-- **P74-N's `primaryShade` value.** The designer's Rig Cyan spec (`.wordpress-org/COLOR-SPEC.md` §2) defines `primaryShade` by criterion (first array index from the dark end clearing 4.5:1 against the lightest surface *and* 4.5:1 under white text). An earlier revision reported the answer as an OKLCH-only rung name (since retracted — see below); the spec's final state carries no value at all for Rig Cyan, since the current HSL generator and the not-yet-designed OKLCH generator resolve the criterion to different, currently-unknown-for-OKLCH indices. Setting `primaryShade` before P75-F lands would mean guessing.
+- **Rig Cyan's `primaryShade` (moved from P74-N, Phase 74 Decision I).** The designer's spec (`.wordpress-org/COLOR-SPEC.md` §2) defines `primaryShade` by criterion (first array index from the dark end clearing 4.5:1 against the lightest surface *and* 4.5:1 under white text). P74-N ships `default-dark.json` with no `primaryShade` value — only a `_primaryShade` note — so Phase 74 can close without guessing an index the OKLCH generator will immediately invalidate. **This track sets the live index** against the new ramp, in the same commit as the generator swap. Under the current HSL generator the criterion is index 7 (`#0f7971`); the OKLCH-side answer is not derivable until this track chooses lightness stops.
 - **P75-E step 3's repair layer**, which selects a ramp rung by criterion (nearest rung clearing 3:1 against a panel/UI surface) — correctness of that selection depends on the ramp itself being generated correctly.
 
 ### The gamut-mapping requirement (not optional)
@@ -283,8 +283,9 @@ Before emitting each rung, test whether `oklch(L, C, H)` falls inside sRGB; if n
 **This is a data migration, not only an algorithm change — treat it as such in the same commit.** A theme's `primaryShade` index doesn't name a color, it names a *position* in a ramp; swapping the ramp-generation algorithm silently changes what every existing index resolves to. **16 of the 23 shipped themes set a non-default `primaryShade`.** Migrating the generator without re-deriving those 16 values would silently recolor every filled button/UI-fill element in each of those themes — a real regression, not a cosmetic one, and one that would ship invisibly (nothing currently asserts that a theme's *resolved* `primaryShade` color still clears its intended contrast bar, only that the field is present). Confirmed via the designer's round-5 review (`.wordpress-org/color-response-from-designer.md.md`) — their specific example numbers didn't reproduce against the real `generateColorScale` function when checked directly (see the Note below), but the underlying coupling is real and independently verified against our own code.
 
 **In the same change that swaps the generator:**
-1. Re-derive `primaryShade` for all 16 affected themes against the new OKLCH ramp, by the same criterion each was presumably chosen for originally (first rung from the dark end clearing 4.5:1 against the theme's lightest surface and under white text — the criterion `COLOR-SPEC.md` §2 defines for Rig Cyan, generalized to every theme).
-2. Add a regression test: for every shipped theme, the *resolved* `primaryShade` color clears its intended contrast bar. This is what would have caught this class of bug before it shipped, and prevents the next recurrence (e.g. a future ramp-formula tweak that isn't a full algorithm swap).
+1. **Set Rig Cyan / `default-dark`'s `primaryShade`** (the value P74-N deliberately omitted) against the new OKLCH ramp, by the criterion in `COLOR-SPEC.md` §2. Remove the `_primaryShade` note once a real index is in the file.
+2. Re-derive `primaryShade` for all 16 other themes that already author a non-default index, by the same criterion generalized to each theme's own lightest surface and white text.
+3. Add a regression test: for every shipped theme, the *resolved* `primaryShade` color clears its intended contrast bar. This is what would have caught this class of bug before it shipped, and prevents the next recurrence (e.g. a future ramp-formula tweak that isn't a full algorithm swap).
 
 > **Note on the numbers, resolved as of round 6.** An earlier designer round claimed current-HSL index 6 yields `#1ce3d5` at 1.47:1, and that the criterion resolves at index 9. Neither matched `generateColorScale('#1ad1c4', 'dark')`, verified directly against the real function: index 6 actually produces `#149f95` (2.98:1 on `#e8f7fc`), and the real first-from-the-dark-end index clearing the criterion is **index 7** (`#0f7971`, 4.79:1 on text / 5.26:1 under white). The designer independently re-ran the correction, confirmed the same two values, and — rather than swap in the corrected index — removed `primaryShade` from the delivered theme JSON entirely, replacing it with a `_primaryShade` note (criterion + these measured values + "pending P75-F," no number to copy by mistake). Both sides also standardized on **plain array indices only, never Tailwind-style rung names (50/100/…/950)** going forward — the two conventions don't map cleanly onto a 10-element array and the mismatch went uncaught for several rounds. The structural finding (index-based `primaryShade` recolors under any generator swap) was never in question — only the illustrative numbers needed correcting, and now have been on both sides.
 
@@ -292,8 +293,8 @@ Before emitting each rung, test whether `oklch(L, C, H)` falls inside sRGB; if n
 
 - Every generated ramp (all 23 shipped themes plus any user-authored custom theme) stays within sRGB gamut at every rung.
 - Hue drift between a ramp's base accent and every generated rung stays under 1°.
-- Rig Cyan's `primaryShade` resolves against the real, implemented algorithm — not assumed equal to any number quoted in either design round, since the exact lightness-stepping bounds for the new generator aren't decided yet and both sides' prior numbers have been provisional model output, not verified output.
-- All 16 themes with a non-default `primaryShade` are re-derived in the same change, with a passing regression test per theme.
+- Rig Cyan / `default-dark` has a live `primaryShade` index resolved against the real OKLCH generator — not assumed equal to any number quoted in either design round, and not left as a `_primaryShade` note.
+- All 16 other themes with a non-default `primaryShade` are re-derived in the same change, with a passing regression test per theme.
 
 ### Validation
 
@@ -301,7 +302,7 @@ Per the designer's own suggestion (round 4): implement as a **property test**, n
 
 ### Sequencing
 
-Must land before P74-N's `primaryShade` is finalized and before P75-E's step 3 repair layer is implemented. Does not block P74-N's other palette fields (background/surface/text/accent/status colors), which are independent of ramp generation.
+Must land before P75-E's step 3 repair layer is implemented. **Does not block Phase 74** — P74-N/O close with no `primaryShade` on Rig Cyan (Decision I). This track is what *sets* that index, rather than a gate that Phase 74 waits on.
 
 ---
 
@@ -332,6 +333,6 @@ Not started. This document currently reflects the **plan** only — see the Stat
 
 **Planned, not yet implemented.** P75-A/B/C are code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), and P75-F (OKLCH migration) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." Once P75-D/E/F land, `primaryShade` can finally be set for real (P74-N's one remaining blocked item) and the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), and P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." Once P75-D/E/F land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
 
 Once implemented, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist, and its §F (freemium launch) checklist item "Build the free ZIP" should be updated to point at the `Release` workflow's new lite-ZIP output instead of a manual `npm run build:wp:free` run.
