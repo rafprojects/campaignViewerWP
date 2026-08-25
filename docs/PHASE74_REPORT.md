@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-G, P74-H, P74-I, P74-L landed, remaining tracks Planned
+**Status:** In progress — P74-A, P74-B, P74-C, P74-D, P74-G, P74-H, P74-I, P74-J, P74-L landed, remaining tracks Planned
 **Created:** 2026-08-23
-**Last updated:** 2026-08-24 (P74-I landed — `--wpsg-*` CSS custom-property namespace renamed to `--mullion-*` across 48 source files plus the PHP/i18n `dot_nav_active_color` default; Playwright visual 33/33 zero diffs; P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
+**Last updated:** 2026-08-24 (P74-J landed — remaining JS/TS `wpsg`/`WPSG` identifiers, host class `.wp-super-gallery` → `.mullion-gallery`, window globals, `data-mullion-*` attrs, and live PHP emitters; P74-I landed — `--wpsg-*` CSS custom-property namespace renamed to `--mullion-*` across 48 source files plus the PHP/i18n `dot_nav_active_color` default; Playwright visual 33/33 zero diffs; P74-H landed — 228 wpsg_* identifiers (21 functions, 75 hooks/filters, 108 REST error codes, 15 cron/schedule names, 1 AJAX action, 5 settings ids, 3 globals) renamed to mullion_*, plus the wpsg-cron-hooks.php file rename; P74-G landed — 56 PHP classes + 1 interface + 98 PHPUnit test classes renamed WPSG_* → Mullion_*, plus 6 orphaned PHP constants folded in as MULLION_*; P74-N: `borderStrong`'s fallback corrected from alias-to-`border` to a derived value, per verified designer review round 5 — aliasing would have reinstated the exact WCAG failure the field exists to prevent; palette from `COLOR-SPEC.md` adopted, `primaryShade` blocked on Phase 75's P75-F; P74-C landed — text domain renamed, header-only .po/.pot metadata fix)
 
 ### Tracks
 
@@ -17,7 +17,7 @@
 | P74-G | PHP class + file rename (56 classes, 56 files) | Done | Medium (large, mechanical) |
 | P74-H | Function + hook/filter rename (20 functions, ~50+ extension points) | Done | Medium |
 | P74-I | CSS custom-property prefix rename (`--wpsg-*` → `--mullion-*`) | Done | Medium |
-| P74-J | Remaining JS/TS identifier cleanup | Planned | Low-Medium |
+| P74-J | Remaining JS/TS identifier cleanup | Done | Low-Medium |
 | P74-K | Freemius slug wiring | Planned | Low (hard sequencing dependency on Phase 75) |
 | P74-L | Build/CI/tooling string literals (+ npm workspace package scope rename, folded in) | Done | Low |
 | P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Planned | Low (volume) |
@@ -401,12 +401,24 @@ Sweep and rename each to its `mullion`/`Mullion` equivalent; `.wp-super-gallery`
 
 ### Acceptance criteria
 
-- `grep -rn "wpsg\|WPSG"` (case-sensitive, both forms) across `src/` and `packages/*/src` returns zero results.
+- `grep -rn "wpsg\|WPSG"` (case-sensitive, both forms) across `src/` and `packages/*/src` returns zero results. **Met.**
 
 ### Validation
 
-- Full Vitest suite.
-- Browser console check in wp-env admin — no `[WPSG ...]`-prefixed log lines.
+- Full Vitest suite: 3,775/3,775 passing across 255 files (`tsc --noEmit` clean).
+- Full PHPUnit suite (wp-env): 1,304 tests, 13,683 assertions, 2 skipped, 0 failures.
+- `npm run i18n:check` + `npm run i18n:check:locales` — 2,379/2,379 for all 5 locales.
+- Console prefixes: every former `[WPSG]` / `[WPSG Theme]` site in `src/` and `packages/*/src` now reads `[MULLION]` / `[MULLION Theme]`. Live wp-env admin console inspect not repeated this pass (no UI change beyond identifier names; source grep is exhaustive).
+
+### Implementation Notes (2026-08-24)
+
+- **Mechanical `WPSG` → `MULLION`, `Wpsg` → `Mullion`, `wpsg` → `mullion`** across `src/`, `packages/*/src`, and `e2e/` (265 + 6 files). Covers debug helpers (`wpsgDebug` → `mullionDebug`, files git-mv'd), `useWpsgLicense` → `useMullionLicense`, i18next namespace `'wpsg'` → `'mullion'`, `data-wpsg-*` attributes, CSS classes (`.wpsg-tile-*`, `.wpsg-sr-only`, `.wpsg-theme-vars`, …), localStorage keys (`wpsg_view_*`, `wpsg_builder_*`), window globals (`__WPSG_CONFIG__` → `__MULLION_CONFIG__`, plus `__MULLION_AUTH_PROVIDER__` / `__MULLION_API_BASE__` / `__MULLION_I18N__` / `__MULLION_PAGE_SPACES__` / `__mullionOpen_*` / `__mullionThemeId`), and console prefixes.
+- **Host class is a separate pass.** `.wp-super-gallery` does not contain the substring `wpsg`, so the token sweep would have left it. Renamed via class-specific patterns (`.wp-super-gallery`, BEM `--`/`__` variants, `className="wp-super-gallery"`) so REST paths `/wp-json/wp-super-gallery/v1/…` stay untouched — that namespace is still the live backend (unclaimed gap, deliberately left by P74-L).
+- **PHP/e2e live couplings folded in**, same standard as P74-H's REST error codes: `Mullion_Embed::page_config_js()` window globals, shortcode `data-mullion-props`/`data-mullion-config`, host CSS classes, `#mullion-assets-admin` / `#mullion-spaces-admin` mount divs, admin-bar `data-mullion-open` + `__mullionOpen_*`, `$GLOBALS['mullion_spaces_on_page']` (a P74-H leftover in the same file), webhook/monitoring/pagination HTTP headers (`X-MULLION-Signature` etc.), and the matching PHPUnit/e2e assertions. Without these, the renamed SPA would silently fail to mount or to read config.
+- **Also folded:** `eslint.config.js` plugin id `wpsg` → `mullion` (the P71-E gate test in `src/` looks up `mullion/no-untranslated-notification`; leaving the config registered under `wpsg/` made the gate silently no-op). `scripts/generate-frontend-i18n.mjs` header comment for `__MULLION_I18N__`. A P74-C miss in `class-mullion-embed.php`: one `__()` call still used `'wp-super-gallery'` as its text-domain argument — corrected to `'mullion-gallery'` while that file was open.
+- **i18n:** two user-visible strings named CSS/capability tokens (`data-wpsg-component`, `manage_wpsg`). Source JSON + PHP settings description updated; surgical `.po`/`.pot` msgid/msgstr token swap (identity translations); `make-mo`/`make-php` only, no `make-pot`. **Note for P74-E:** the empty-state copy now says `manage_mullion` while the PHP capability is still `manage_wpsg` until that track lands — admin-only, pre-launch.
+- **Held back on purpose:** REST namespace `/wp-super-gallery/v1/` (still registered in PHP; changing only JS would 404 every API call); script handle `wp-super-gallery-app` and fallback filename `wp-super-gallery.js`; admin `PAGE_SLUG` (`wpsg-assets` etc.) and CPT/option/capability identifiers (P74-E/F); Freemius `'slug' => 'wp-super-gallery'` (P74-K); PHP-only wrapper class `wpsg-full-bleed` (no JS consumer); `docs/**` (P74-M).
+- **No aliases.** Pre-launch, same call as P74-D/P74-I. localStorage UI-pref keys start fresh under `mullion_*`.
 
 ---
 

@@ -299,7 +299,7 @@ class Mullion_Settings_Core_Fields {
             <?php esc_html_e('Keep React DevTools names and emit DOM component markers in deployed builds.', 'mullion-gallery'); ?>
         </label>
         <p class="description">
-            <?php esc_html_e('Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging.', 'mullion-gallery'); ?>
+            <?php esc_html_e('Adds explicit component names for React DevTools in production builds and injects data-mullion-component/data-mullion-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging.', 'mullion-gallery'); ?>
         </p>
         <?php
     }

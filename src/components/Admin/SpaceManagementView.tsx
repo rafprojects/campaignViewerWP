@@ -40,10 +40,10 @@ export interface SpaceManagementViewProps {
 /**
  * Full space management UI (create / archive / per-space settings / access grants).
  * Rendered both inside SpaceManagementModal (admin panel header) and standalone
- * on the WP-admin "Spaces" page (see main.tsx #wpsg-spaces-admin mount).
+ * on the WP-admin "Spaces" page (see main.tsx #mullion-spaces-admin mount).
  */
 export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSystemAdmin = false }: SpaceManagementViewProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const spaceRoleOptions = [
     { value: 'viewer', label: t('admin_space_role_viewer', 'Viewer') },
     { value: 'editor', label: t('admin_space_role_editor', 'Editor') },
@@ -499,7 +499,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                 </Table.Tbody>
               </Table>
             ) : (
-              <Text size="sm" c="dimmed">{t('admin_space_no_grants', 'No access grants. Everyone with the manage_wpsg capability can access this space.')}</Text>
+              <Text size="sm" c="dimmed">{t('admin_space_no_grants', 'No access grants. Everyone with the manage_mullion capability can access this space.')}</Text>
             )}
 
             <Divider label={t('admin_space_grant_divider', 'Grant access')} labelPosition="center" />

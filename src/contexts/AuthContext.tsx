@@ -15,7 +15,7 @@ interface AuthContextValue {
   permissions: string[];
   isAuthenticated: boolean;
   isReady: boolean;
-  /** Editor-or-above (manage_wpsg): can edit. True for both `editor` and `admin`. */
+  /** Editor-or-above (manage_mullion): can edit. True for both `editor` and `admin`. */
   isAdmin: boolean;
   /** System admin (manage_options): full control. Gates system-only surfaces (P53-A). */
   isSystemAdmin: boolean;

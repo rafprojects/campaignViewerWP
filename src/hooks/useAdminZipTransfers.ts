@@ -22,7 +22,7 @@ type AuditZipParams = Parameters<ApiClient['startAuditLogBinaryExport']>[0];
  * `exportMediaZip`.
  */
 export function useAdminZipTransfers({ apiClient, onNotify }: Options) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
 
   const [auditZipExporting, setAuditZipExporting] = useState(false);
   const [globalAuditZipExporting, setGlobalAuditZipExporting] = useState(false);

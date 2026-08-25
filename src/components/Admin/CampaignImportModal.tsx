@@ -11,7 +11,7 @@ import {
 import { IconUpload, IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { CampaignExportPayload } from '@/services/apiClient';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface CampaignImportModalProps {
   opened: boolean;
@@ -44,10 +44,10 @@ function CampaignImportModalContent({
   onHandleClose,
   onHandleImport,
 }: CampaignImportModalContentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const hasFile = parsed !== null || zipFile !== null;
   return (
-    <Stack {...getWpsgDebugProps('CampaignImportModal', 'stack')} gap="md">
+    <Stack {...getMullionDebugProps('CampaignImportModal', 'stack')} gap="md">
       <Text size="sm" c="dimmed">
         {t('admin_import_desc', 'Select a {{json}} or {{zip}} file exported from Mullion. Campaigns will be created as drafts — media and layout templates are imported by value.', { json: '.json', zip: '.zip' })}
       </Text>
@@ -86,7 +86,7 @@ function CampaignImportModalContent({
         </Alert>
       )}
 
-      <Group {...getWpsgDebugProps('CampaignImportModal', 'actions')} justify="flex-end">
+      <Group {...getMullionDebugProps('CampaignImportModal', 'actions')} justify="flex-end">
         <Button variant="subtle" onClick={onHandleClose} disabled={isSaving}>
           {t('admin_cancel', 'Cancel')}
         </Button>
@@ -103,7 +103,7 @@ function CampaignImportModalContent({
   );
 }
 
-setWpsgDebugDisplayName(CampaignImportModalContent, 'AdminPanel:CampaignImportModalContent');
+setMullionDebugDisplayName(CampaignImportModalContent, 'AdminPanel:CampaignImportModalContent');
 
 export function CampaignImportModal({
   opened,
@@ -112,7 +112,7 @@ export function CampaignImportModal({
   onImportBinary,
   onClose,
 }: CampaignImportModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [parsed, setParsed] = useState<CampaignExportPayload | null>(null);
   const [zipFile, setZipFile] = useState<File | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -177,14 +177,14 @@ export function CampaignImportModal({
 
   return (
     <Modal
-      {...getWpsgDebugProps('CampaignImportModal')}
+      {...getMullionDebugProps('CampaignImportModal')}
       opened={opened}
       onClose={handleClose}
-      title={<span {...getWpsgDebugProps('CampaignImportModal', 'title')}>{t('admin_import_title', 'Import Campaign')}</span>}
+      title={<span {...getMullionDebugProps('CampaignImportModal', 'title')}>{t('admin_import_title', 'Import Campaign')}</span>}
       size="sm"
       centered
-      closeButtonProps={getWpsgDebugProps('CampaignImportModal', 'close')}
-      overlayProps={getWpsgDebugProps('CampaignImportModal', 'overlay')}
+      closeButtonProps={getMullionDebugProps('CampaignImportModal', 'close')}
+      overlayProps={getMullionDebugProps('CampaignImportModal', 'overlay')}
     >
       <CampaignImportModalContent
         parsed={parsed}
@@ -201,4 +201,4 @@ export function CampaignImportModal({
   );
 }
 
-setWpsgDebugDisplayName(CampaignImportModal, 'AdminPanel:CampaignImportModal');
+setMullionDebugDisplayName(CampaignImportModal, 'AdminPanel:CampaignImportModal');

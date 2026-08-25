@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import type { SettingsData } from '@/contexts/SettingsStore';
 import { GeneralSettingsSection } from '../GeneralSettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsAppearanceTabProps {
   settings: SettingsData;
@@ -23,4 +23,4 @@ export const SettingsAppearanceTab = memo(function SettingsAppearanceTab({
     />
   );
 });
-setWpsgDebugDisplayName(SettingsAppearanceTab, 'SettingsPanel:AppearanceTab');
+setMullionDebugDisplayName(SettingsAppearanceTab, 'SettingsPanel:AppearanceTab');

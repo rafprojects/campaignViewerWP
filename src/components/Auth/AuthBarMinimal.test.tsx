@@ -10,11 +10,11 @@ const SPACE_A: SpaceSwitcherSpace = { instanceId: 'space-a', name: 'Hero Gallery
 const SPACE_B: SpaceSwitcherSpace = { instanceId: 'space-b', name: 'Products' };
 
 function setOpener(instanceId: string, fn: (...args: unknown[]) => void) {
-    (window as Win)[`__wpsgOpen_${instanceId}`] = fn;
+    (window as Win)[`__mullionOpen_${instanceId}`] = fn;
 }
 
 afterEach(() => {
-    delete (window as Win)['__wpsgOpen_space-b'];
+    delete (window as Win)['__mullionOpen_space-b'];
 });
 
 const baseProps = {

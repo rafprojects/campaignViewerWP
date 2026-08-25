@@ -47,14 +47,14 @@ describe('GraphicLayerContent', () => {
     const { container } = render(
       <GraphicLayerContent layer={{ ...base, borderWidth: 4, borderColor: '#ff0000' }} />,
     );
-    const rect = container.querySelector('[data-wpsg-graphic-layer="rect"]') as HTMLElement;
+    const rect = container.querySelector('[data-mullion-graphic-layer="rect"]') as HTMLElement;
     expect(rect).not.toBeNull();
     expect(rect.style.border).toContain('4px');
   });
 
   it('uses the clipped branch and applies a clip-path for a shape preset', () => {
     const { container } = render(<GraphicLayerContent layer={{ ...base, shape: 'circle' }} />);
-    expect(container.querySelector('[data-wpsg-graphic-layer="clipped"]')).not.toBeNull();
+    expect(container.querySelector('[data-mullion-graphic-layer="clipped"]')).not.toBeNull();
     // The inner clipped containers carry the ellipse clip-path.
     const clipped = container.querySelector('[style*="ellipse"]');
     expect(clipped).not.toBeNull();
@@ -64,7 +64,7 @@ describe('GraphicLayerContent', () => {
     const { container } = render(
       <GraphicLayerContent layer={{ ...base, rotation: 30, flipH: true }} />,
     );
-    const wrapper = container.querySelector('[data-wpsg-graphic-layer="rect"]') as HTMLElement;
+    const wrapper = container.querySelector('[data-mullion-graphic-layer="rect"]') as HTMLElement;
     expect(wrapper.style.transform).toContain('rotate(30deg)');
     expect(wrapper.style.transform).toContain('scaleX(-1)');
   });

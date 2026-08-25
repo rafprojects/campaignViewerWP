@@ -8,7 +8,7 @@ import { useLatestRef } from './useLatestRef';
  * Returns a callback ref to attach to a scrollable HTMLElement.
  * On mount, restores the saved `scrollTop`. On scroll, saves (debounced 200 ms).
  *
- * The key is `wpsg_view_<scopeId>_scroll_<feature>`. Inject the per-mount
+ * The key is `mullion_view_<scopeId>_scroll_<feature>`. Inject the per-mount
  * `scopeId` via `options.scopeId` (defaults to `'root'`).
  * Pass a `tabKey` to namespace per-tab when the scroll container is shared
  * across multiple tabs (e.g. the settings panel drawer body).
@@ -22,7 +22,7 @@ export function useScrollRestore(
   tabKey?: string | null,
   options: ViewScopeOptions = {},
 ) {
-  const { scopeId = 'root', namespace = 'wpsg_view' } = options;
+  const { scopeId = 'root', namespace = 'mullion_view' } = options;
   const elementRef = useRef<HTMLElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

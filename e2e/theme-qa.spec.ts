@@ -49,25 +49,25 @@ async function installThemeSession(
   await page.addInitScript(
     ([storedTheme, wpTheme]: [string | undefined, string | undefined]) => {
       const g = window as Window & {
-        __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
-        __WPSG_API_BASE__?: string;
-        __WPSG_CONFIG__?: { enableJwt?: boolean; restNonce?: string };
-        __wpsgThemeId?: string;
+        __MULLION_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
+        __MULLION_API_BASE__?: string;
+        __MULLION_CONFIG__?: { enableJwt?: boolean; restNonce?: string };
+        __mullionThemeId?: string;
       };
-      g.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-      g.__WPSG_API_BASE__ = 'http://127.0.0.1:5173';
-      g.__WPSG_CONFIG__ = { enableJwt: true, restNonce: 'test-nonce' };
+      g.__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+      g.__MULLION_API_BASE__ = 'http://127.0.0.1:5173';
+      g.__MULLION_CONFIG__ = { enableJwt: true, restNonce: 'test-nonce' };
 
-      localStorage.setItem('wpsg_access_token', 'fake-token');
+      localStorage.setItem('mullion_access_token', 'fake-token');
       localStorage.setItem(
-        'wpsg_user',
+        'mullion_user',
         JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }),
       );
       if (storedTheme) {
-        localStorage.setItem('wpsg-theme-id', storedTheme);
+        localStorage.setItem('mullion-theme-id', storedTheme);
       }
       if (wpTheme) {
-        g.__wpsgThemeId = wpTheme;
+        g.__mullionThemeId = wpTheme;
       }
     },
     [themeId, wpInjectedThemeId] as [string | undefined, string | undefined],
@@ -158,12 +158,12 @@ test.describe('theme behavioral tests', () => {
 
     // Save and check localStorage update
     await dialog.getByRole('button', { name: 'Save Changes' }).click();
-    const saved = await page.evaluate(() => localStorage.getItem('wpsg-theme-id'));
+    const saved = await page.evaluate(() => localStorage.getItem('mullion-theme-id'));
     // After save, the theme should be persisted (may be default-dark if unchanged)
     expect(typeof saved === 'string' || saved === null).toBe(true);
   });
 
-  test('WP injected __wpsgThemeId overrides localStorage stored theme', async ({ page }) => {
+  test('WP injected __mullionThemeId overrides localStorage stored theme', async ({ page }) => {
     // localStorage has tokyo-night but WP injection says cyberpunk
     await installThemeSession(page, { themeId: 'tokyo-night', wpInjectedThemeId: 'cyberpunk' });
     await page.goto('/');
@@ -173,7 +173,7 @@ test.describe('theme behavioral tests', () => {
     const themeApplied = await page.evaluate(() => {
       const shadowRoot = document.getElementById('root')?.shadowRoot;
       if (!shadowRoot) return null;
-      const styleEl = shadowRoot.querySelector('#wpsg-theme-vars') as HTMLStyleElement | null;
+      const styleEl = shadowRoot.querySelector('#mullion-theme-vars') as HTMLStyleElement | null;
       return styleEl?.textContent ?? null;
     });
 
@@ -189,7 +189,7 @@ test.describe('theme behavioral tests', () => {
 
     const hasThemeVars = await page.evaluate(() => {
       const shadowRoot = document.getElementById('root')?.shadowRoot;
-      return !!shadowRoot?.querySelector('#wpsg-theme-vars');
+      return !!shadowRoot?.querySelector('#mullion-theme-vars');
     });
     expect(hasThemeVars).toBe(true);
   });

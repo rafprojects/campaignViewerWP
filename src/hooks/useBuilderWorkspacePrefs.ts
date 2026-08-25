@@ -29,24 +29,24 @@ export interface BuilderWorkspacePrefs {
 /** P30-B workspace preferences, persisted in localStorage and root-scoped per P37-KS1. */
 export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs {
   const [snapMode, setSnapMode] = useState<SnapMode>(() => {
-    try { return (safeLocalStorage.getItem(`wpsg_builder_${rootId}_snap_mode`) as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
+    try { return (safeLocalStorage.getItem(`mullion_builder_${rootId}_snap_mode`) as SnapMode | null) ?? 'guides'; } catch { return 'guides'; }
   });
   const [snapThreshold, setSnapThreshold] = useState(5);
   const [showGrid, setShowGrid] = useState(() => {
-    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_grid`) === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`mullion_builder_${rootId}_show_grid`) === 'true'; } catch { return false; }
   });
   const [gridSizePx, setGridSizePx] = useState(() => {
-    try { return Number(safeLocalStorage.getItem(`wpsg_builder_${rootId}_grid_size`)) || 20; } catch { return 20; }
+    try { return Number(safeLocalStorage.getItem(`mullion_builder_${rootId}_grid_size`)) || 20; } catch { return 20; }
   });
   const [showRulers, setShowRulers] = useState(() => {
-    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_rulers`) === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`mullion_builder_${rootId}_show_rulers`) === 'true'; } catch { return false; }
   });
   const [showMeasurements, setShowMeasurements] = useState(() => {
-    try { return safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_measurements`) === 'true'; } catch { return false; }
+    try { return safeLocalStorage.getItem(`mullion_builder_${rootId}_show_measurements`) === 'true'; } catch { return false; }
   });
   const [designAssetsOpen, setDesignAssetsOpen] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem(`wpsg_builder_${rootId}_design_assets_open`);
+      const stored = localStorage.getItem(`mullion_builder_${rootId}_design_assets_open`);
       return stored === null ? true : stored === 'true';
     } catch {
       return true;
@@ -54,7 +54,7 @@ export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs 
   });
   const [layoutScope, setLayoutScopeState] = useState<LayoutScope>(() => {
     try {
-      return (localStorage.getItem(`wpsg_builder_${rootId}_layout_scope`) as LayoutScope | null) ?? 'global';
+      return (localStorage.getItem(`mullion_builder_${rootId}_layout_scope`) as LayoutScope | null) ?? 'global';
     } catch {
       return 'global';
     }
@@ -62,14 +62,14 @@ export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs 
   const setLayoutScope = useCallback(
     (scope: LayoutScope) => {
       setLayoutScopeState(scope);
-      try { localStorage.setItem(`wpsg_builder_${rootId}_layout_scope`, scope); } catch { /* ignore */ }
+      try { localStorage.setItem(`mullion_builder_${rootId}_layout_scope`, scope); } catch { /* ignore */ }
     },
     [rootId],
   );
 
   const [savedSwatches, setSavedSwatches] = useState<string[]>(() => {
     try {
-      const raw = safeLocalStorage.getItem(`wpsg_builder_${rootId}_color_swatches`);
+      const raw = safeLocalStorage.getItem(`mullion_builder_${rootId}_color_swatches`);
       return raw ? (JSON.parse(raw) as string[]) : [];
     } catch { return []; }
   });
@@ -80,29 +80,29 @@ export function useBuilderWorkspacePrefs(rootId: string): BuilderWorkspacePrefs 
       if (!trimmed || trimmed === '#') return;
       setSavedSwatches((prev) => {
         const deduped = [trimmed, ...prev.filter((c) => c !== trimmed)].slice(0, 30);
-        try { safeLocalStorage.setItem(`wpsg_builder_${rootId}_color_swatches`, JSON.stringify(deduped)); } catch { /* ignore */ }
+        try { safeLocalStorage.setItem(`mullion_builder_${rootId}_color_swatches`, JSON.stringify(deduped)); } catch { /* ignore */ }
         return deduped;
       });
     },
     [rootId],
   );
 
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_snap_mode`, snapMode); }, [rootId, snapMode]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_grid`, String(showGrid)); }, [rootId, showGrid]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_grid_size`, String(gridSizePx)); }, [rootId, gridSizePx]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_rulers`, String(showRulers)); }, [rootId, showRulers]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_measurements`, String(showMeasurements)); }, [rootId, showMeasurements]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_snap_mode`, snapMode); }, [rootId, snapMode]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_show_grid`, String(showGrid)); }, [rootId, showGrid]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_grid_size`, String(gridSizePx)); }, [rootId, gridSizePx]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_show_rulers`, String(showRulers)); }, [rootId, showRulers]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_show_measurements`, String(showMeasurements)); }, [rootId, showMeasurements]);
 
   // P37-KS1: one-time migration of legacy global builder workspace keys to root-scoped keys.
   useEffect(() => {
     const migrations: [string, string][] = [
-      ['wpsg_builder_snap_mode', `wpsg_builder_${rootId}_snap_mode`],
-      ['wpsg_builder_show_grid', `wpsg_builder_${rootId}_show_grid`],
-      ['wpsg_builder_grid_size', `wpsg_builder_${rootId}_grid_size`],
-      ['wpsg_builder_show_rulers', `wpsg_builder_${rootId}_show_rulers`],
-      ['wpsg_builder_show_measurements', `wpsg_builder_${rootId}_show_measurements`],
-      ['wpsg_builder_design_assets_open', `wpsg_builder_${rootId}_design_assets_open`],
-      ['wpsg_builder_layout', `wpsg_builder_${rootId}_layout`],
+      ['mullion_builder_snap_mode', `mullion_builder_${rootId}_snap_mode`],
+      ['mullion_builder_show_grid', `mullion_builder_${rootId}_show_grid`],
+      ['mullion_builder_grid_size', `mullion_builder_${rootId}_grid_size`],
+      ['mullion_builder_show_rulers', `mullion_builder_${rootId}_show_rulers`],
+      ['mullion_builder_show_measurements', `mullion_builder_${rootId}_show_measurements`],
+      ['mullion_builder_design_assets_open', `mullion_builder_${rootId}_design_assets_open`],
+      ['mullion_builder_layout', `mullion_builder_${rootId}_layout`],
     ];
     for (const [oldKey, newKey] of migrations) {
       try {

@@ -1,14 +1,14 @@
 /**
- * WPSG Debug utilities.
+ * MULLION Debug utilities.
  *
- * All debug logging is gated behind the `wpsg_debug` localStorage flag.
+ * All debug logging is gated behind the `mullion_debug` localStorage flag.
  * Toggle via Admin → Settings → Advanced → "Enable debug logging",
- * or manually: `localStorage.setItem('wpsg_debug', '1')` in console.
+ * or manually: `localStorage.setItem('mullion_debug', '1')` in console.
  */
 
-const STORAGE_KEY = 'wpsg_debug';
+const STORAGE_KEY = 'mullion_debug';
 
-/** Check whether WPSG debug mode is enabled. */
+/** Check whether MULLION debug mode is enabled. */
 export function isDebugEnabled(): boolean {
   try {
     return typeof localStorage !== 'undefined' && localStorage.getItem(STORAGE_KEY) === '1';

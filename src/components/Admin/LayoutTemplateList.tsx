@@ -63,10 +63,10 @@ import {
   getLayoutTemplatesQueryKey,
   useLayoutTemplates,
 } from '@/services/layoutTemplateQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useBuilderDeepLink } from '@mullion/shared-utils';
-import { useWpsgLicense } from '@/hooks/useWpsgLicense';
-import { showProUpsell } from '@/utils/wpsgUpsell';
+import { useMullionLicense } from '@/hooks/useMullionLicense';
+import { showProUpsell } from '@/utils/mullionUpsell';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -125,8 +125,8 @@ interface LayoutTemplateListProps {
 // ── Component ────────────────────────────────────────────────────────────────
 
 export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spaceId }: LayoutTemplateListProps) {
-  const { t: tr } = useTranslation('wpsg');
-  const { isPro, upgradeUrl } = useWpsgLicense();
+  const { t: tr } = useTranslation('mullion');
+  const { isPro, upgradeUrl } = useMullionLicense();
   const queryClient = useQueryClient();
   // ── State ─────────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -597,7 +597,7 @@ export function LayoutTemplateList({ apiClient, onNotify, initialTemplateId, spa
   );
 }
 
-setWpsgDebugDisplayName(LayoutTemplateList, 'AdminPanel:LayoutTemplateList');
+setMullionDebugDisplayName(LayoutTemplateList, 'AdminPanel:LayoutTemplateList');
 
 // ── Grid Card ────────────────────────────────────────────────────────────────
 
@@ -610,7 +610,7 @@ interface TemplateGridCardProps {
 }
 
 function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }: TemplateGridCardProps) {
-  const { t: tr } = useTranslation('wpsg');
+  const { t: tr } = useTranslation('mullion');
   const t = template;
   return (
     <Card shadow="xs" radius="md" withBorder padding="sm" pos="relative">
@@ -707,4 +707,4 @@ function TemplateGridCard({ template, onEdit, onDuplicate, onDelete, onExport }:
   );
 }
 
-setWpsgDebugDisplayName(TemplateGridCard, 'AdminPanel:TemplateGridCard');
+setMullionDebugDisplayName(TemplateGridCard, 'AdminPanel:TemplateGridCard');

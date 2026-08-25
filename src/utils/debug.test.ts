@@ -12,12 +12,12 @@ describe('isDebugEnabled', () => {
   });
 
   it('returns true when debug flag is set to "1"', () => {
-    localStorage.setItem('wpsg_debug', '1');
+    localStorage.setItem('mullion_debug', '1');
     expect(isDebugEnabled()).toBe(true);
   });
 
   it('returns false for values other than "1"', () => {
-    localStorage.setItem('wpsg_debug', 'true');
+    localStorage.setItem('mullion_debug', 'true');
     expect(isDebugEnabled()).toBe(false);
   });
 });
@@ -31,7 +31,7 @@ describe('debugGroup', () => {
   });
 
   it('logs collapsed group when debug is enabled', () => {
-    localStorage.setItem('wpsg_debug', '1');
+    localStorage.setItem('mullion_debug', '1');
     const spy = vi.spyOn(console, 'groupCollapsed').mockImplementation(() => {});
     debugGroup('my-label');
     expect(spy).toHaveBeenCalledWith('my-label');
@@ -48,7 +48,7 @@ describe('debugLog', () => {
   });
 
   it('logs when debug is enabled', () => {
-    localStorage.setItem('wpsg_debug', '1');
+    localStorage.setItem('mullion_debug', '1');
     const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
     debugLog('hello', 42);
     expect(spy).toHaveBeenCalledWith('hello', 42);
@@ -65,7 +65,7 @@ describe('debugGroupEnd', () => {
   });
 
   it('calls groupEnd when debug is enabled', () => {
-    localStorage.setItem('wpsg_debug', '1');
+    localStorage.setItem('mullion_debug', '1');
     const spy = vi.spyOn(console, 'groupEnd').mockImplementation(() => {});
     debugGroupEnd();
     expect(spy).toHaveBeenCalled();

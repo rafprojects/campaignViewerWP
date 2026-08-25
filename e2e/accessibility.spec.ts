@@ -66,20 +66,20 @@ test.describe('accessibility baseline', () => {
     // JWT mode so the sign-in flow is available
     await page.addInitScript(() => {
       (window as Window & {
-        __WPSG_AUTH_PROVIDER__?: string;
-        __WPSG_API_BASE__?: string;
-        __WPSG_CONFIG__?: Record<string, unknown>;
-      }).__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
+        __MULLION_AUTH_PROVIDER__?: string;
+        __MULLION_API_BASE__?: string;
+        __MULLION_CONFIG__?: Record<string, unknown>;
+      }).__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
       (window as Window & {
-        __WPSG_AUTH_PROVIDER__?: string;
-        __WPSG_API_BASE__?: string;
-        __WPSG_CONFIG__?: Record<string, unknown>;
-      }).__WPSG_API_BASE__ = 'http://127.0.0.1:5173';
+        __MULLION_AUTH_PROVIDER__?: string;
+        __MULLION_API_BASE__?: string;
+        __MULLION_CONFIG__?: Record<string, unknown>;
+      }).__MULLION_API_BASE__ = 'http://127.0.0.1:5173';
       (window as Window & {
-        __WPSG_AUTH_PROVIDER__?: string;
-        __WPSG_API_BASE__?: string;
-        __WPSG_CONFIG__?: Record<string, unknown>;
-      }).__WPSG_CONFIG__ = { enableJwt: true };
+        __MULLION_AUTH_PROVIDER__?: string;
+        __MULLION_API_BASE__?: string;
+        __MULLION_CONFIG__?: Record<string, unknown>;
+      }).__MULLION_CONFIG__ = { enableJwt: true };
     });
 
     // Token-validate returns 401 → unauthenticated state
@@ -203,15 +203,15 @@ const adminCampaign = {
 async function prepareAdminApp(page: Page) {
   await page.addInitScript(() => {
     const g = window as Window & {
-      __WPSG_AUTH_PROVIDER__?: string;
-      __WPSG_API_BASE__?: string;
-      __WPSG_CONFIG__?: Record<string, unknown>;
+      __MULLION_AUTH_PROVIDER__?: string;
+      __MULLION_API_BASE__?: string;
+      __MULLION_CONFIG__?: Record<string, unknown>;
     };
-    g.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    g.__WPSG_API_BASE__ = 'http://127.0.0.1:5173';
-    g.__WPSG_CONFIG__ = { enableJwt: true, restNonce: 'test-nonce' };
-    localStorage.setItem('wpsg_access_token', 'fake-token');
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
+    g.__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    g.__MULLION_API_BASE__ = 'http://127.0.0.1:5173';
+    g.__MULLION_CONFIG__ = { enableJwt: true, restNonce: 'test-nonce' };
+    localStorage.setItem('mullion_access_token', 'fake-token');
+    localStorage.setItem('mullion_user', JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }));
   });
 
   const settings = {

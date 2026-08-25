@@ -30,7 +30,7 @@ import {
 import { useTheme } from '@/hooks/useTheme';
 import type { ThemeMeta } from '@mullion/theme-engine';
 import { getTheme, getAllThemeMetaGrouped } from '@/themes/index';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -97,7 +97,7 @@ export function ThemeSelector({
   selectProps,
   onThemeChange,
 }: ThemeSelectorProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const effectiveLabel = label ?? t('admin_theme_label', 'Theme');
   const effectiveDescription = description ?? t('admin_theme_desc', 'Choose a color theme. Preview applies instantly; saved when you click Save.');
   const { themeId, availableThemes, setPreviewTheme } = useTheme();
@@ -162,4 +162,4 @@ export function ThemeSelector({
   );
 }
 
-setWpsgDebugDisplayName(ThemeSelector, 'AdminPanel:ThemeSelector');
+setMullionDebugDisplayName(ThemeSelector, 'AdminPanel:ThemeSelector');

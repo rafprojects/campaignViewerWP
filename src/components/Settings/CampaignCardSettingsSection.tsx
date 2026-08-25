@@ -55,7 +55,7 @@ interface CampaignCardSettingsSectionProps {
 }
 
 export function CampaignCardSettingsSection({ settings, updateSetting, activeBreakpoint, apiClient }: CampaignCardSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const isDesktop = activeBreakpoint === 'desktop';
 
   // P37-LB: Fetch layout templates for listing-builder template selector

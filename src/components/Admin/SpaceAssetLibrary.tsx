@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
 import type { AssetLibraryItem } from '@/components/Admin/LayoutBuilder/BuilderDockContext';
 import { CHECKERED_BG } from '@/utils/checkeredBg';
 import { getAssetFileType } from '@/utils/assetFileType';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface SpaceAssetLibraryProps {
   assets: AssetLibraryItem[];
@@ -36,7 +36,7 @@ export function SpaceAssetLibrary({
   onBulkToggle,
   loading = false,
 }: SpaceAssetLibraryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [search, setSearch] = useState('');
   const [activeTags, setActiveTags] = useState<string[]>([]);
 
@@ -187,4 +187,4 @@ export function SpaceAssetLibrary({
   );
 }
 
-setWpsgDebugDisplayName(SpaceAssetLibrary, 'AdminPanel:SpaceAssetLibrary');
+setMullionDebugDisplayName(SpaceAssetLibrary, 'AdminPanel:SpaceAssetLibrary');

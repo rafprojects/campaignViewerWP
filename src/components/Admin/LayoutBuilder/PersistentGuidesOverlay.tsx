@@ -32,7 +32,7 @@ export function PersistentGuidesOverlay({
   onToggleGuideLock,
   onSelectGuide,
 }: PersistentGuidesOverlayProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   function startGuideDrag(e: React.MouseEvent, guide: PersistentGuide) {
     e.stopPropagation();
 

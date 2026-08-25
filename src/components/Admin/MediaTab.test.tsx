@@ -120,7 +120,7 @@ describe('MediaTab', () => {
   });
 
   it('uses the compact bounded-width preset when compact view is restored from storage', async () => {
-    window.localStorage.setItem('wpsg_media_viewMode_layout-compact', JSON.stringify('compact'));
+    window.localStorage.setItem('mullion_media_viewMode_layout-compact', JSON.stringify('compact'));
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm-compact',
@@ -145,7 +145,7 @@ describe('MediaTab', () => {
   });
 
   it('keeps the list branch outside the bounded grid shell', async () => {
-    window.localStorage.setItem('wpsg_media_viewMode_layout-list', JSON.stringify('list'));
+    window.localStorage.setItem('mullion_media_viewMode_layout-list', JSON.stringify('list'));
     apiClient.get.mockResolvedValueOnce([
       {
         id: 'm-list',
@@ -893,7 +893,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (list view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode_root');
+    localStorage.removeItem('mullion_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'm1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Alpha', order: 1 },
@@ -923,7 +923,7 @@ describe('MediaTab', () => {
 
   it('hides drag handles when not in order sort mode (grid view)', async () => {
     // Clear any sort preference left by earlier tests
-    localStorage.removeItem('wpsg_media_sortMode_root');
+    localStorage.removeItem('mullion_media_sortMode_root');
 
     apiClient.get.mockResolvedValueOnce([
       { id: 'g1', type: 'image', source: 'upload', url: '1.jpg', caption: 'Gamma', order: 1 },

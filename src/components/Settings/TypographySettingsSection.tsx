@@ -47,7 +47,7 @@ export function TypographySettingsSection({
   onOverrideChange,
   isSystemAdmin = false,
 }: TypographySettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { value: accordionValue, onChange: onAccordionChange } = usePersistentAccordion('typography', null);
 
   return (

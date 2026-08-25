@@ -16,7 +16,7 @@ interface KeyboardHintOverlayProps {
  * or on any user interaction.
  */
 export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [show, setShow] = useState(false);
 
   const dismiss = useCallback(() => setShow(false), []);

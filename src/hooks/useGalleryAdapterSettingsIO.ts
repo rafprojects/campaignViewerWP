@@ -114,7 +114,7 @@ export function useGalleryAdapterSettingsIO({
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'gallery-adapter-settings.wpsg.json';
+    a.download = 'gallery-adapter-settings.mullion.json';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -15,7 +15,7 @@ import type {
 import { clampDimension } from '@mullion/shared-utils';
 import { toCss, sanitizeCssUrl } from '@mullion/shared-utils';
 import { resolveGalleryComponentCommonSettings } from '@/components/Galleries/Adapters/_shared/runtimeCommon';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface GallerySectionWrapperProps {
   settings: GalleryBehaviorSettings;
@@ -155,9 +155,9 @@ export function GallerySectionWrapper({
     : undefined;
 
   return (
-    <Box {...getWpsgDebugProps('GallerySectionWrapper')} ref={sectionRef} style={wrapperStyle}>
+    <Box {...getMullionDebugProps('GallerySectionWrapper')} ref={sectionRef} style={wrapperStyle}>
       {hasContentOffset ? (
-        <div {...getWpsgDebugProps('GallerySectionWrapper', 'offset-content')} style={contentStyle}>{children(containerDimensions)}</div>
+        <div {...getMullionDebugProps('GallerySectionWrapper', 'offset-content')} style={contentStyle}>{children(containerDimensions)}</div>
       ) : (
         children(containerDimensions)
       )}
@@ -165,4 +165,4 @@ export function GallerySectionWrapper({
   );
 }
 
-setWpsgDebugDisplayName(GallerySectionWrapper, 'GallerySectionWrapper');
+setMullionDebugDisplayName(GallerySectionWrapper, 'GallerySectionWrapper');

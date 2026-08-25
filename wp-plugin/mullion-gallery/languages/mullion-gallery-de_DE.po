@@ -2839,8 +2839,8 @@ msgid "Enable Component Debug Names & Markers"
 msgstr "Komponenten-Debug-Namen und -Markierungen aktivieren"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:688
-msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
-msgstr "Wenn aktiviert, behalten bereitgestellte Builds explizite React-DevTools-Komponentennamen bei und fügen data-wpsg-component/data-wpsg-slot-Attribute in das DOM ein, für die Elementinspektion und QA-Selektoren. Die lokale Entwicklung kann weiterhin Quellkomponentennamen anzeigen, auch wenn dies deaktiviert ist."
+msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-mullion-component/data-mullion-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+msgstr "Wenn aktiviert, behalten bereitgestellte Builds explizite React-DevTools-Komponentennamen bei und fügen data-mullion-component/data-mullion-slot-Attribute in das DOM ein, für die Elementinspektion und QA-Selektoren. Die lokale Entwicklung kann weiterhin Quellkomponentennamen anzeigen, auch wenn dies deaktiviert ist."
 
 #: includes/i18n/class-wpsg-frontend-strings.php:689
 msgid "Data Maintenance"
@@ -6245,8 +6245,8 @@ msgid "Revoke access"
 msgstr "Zugriff widerrufen"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1804
-msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
-msgstr "Keine Zugriffsberechtigungen. Jeder mit der Berechtigung manage_wpsg kann auf diesen Bereich zugreifen."
+msgid "No access grants. Everyone with the manage_mullion capability can access this space."
+msgstr "Keine Zugriffsberechtigungen. Jeder mit der Berechtigung manage_mullion kann auf diesen Bereich zugreifen."
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1805
 msgid "Grant access"
@@ -9134,8 +9134,8 @@ msgid "Keep React DevTools names and emit DOM component markers in deployed buil
 msgstr "React-DevTools-Namen beibehalten und DOM-Komponentenmarkierungen in bereitgestellten Builds ausgeben."
 
 #: includes/settings/class-wpsg-settings-core-fields.php:302
-msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
-msgstr "Fügt explizite Komponentennamen für React DevTools in Produktions-Builds hinzu und injiziert data-wpsg-component/data-wpsg-slot-Attribute für die Elementinspektion im Browser, QA-Selektoren und das Debugging der UI-Oberfläche."
+msgid "Adds explicit component names for React DevTools in production builds and injects data-mullion-component/data-mullion-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgstr "Fügt explizite Komponentennamen für React DevTools in Produktions-Builds hinzu und injiziert data-mullion-component/data-mullion-slot-Attribute für die Elementinspektion im Browser, QA-Selektoren und das Debugging der UI-Oberfläche."
 
 #: includes/settings/class-wpsg-settings-core-fields.php:394
 msgid "Enable smooth animations and transitions."

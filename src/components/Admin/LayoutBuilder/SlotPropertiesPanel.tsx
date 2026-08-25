@@ -41,7 +41,7 @@ import type {
   SlotEntranceDirection,
 } from '@/types';
 import { buildSlotEntranceCss, REVEAL_CLASS } from '@/utils/slotEntrance';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -126,7 +126,7 @@ const FOCAL_PRESETS: Array<{ pos: string; label: string; dotX: string; dotY: str
 // ── Inline property row ──────────────────────────────────────
 
 function PropRow({ label, children, tooltip }: { label: string; children: React.ReactNode; tooltip?: string }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Group gap={6} align="center" wrap="nowrap" style={{ minHeight: 28 }}>
       <Group gap={2} align="center" wrap="nowrap" style={{ width: 70, flexShrink: 0 }}>
@@ -144,7 +144,7 @@ function PropRow({ label, children, tooltip }: { label: string; children: React.
   );
 }
 
-setWpsgDebugDisplayName(PropRow, 'LayoutBuilder:SlotPropertiesPanel:PropRow');
+setMullionDebugDisplayName(PropRow, 'LayoutBuilder:SlotPropertiesPanel:PropRow');
 
 function SectionHeader({ label }: { label: string }) {
   return (
@@ -163,14 +163,14 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:SlotPropertiesPanel:SectionHeader');
+setMullionDebugDisplayName(SectionHeader, 'LayoutBuilder:SlotPropertiesPanel:SectionHeader');
 
 // ── Effects sub-sections ─────────────────────────────────────
 
 type EffectSectionProps = Pick<SlotPropertiesPanelProps, 'slot' | 'onUpdate'>;
 
 function FilterEffectsSection({ slot, onUpdate }: EffectSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const fe: SlotFilterEffects = slot.filterEffects ?? {};
   const setFe = (patch: Partial<SlotFilterEffects>) =>
     onUpdate({ filterEffects: { ...fe, ...patch } });
@@ -213,7 +213,7 @@ function FilterEffectsSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function ShadowSection({ slot, onUpdate }: EffectSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const sh: SlotShadow = slot.shadow ?? { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0,0,0,0.5)' };
   const hasShadow = Boolean(slot.shadow);
   const setSh = (patch: Partial<SlotShadow>) =>
@@ -257,7 +257,7 @@ function ShadowSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function OverlayEffectSection({ slot, onUpdate }: EffectSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const ov: SlotOverlayEffect = slot.overlayEffect ?? { mode: 'none', intensity: 30, onHoverOnly: false };
   const setOv = (patch: Partial<SlotOverlayEffect>) =>
     onUpdate({ overlayEffect: { ...ov, ...patch } });
@@ -296,7 +296,7 @@ function OverlayEffectSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function TiltEffectSection({ slot, onUpdate }: EffectSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const tilt: SlotTiltEffect = slot.tilt ?? { enabled: false, maxAngle: 15, perspective: 1000, resetSpeed: 300 };
   const setTilt = (patch: Partial<SlotTiltEffect>) =>
     onUpdate({ tilt: { ...tilt, ...patch } });
@@ -331,12 +331,12 @@ function TiltEffectSection({ slot, onUpdate }: EffectSectionProps) {
 }
 
 function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   // P58-E: scroll-reveal entrance animation, previewed in-panel (the live builder
   // canvas uses LayoutSlotComponent; entrance only runs in the rendered gallery).
   const anim = slot.entranceAnimation;
   const [playNonce, setPlayNonce] = useState(0);
-  const previewClass = 'wpsg-entrance-preview-box';
+  const previewClass = 'mullion-entrance-preview-box';
 
   const setAnim = (patch: Partial<SlotEntranceAnimation>) => {
     if (!anim) return;
@@ -344,7 +344,7 @@ function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
   };
 
   const previewCss = anim
-    ? buildSlotEntranceCss({ className: previewClass, keyframeName: 'wpsgEntrancePreviewKf', anim, rotationDeg: 0 })
+    ? buildSlotEntranceCss({ className: previewClass, keyframeName: 'mullionEntrancePreviewKf', anim, rotationDeg: 0 })
     : '';
   // Re-mount the preview box (replaying the CSS animation) on any setting change or Play click.
   const previewKey = anim
@@ -434,7 +434,7 @@ function EntranceSection({ slot, onUpdate }: EffectSectionProps) {
     </Stack>
   );
 }
-setWpsgDebugDisplayName(EntranceSection, 'LayoutBuilder:SlotPropertiesPanel:EntranceSection');
+setMullionDebugDisplayName(EntranceSection, 'LayoutBuilder:SlotPropertiesPanel:EntranceSection');
 
 // ── Component ────────────────────────────────────────────────
 
@@ -447,7 +447,7 @@ export function SlotPropertiesPanel({
   onSendBackward,
   listingMode = false,
 }: SlotPropertiesPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const shapeOptions = SHAPE_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_shape_${o.value}`, o.label) }));
   const fitOptions = FIT_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_fit_${o.value}`, o.label) }));
   const clickOptions = CLICK_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_click_${o.value}`, o.label) }));
@@ -935,4 +935,4 @@ export function SlotPropertiesPanel({
   );
 }
 
-setWpsgDebugDisplayName(SlotPropertiesPanel, 'LayoutBuilder:SlotPropertiesPanel');
+setMullionDebugDisplayName(SlotPropertiesPanel, 'LayoutBuilder:SlotPropertiesPanel');

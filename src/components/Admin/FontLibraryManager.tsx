@@ -13,7 +13,7 @@ import { IconTrash, IconUpload, IconWorld, IconWorldOff } from '@tabler/icons-re
 import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import { type FontLibraryEntry, loadCustomFonts, useLatestRef } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 const ACCEPT = '.woff2,.woff,.ttf,.otf';
 
@@ -29,7 +29,7 @@ interface Props {
 }
 
 export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = false }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [fonts, setFonts] = useState<FontLibraryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
@@ -158,4 +158,4 @@ export function FontLibraryManager({ apiClient, onFontsChange, isSystemAdmin = f
   );
 }
 
-setWpsgDebugDisplayName(FontLibraryManager, 'AdminPanel:FontLibraryManager');
+setMullionDebugDisplayName(FontLibraryManager, 'AdminPanel:FontLibraryManager');

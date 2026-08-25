@@ -18,7 +18,7 @@ enableMapSet();
 
 // ── Constants ────────────────────────────────────────────────
 
-const STORAGE_KEY_PREFIX = 'wpsg_layout_draft_';
+const STORAGE_KEY_PREFIX = 'mullion_layout_draft_';
 
 /**
  * P36-A: Autosave payload wrapper. The `savedAt` timestamp is set at each

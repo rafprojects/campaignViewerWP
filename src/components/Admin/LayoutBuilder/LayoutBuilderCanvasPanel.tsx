@@ -15,9 +15,9 @@ import type { ContextualToolbarCallbacks } from './ContextualToolbar';
 import { CanvasTransformContext, useRootId } from '@mullion/shared-ui';
 import { SNAP_MODE_LABELS, type SnapMode } from '@mullion/shared-utils';
 import { safeLocalStorage, fitRectsIntoBand } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useWpsgLicense } from '@/hooks/useWpsgLicense';
-import { showProUpsell } from '@/utils/wpsgUpsell';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { useMullionLicense } from '@/hooks/useMullionLicense';
+import { showProUpsell } from '@/utils/mullionUpsell';
 
 // ── P30-C: Device preview presets ────────────────────────────────────────────
 
@@ -113,8 +113,8 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
     toggleGuideLock,
   } = useBuilderDock();
 
-  const { t: tr } = useTranslation('wpsg');
-  const { isPro, upgradeUrl } = useWpsgLicense();
+  const { t: tr } = useTranslation('mullion');
+  const { isPro, upgradeUrl } = useMullionLicense();
   const presetSegmentedData = PRESET_SEGMENTED_DATA.map(({ value, label }) => ({ value, label: tr(`lb_canvas_preset_${value}`, label) }));
   const breakpointEditData = BREAKPOINT_EDIT_DATA.map(({ value, label }) => ({ value, label: tr(`admin_bp_${value}`, label) }));
 
@@ -251,25 +251,25 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
 
   // ── P30-C: Device preview presets (root-scoped per P37-KS1) ─────────────
   const [previewPreset, setPreviewPreset] = useState<PreviewPreset>(() =>
-    (safeLocalStorage.getItem(`wpsg_builder_${rootId}_preview_preset`) as PreviewPreset | null) ?? 'none',
+    (safeLocalStorage.getItem(`mullion_builder_${rootId}_preview_preset`) as PreviewPreset | null) ?? 'none',
   );
   const [customPreviewWidth, setCustomPreviewWidth] = useState<number>(() =>
-    Number(safeLocalStorage.getItem(`wpsg_builder_${rootId}_custom_preview_width`)) || 800,
+    Number(safeLocalStorage.getItem(`mullion_builder_${rootId}_custom_preview_width`)) || 800,
   );
   const [showPreviewFrame, setShowPreviewFrame] = useState<boolean>(
-    () => safeLocalStorage.getItem(`wpsg_builder_${rootId}_show_preview_frame`) === 'true',
+    () => safeLocalStorage.getItem(`mullion_builder_${rootId}_show_preview_frame`) === 'true',
   );
 
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_preview_preset`, previewPreset); }, [rootId, previewPreset]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_custom_preview_width`, String(customPreviewWidth)); }, [rootId, customPreviewWidth]);
-  useEffect(() => { safeLocalStorage.setItem(`wpsg_builder_${rootId}_show_preview_frame`, String(showPreviewFrame)); }, [rootId, showPreviewFrame]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_preview_preset`, previewPreset); }, [rootId, previewPreset]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_custom_preview_width`, String(customPreviewWidth)); }, [rootId, customPreviewWidth]);
+  useEffect(() => { safeLocalStorage.setItem(`mullion_builder_${rootId}_show_preview_frame`, String(showPreviewFrame)); }, [rootId, showPreviewFrame]);
 
   // P37-KS1: one-time migration of legacy global preview keys to root-scoped keys.
   useEffect(() => {
     const migrations: [string, string][] = [
-      ['wpsg_builder_preview_preset', `wpsg_builder_${rootId}_preview_preset`],
-      ['wpsg_builder_custom_preview_width', `wpsg_builder_${rootId}_custom_preview_width`],
-      ['wpsg_builder_show_preview_frame', `wpsg_builder_${rootId}_show_preview_frame`],
+      ['mullion_builder_preview_preset', `mullion_builder_${rootId}_preview_preset`],
+      ['mullion_builder_custom_preview_width', `mullion_builder_${rootId}_custom_preview_width`],
+      ['mullion_builder_show_preview_frame', `mullion_builder_${rootId}_show_preview_frame`],
     ];
     for (const [oldKey, newKey] of migrations) {
       try {
@@ -814,4 +814,4 @@ export function LayoutBuilderCanvasPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderCanvasPanel, 'LayoutBuilder:LayoutBuilderCanvasPanel');
+setMullionDebugDisplayName(LayoutBuilderCanvasPanel, 'LayoutBuilder:LayoutBuilderCanvasPanel');

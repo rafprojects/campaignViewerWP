@@ -134,7 +134,7 @@ interface UnifiedCampaignModalTabListProps {
 }
 
 const UnifiedCampaignModalTabList: NamedComponent<UnifiedCampaignModalTabListProps> = ({ isEdit, mediaCount }) => {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Tabs.List>
       <Tabs.Tab value="details">{t('admin_camp_tab_details', 'Details')}</Tabs.Tab>
@@ -173,7 +173,7 @@ const UnifiedCampaignDetailsPanel: NamedComponent<UnifiedCampaignDetailsPanelPro
   companies,
   companiesLoading,
 }) => {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
   <Tabs.Panel value="details" pt="md">
     <Stack gap="md">
@@ -288,7 +288,7 @@ const UnifiedCampaignSettingsPanel: NamedComponent<UnifiedCampaignSettingsPanelP
   layoutTemplates,
   onEditLayout,
 }) => {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const usesLayoutBuilder = campaignUsesLayoutBuilder(formState.galleryOverrides);
   return (
   <Tabs.Panel value="settings" pt="md">
@@ -544,7 +544,7 @@ export function UnifiedCampaignModal({
   categoryItems = [],
   tagItems = [],
 }: UnifiedCampaignModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [galleryConfigEditorOpen, setGalleryConfigEditorOpen] = useState(false);
   const { activeCampaign, onEditGalleryConfig, setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   // Live mirrors of the context so the edit-modal effect can snapshot whatever was
@@ -814,7 +814,7 @@ function MediaTabContent({
   addMediaLoading,
   onAddExternalMedia,
 }: MediaTabContentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Stack gap="lg">
       {/* Media grid */}

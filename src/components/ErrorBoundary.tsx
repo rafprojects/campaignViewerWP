@@ -11,7 +11,7 @@ interface Props {
   /**
    * P69-C/D: when true (an admin/editor viewer), the raw exception message is
    * shown for troubleshooting. Public visitors (default) see generic copy so
-   * internal details in error messages aren't disclosed. The `wpsg_debug`
+   * internal details in error messages aren't disclosed. The `mullion_debug`
    * localStorage flag also reveals the raw message regardless of this prop.
    */
   isAdmin?: boolean;
@@ -56,7 +56,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       const genericBody = i18n.t('eb_error_body', 'An unexpected error occurred while loading this component.');
       // Only reveal the raw exception message to admins/editors, or when the
-      // wpsg_debug flag is set. Public visitors get the generic copy — the full
+      // mullion_debug flag is set. Public visitors get the generic copy — the full
       // error already reaches Sentry (see componentDidCatch); end users don't
       // need internal details (URLs, state fragments) that a message may carry.
       const showRawMessage = this.props.isAdmin === true || isDebugEnabled();

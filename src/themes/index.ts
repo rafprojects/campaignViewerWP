@@ -131,7 +131,7 @@ function registerTheme(extension: ThemeExtension): boolean {
   // 2. Validate (inject the browser dev flag — the package's own isDevEnv()
   //    can't see import.meta.env, so dev warnings would otherwise go dark here)
   if (!isValidTheme(merged, import.meta.env.DEV)) {
-    console.error(`[WPSG Theme] Skipping invalid theme: ${extension.id}`);
+    console.error(`[MULLION Theme] Skipping invalid theme: ${extension.id}`);
     return false;
   }
 
@@ -191,14 +191,14 @@ function initializeRegistry(): void {
 
   if (import.meta.env.DEV) {
     console.log(
-      `[WPSG Theme] Registry initialized: ${successCount}/${bundled.length} themes in ${elapsed.toFixed(1)}ms`,
+      `[MULLION Theme] Registry initialized: ${successCount}/${bundled.length} themes in ${elapsed.toFixed(1)}ms`,
     );
   }
 
   // Safety: ensure default theme is always available
   if (!registry.has(DEFAULT_THEME_ID)) {
     console.error(
-      `[WPSG Theme] CRITICAL: Default theme "${DEFAULT_THEME_ID}" failed to register!`,
+      `[MULLION Theme] CRITICAL: Default theme "${DEFAULT_THEME_ID}" failed to register!`,
     );
   }
 }
@@ -222,7 +222,7 @@ export function getTheme(id: string): ThemeEntry {
   if (entry) return entry;
 
   if (import.meta.env.DEV) {
-    console.warn(`[WPSG Theme] Theme "${id}" not found, falling back to "${DEFAULT_THEME_ID}"`);
+    console.warn(`[MULLION Theme] Theme "${id}" not found, falling back to "${DEFAULT_THEME_ID}"`);
   }
 
   // Guaranteed to exist after initialization

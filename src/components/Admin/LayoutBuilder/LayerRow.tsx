@@ -29,7 +29,7 @@ import {
 import type { LayerItem } from '@/utils/layerList';
 import { getLayerName } from '@/utils/layerList';
 import type { LayoutTemplate } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -98,7 +98,7 @@ export function LayerRow({
   const locked = (item.kind !== 'background' && item.kind !== 'mask') ? (item.locked ?? false) : false;
   const displayName = getLayerName(item, template);
 
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [editing, setEditing] = useState(false);
   const [draftName, setDraftName] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -326,4 +326,4 @@ export function LayerRow({
   );
 }
 
-setWpsgDebugDisplayName(LayerRow, 'LayoutBuilder:LayerRow');
+setMullionDebugDisplayName(LayerRow, 'LayoutBuilder:LayerRow');

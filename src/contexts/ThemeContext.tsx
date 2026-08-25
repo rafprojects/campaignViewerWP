@@ -39,7 +39,7 @@ import {
 // Constants
 // ---------------------------------------------------------------------------
 
-const STORAGE_KEY = 'wpsg-theme-id';
+const STORAGE_KEY = 'mullion-theme-id';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -55,8 +55,8 @@ const STORAGE_KEY = 'wpsg-theme-id';
  * When persistence is disabled (admin locked theme), localStorage is
  * skipped and the injected theme takes precedence.
  *
- * [P51-D] The WordPress-specific candidate reads (`__wpsgThemeId`,
- * `data-wpsg-theme`, `__WPSG_CONFIG__.theme`) are injected via
+ * [P51-D] The WordPress-specific candidate reads (`__mullionThemeId`,
+ * `data-mullion-theme`, `__MULLION_CONFIG__.theme`) are injected via
  * `resolveWpThemeIds` so this context carries no direct WP coupling.
  */
 function resolveInitialThemeId(
@@ -133,7 +133,7 @@ export interface ThemeProviderProps {
   defaultThemeId?: string | undefined;
 
   /**
-   * Scopes the localStorage key to `wpsg-theme-id-{instanceId}` so that
+   * Scopes the localStorage key to `mullion-theme-id-{instanceId}` so that
    * each space on a multi-space page maintains independent user theme
    * preferences.
    */
@@ -147,14 +147,14 @@ export interface ThemeProviderProps {
   shadowRoot?: ShadowRoot | null;
 
   /**
-   * Host element for non-shadow mounts. Used to scope custom WPSG CSS
+   * Host element for non-shadow mounts. Used to scope custom MULLION CSS
    * variables per gallery instance when rendering in the normal DOM.
    */
   hostElement?: HTMLElement | null;
 
   /**
    * Scoped selector for non-shadow custom CSS variable injection.
-   * Example: `[data-wpsg-theme-scope="abc123"]`.
+   * Example: `[data-mullion-theme-scope="abc123"]`.
    */
   themeScopeSelector?: string | undefined;
 
@@ -162,7 +162,7 @@ export interface ThemeProviderProps {
    * Host-injected initial-theme candidates, in priority order. The first
    * candidate that resolves to a registered theme is used as the initial
    * theme (after localStorage and `defaultThemeId`). Kept injectable so the
-   * theme context stays free of any WordPress (`window.__WPSG_*`) coupling —
+   * theme context stays free of any WordPress (`window.__MULLION_*`) coupling —
    * see `@/services/wpThemeId`. [P51-D]
    */
   resolveWpThemeIds?: (() => Array<string | null | undefined>) | undefined;
@@ -187,8 +187,8 @@ export function ThemeProvider({
 
   // The effective theme ID: preview overrides saved, forced overrides all
   const effectiveThemeId = forcedThemeId ?? previewThemeId ?? themeId;
-  const scopeId = hostElement?.dataset.wpsgThemeScope
-    ? normalizeThemeScopeToken(hostElement.dataset.wpsgThemeScope)
+  const scopeId = hostElement?.dataset.mullionThemeScope
+    ? normalizeThemeScopeToken(hostElement.dataset.mullionThemeScope)
     : null;
   const scopedStyleId = scopeId ? buildThemeStyleElementId(scopeId) : null;
 
@@ -231,12 +231,12 @@ export function ThemeProvider({
     }
   }, [forcedThemeId]);
 
-  // Inject custom WPSG CSS variables into the shadow root.
+  // Inject custom MULLION CSS variables into the shadow root.
   // Split into two effects so the style element is only created/removed when
   // the shadowRoot changes (mount/unmount), while cssVars changes only update
   // textContent — avoiding remove+recreate DOM churn and brief CSS var gaps on
   // theme switches.
-  const STYLE_ID = 'wpsg-theme-vars';
+  const STYLE_ID = 'mullion-theme-vars';
   useEffect(() => {
     if (!shadowRoot) return;
     // Use ownerDocument rather than the ambient `document` so the element

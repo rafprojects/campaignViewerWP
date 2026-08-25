@@ -42,7 +42,7 @@ describe('useScrollRestore — callbackRef', () => {
   });
 
   it('restores saved scroll position on mount', () => {
-    localStorage.setItem('wpsg_view_root_scroll_feat', JSON.stringify(42));
+    localStorage.setItem('mullion_view_root_scroll_feat', JSON.stringify(42));
     const { result } = renderHook(() => useScrollRestore('feat'));
     const el = makeElement(0);
     act(() => result.current(el as unknown as HTMLElement));
@@ -80,14 +80,14 @@ describe('useScrollRestore — callbackRef', () => {
     act(() => el.dispatchScroll());
     // Debounce fires after 200ms
     await act(async () => { await new Promise((r) => setTimeout(r, 250)); });
-    const stored = JSON.parse(localStorage.getItem('wpsg_view_root_scroll_feat') ?? 'null');
+    const stored = JSON.parse(localStorage.getItem('mullion_view_root_scroll_feat') ?? 'null');
     expect(stored).toBe(100);
   });
 });
 
 describe('useScrollRestore — tabKey change effect', () => {
   it('restores scroll position when tabKey changes', () => {
-    localStorage.setItem('wpsg_view_root_scroll_feat_tab2', JSON.stringify(55));
+    localStorage.setItem('mullion_view_root_scroll_feat_tab2', JSON.stringify(55));
     const { result, rerender } = renderHook(
       ({ tab }: { tab: string }) => useScrollRestore('feat', tab),
       { initialProps: { tab: 'tab1' } },
@@ -122,7 +122,7 @@ describe('useScrollRestore — tabKey change effect', () => {
 
 describe('useScrollRestore — options', () => {
   it('uses tabKey in the storage key', () => {
-    localStorage.setItem('wpsg_view_root_scroll_gallery_list', JSON.stringify(10));
+    localStorage.setItem('mullion_view_root_scroll_gallery_list', JSON.stringify(10));
     const { result } = renderHook(() => useScrollRestore('gallery', 'list'));
     const el = makeElement(0);
     act(() => result.current(el as unknown as HTMLElement));

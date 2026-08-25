@@ -290,8 +290,8 @@ describe('LayoutSlotComponent — media drop events', () => {
     fireEvent.drop(imgContainer, {
       dataTransfer: {
         getData: (type: string) =>
-          type === 'application/x-wpsg-media-id' ? 'media-42' : '',
-        types: ['application/x-wpsg-media-id'],
+          type === 'application/x-mullion-media-id' ? 'media-42' : '',
+        types: ['application/x-mullion-media-id'],
       },
     });
 
@@ -306,11 +306,11 @@ describe('LayoutSlotComponent — media drop events', () => {
     fireEvent.drop(imgContainer, {
       dataTransfer: {
         getData: (type: string) => {
-          if (type === 'application/x-wpsg-media-id') return 'media-42';
-          if (type === 'application/x-wpsg-media-meta') return JSON.stringify(meta);
+          if (type === 'application/x-mullion-media-id') return 'media-42';
+          if (type === 'application/x-mullion-media-meta') return JSON.stringify(meta);
           return '';
         },
-        types: ['application/x-wpsg-media-id'],
+        types: ['application/x-mullion-media-id'],
       },
     });
 

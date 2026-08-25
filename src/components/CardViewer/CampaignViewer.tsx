@@ -24,7 +24,7 @@ import {
   buildCampaignGalleryOverrideEditorValue,
   hasCampaignGalleryOverrides,
 } from '@/utils/campaignGalleryOverrides';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { UnifiedGallerySection } from './UnifiedGallerySection';
 import { PerTypeGallerySection } from './PerTypeGallerySection';
 
@@ -69,7 +69,7 @@ function CampaignViewerCoverHeader({
   campaignDateStyle,
   coverHeights,
 }: CampaignViewerCoverHeaderProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Box pos="relative" h={coverHeights} component="div">
       <InContextEditor
@@ -174,14 +174,14 @@ function CampaignViewerGalleryContent({
   isAdmin,
   apiClient,
 }: CampaignViewerGalleryContentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   if (!hasAccess || (displayedCampaign.videos.length === 0 && displayedCampaign.images.length === 0)) {
     return null;
   }
 
   return (
     <Box
-      {...getWpsgDebugProps('CampaignViewer', 'gallery-shell')}
+      {...getMullionDebugProps('CampaignViewer', 'gallery-shell')}
       style={{
         width: '100%',
         maxWidth: galleryShellLayout.maxWidth,
@@ -232,7 +232,7 @@ function CampaignViewerStatsSection({
   campaignStatsValueStyle,
   campaignStatsLabelStyle,
 }: CampaignViewerStatsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Box component="section" role="region" aria-labelledby="campaign-stats-heading" pos="relative">
       <InContextEditor
@@ -245,7 +245,7 @@ function CampaignViewerStatsSection({
           <Switch label={t('cv_admin_only', 'Admin Only')} checked={!!settings.campaignStatsAdminOnly} onChange={(e) => inContextSave('campaignStatsAdminOnly', e.currentTarget.checked)} size="xs" />
         </Stack>
       </InContextEditor>
-      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="wpsg-sr-only">{t('cv_stats_heading', 'Campaign Statistics')}</Title>
+      <Title order={3} size="h6" mb="sm" id="campaign-stats-heading" className="mullion-sr-only">{t('cv_stats_heading', 'Campaign Statistics')}</Title>
       <SimpleGrid cols={{ base: 2, sm: 4 }} spacing={{ base: 'sm', md: 'md' }} py="sm" style={{ borderTopWidth: 1, borderTopColor: 'var(--mullion-color-border)' }}>
         <Paper p="md" radius="md" withBorder ta="center">
           <Text size="xl" fw={700} style={campaignStatsValueStyle}>{displayedCampaign.videos.length}</Text>
@@ -284,7 +284,7 @@ export function CampaignViewer({
   onClose,
   spaceId,
 }: CampaignViewerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const s = galleryBehaviorSettings;
   const { setActiveCampaign, setOnEditGalleryConfig } = useCampaignContext();
   const [viewerCampaign, setViewerCampaign] = useState(campaign);
@@ -463,7 +463,7 @@ export function CampaignViewer({
   }, [useFullscreen, s.modalBgType, s.modalBgColor, s.modalBgGradient]);
   return (
     <Modal
-      {...getWpsgDebugProps('CampaignViewer')}
+      {...getMullionDebugProps('CampaignViewer')}
       opened={opened}
       onClose={onClose}
       withinPortal={false}
@@ -473,11 +473,11 @@ export function CampaignViewer({
       padding={0}
       withCloseButton
       closeButtonProps={{
-        ...getWpsgDebugProps('CampaignViewer', 'close'),
+        ...getMullionDebugProps('CampaignViewer', 'close'),
         'aria-label': t('cv_close_aria', 'Close campaign viewer'),
         size: 'lg',
       }}
-      overlayProps={getWpsgDebugProps('CampaignViewer', 'overlay')}
+      overlayProps={getMullionDebugProps('CampaignViewer', 'overlay')}
       transitionProps={{ transition, duration: s.modalTransitionDuration }}
       radius={useFullscreen ? 0 : 'lg'}
       fullScreen={useFullscreen}
@@ -510,7 +510,7 @@ export function CampaignViewer({
 
       {/* Content */}
       <Box
-        {...getWpsgDebugProps('CampaignViewer', 'content-shell')}
+        {...getMullionDebugProps('CampaignViewer', 'content-shell')}
         ref={containerRef}
         style={{ width: '100%', maxWidth: contentMaxWidth, marginLeft: 'auto', marginRight: 'auto', padding: galleriesOnly ? 0 : toCssOrNumber(clampedInnerPadding, innerPaddingUnit), display: 'flex', flexDirection: 'column' as const, flex: 1, justifyContent: s.modalContentVerticalAlign === 'center' ? 'center' : s.modalContentVerticalAlign === 'bottom' ? 'flex-end' : undefined }}
       >
@@ -609,4 +609,4 @@ export function CampaignViewer({
   );
 }
 
-setWpsgDebugDisplayName(CampaignViewer, 'CampaignViewer');
+setMullionDebugDisplayName(CampaignViewer, 'CampaignViewer');

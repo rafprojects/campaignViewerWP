@@ -740,7 +740,7 @@ describe('isValidTheme — comprehensive coverage', () => {
     const theme = makeValidTheme({ id: '' });
     expect(isValidTheme(theme, true)).toBe(false);
     expect(warn).toHaveBeenCalled();
-    expect(warn.mock.calls[0]![0]).toContain('[WPSG Theme]');
+    expect(warn.mock.calls[0]![0]).toContain('[MULLION Theme]');
     warn.mockRestore();
   });
 
@@ -806,7 +806,7 @@ describe('warnLowContrast — comprehensive coverage', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     warnLowContrast('test', '#808080', '#888888', true);
     expect(warn).toHaveBeenCalledTimes(1);
-    expect(warn.mock.calls[0]![0]).toContain('[WPSG Theme]');
+    expect(warn.mock.calls[0]![0]).toContain('[MULLION Theme]');
     expect(warn.mock.calls[0]![0]).toContain('test');
     expect(warn.mock.calls[0]![0]).toContain('contrast ratio');
     expect(warn.mock.calls[0]![0]).toContain('WCAG AA');

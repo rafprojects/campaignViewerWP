@@ -15,7 +15,7 @@ import type {
   ContainerDimensions,
   ResolvedGallerySectionRuntime,
 } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { ClippedTileGridGallery, type ClippedTileGridConfig } from '../_shared/ClippedTileGridGallery';
 
 /** Diamond clip-path: rhombus with tips at 12, 3, 6, 9 o'clock positions. */
@@ -42,4 +42,4 @@ export function DiamondGallery({ media, settings, runtime }: DiamondGalleryProps
   return <ClippedTileGridGallery media={media} settings={settings} runtime={runtime} config={DIAMOND_CONFIG} />;
 }
 
-setWpsgDebugDisplayName(DiamondGallery, 'DiamondGallery');
+setMullionDebugDisplayName(DiamondGallery, 'DiamondGallery');

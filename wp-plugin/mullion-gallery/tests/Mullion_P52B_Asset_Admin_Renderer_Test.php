@@ -5,7 +5,7 @@
  *
  * Proves the WP-admin "Asset Library" page is correctly gated:
  *   - registered with manage_options (System Admin only);
- *   - render_page() outputs the #wpsg-assets-admin mount div;
+ *   - render_page() outputs the #mullion-assets-admin mount div;
  *   - a wpsg_editor lacks manage_options and cannot access the page.
  */
 class Mullion_P52B_Asset_Admin_Renderer_Test extends WP_UnitTestCase {
@@ -56,7 +56,7 @@ class Mullion_P52B_Asset_Admin_Renderer_Test extends WP_UnitTestCase {
         Mullion_Asset_Admin_Renderer::render_page();
         $html = ob_get_clean();
 
-        $this->assertStringContainsString('id="wpsg-assets-admin"', $html);
+        $this->assertStringContainsString('id="mullion-assets-admin"', $html);
     }
 
     public function test_editor_lacks_manage_options_cannot_access_asset_library_page() {

@@ -4,7 +4,7 @@ import type { TypographyOverride } from '@/types';
 import type { SettingsData } from '@/contexts/SettingsStore';
 import type { CustomFontEntry } from '@/components/Common/TypographyEditor';
 import { TypographySettingsSection } from '../TypographySettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsTypographyTabProps {
   apiClient: ApiClient;
@@ -38,4 +38,4 @@ export const SettingsTypographyTab = memo(function SettingsTypographyTab({
     />
   );
 });
-setWpsgDebugDisplayName(SettingsTypographyTab, 'SettingsPanel:TypographyTab');
+setMullionDebugDisplayName(SettingsTypographyTab, 'SettingsPanel:TypographyTab');

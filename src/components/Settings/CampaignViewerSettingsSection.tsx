@@ -22,7 +22,7 @@ interface CampaignViewerSettingsSectionProps {
 }
 
 export function CampaignViewerSettingsSection({ settings, updateSetting }: CampaignViewerSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { mounted, value, onChange } = usePersistentAccordion('campaign-viewer', 'cv-open-mode');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const showCampaignGalleryLabels = getRepresentativeGalleryCommonSetting(resolvedGalleryConfig, 'showCampaignGalleryLabels') as boolean | undefined;

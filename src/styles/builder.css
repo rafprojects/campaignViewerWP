@@ -1,7 +1,7 @@
 /**
  * P37-LB1: Layout Builder — Structural Dockview overrides
  *
- * .dockview-theme-wpsg is supplied as Dockview's active theme class from
+ * .dockview-theme-mullion is supplied as Dockview's active theme class from
  * LayoutBuilderModal. Dockview otherwise defaults to themeAbyss, which is the
  * source of the built-in dark-blue panel chrome.
  *
@@ -10,7 +10,7 @@
  * built-in --dv-* variables on the active Dockview theme root so tabs, panel
  * chrome, and separators inherit the builder shell colors instead.
  */
-.dockview-theme-wpsg {
+.dockview-theme-mullion {
   /* ── Structural (non-color) ──────────────────────────────────────────────── */
   --dv-tabs-and-actions-container-font-size: 13px;
   --dv-tabs-and-actions-container-height: 35px;

@@ -29,7 +29,7 @@ export function useBuilderCampaignMedia(
   );
 
   const campaignSelectionStorageKey = useMemo(
-    () => `wpsg_layout_builder_campaign_${initialTemplateId ?? 'new'}`,
+    () => `mullion_layout_builder_campaign_${initialTemplateId ?? 'new'}`,
     [initialTemplateId],
   );
 

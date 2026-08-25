@@ -31,7 +31,7 @@ import { useLightbox } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import {
   resolveAdapterShellStyle,
   resolveGalleryComponentCommonSettings,
@@ -54,7 +54,7 @@ export function SpotlightGallery({
   runtime,
   containerDimensions,
 }: SpotlightGalleryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -118,7 +118,7 @@ export function SpotlightGallery({
     <Stack
       gap="xs"
       style={adapterSizing}
-      {...getWpsgDebugProps('SpotlightGallery')}
+      {...getMullionDebugProps('SpotlightGallery')}
     >
       {/* Optional gallery heading */}
       <AdapterHeading common={common} heading={heading} />
@@ -157,7 +157,7 @@ export function SpotlightGallery({
               handleHeroClick();
             }
           }}
-          {...getWpsgDebugProps('SpotlightGallery', 'hero')}
+          {...getMullionDebugProps('SpotlightGallery', 'hero')}
           style={{
             flex: 1,
             minWidth: 0,
@@ -205,7 +205,7 @@ export function SpotlightGallery({
               {/* Image: hover zoom icon hint */}
               {!isActiveVideo && (
                 <Box
-                  className="wpsg-spotlight-hero-hint"
+                  className="mullion-spotlight-hero-hint"
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -220,7 +220,7 @@ export function SpotlightGallery({
                   <IconZoomIn
                     size={40}
                     color="white"
-                    className="wpsg-spotlight-hero-zoom"
+                    className="mullion-spotlight-hero-zoom"
                     style={{
                       opacity: 0,
                       transition: `opacity ${transitionMs}ms ease`,
@@ -280,7 +280,7 @@ export function SpotlightGallery({
                 aria-label={item.caption || item.title || t('gallery_item_index', 'Item {{index}}', { index: idx + 1 })}
                 aria-current={isActive ? 'true' : undefined}
                 onClick={() => selectThumbnail(idx)}
-                {...getWpsgDebugProps('SpotlightGallery', 'thumbnail')}
+                {...getMullionDebugProps('SpotlightGallery', 'thumbnail')}
                 style={{
                   width: thumbSizeCss,
                   height: thumbSizeCss,
@@ -332,10 +332,10 @@ export function SpotlightGallery({
 
       {/* Hover styles for the hero area */}
       <style>{`
-        [data-wpsg="SpotlightGallery"][data-wpsg-role="hero"]:hover .wpsg-spotlight-hero-hint {
+        [data-mullion="SpotlightGallery"][data-mullion-role="hero"]:hover .mullion-spotlight-hero-hint {
           background: rgba(0,0,0,0.28) !important;
         }
-        [data-wpsg="SpotlightGallery"][data-wpsg-role="hero"]:hover .wpsg-spotlight-hero-zoom {
+        [data-mullion="SpotlightGallery"][data-mullion-role="hero"]:hover .mullion-spotlight-hero-zoom {
           opacity: 1 !important;
         }
       `}</style>
@@ -353,4 +353,4 @@ export function SpotlightGallery({
   );
 }
 
-setWpsgDebugDisplayName(SpotlightGallery, 'SpotlightGallery');
+setMullionDebugDisplayName(SpotlightGallery, 'SpotlightGallery');

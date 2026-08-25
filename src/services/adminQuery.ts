@@ -581,7 +581,7 @@ export function useAuditEntries(apiClient: ApiClient, campaignId: string, filter
 
 export function useGlobalAuditEntries(apiClient: ApiClient, spaceId = 'all', filters: AuditFilters & { campaignId?: string } = {}, enabled = true) {
   // P53-A: the system audit-log endpoint is require_system_admin; gate the query
-  // so a wpsg_editor never fires a request that hard-403s.
+  // so a mullion_editor never fires a request that hard-403s.
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: getGlobalAuditQueryKey(apiClient, spaceId, filters),
     queryFn: () => fetchGlobalAuditEntries(apiClient, spaceId, filters),
@@ -824,7 +824,7 @@ function getAccessSummaryQueryKey(apiClient: ApiClient, page: number, perPage: n
 
 export function useAccessSummary(apiClient: ApiClient, page = 1, perPage = 200, enabled = true) {
   // P53-A: the access-summary endpoint is require_system_admin; gate the query
-  // so a wpsg_editor never fires a request that hard-403s.
+  // so a mullion_editor never fires a request that hard-403s.
   return useQuery<AccessSummaryResponse>({
     queryKey: getAccessSummaryQueryKey(apiClient, page, perPage),
     queryFn: () => apiClient.getAccessSummary(page, perPage),

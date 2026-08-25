@@ -12,7 +12,7 @@ interface BuilderBroadcastMessage {
   templateId: string;
 }
 
-const BUILDER_BC_CHANNEL = 'wpsg-layout-builder';
+const BUILDER_BC_CHANNEL = 'mullion-layout-builder';
 
 /**
  * P30-D: Opens a BroadcastChannel to detect when another tab saves the same template.

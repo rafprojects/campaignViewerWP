@@ -33,7 +33,7 @@ function GalleryBackgroundFields({
   onBgGradientChange,
   onBgImageChange,
 }: GalleryBackgroundFieldsProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <>
       <ModalSelect
@@ -83,7 +83,7 @@ interface GalleryPresentationSectionsProps {
 }
 
 export function GalleryPresentationSections({ settings, updateSetting, mountedPanels }: GalleryPresentationSectionsProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
 
   const updateScopeBackground = (

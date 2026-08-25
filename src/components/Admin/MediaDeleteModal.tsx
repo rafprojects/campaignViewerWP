@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
 import type { MediaItem } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface MediaDeleteModalProps {
   opened: boolean;
@@ -19,7 +19,7 @@ export function MediaDeleteModal({
   onConfirm,
   usageCount = 0,
 }: MediaDeleteModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const baseMessage = t('admin_media_del_msg', 'Remove this item from the campaign? The file stays in your media library and can be added to other campaigns.');
   const usageWarning =
     usageCount > 0
@@ -40,4 +40,4 @@ export function MediaDeleteModal({
   );
 }
 
-setWpsgDebugDisplayName(MediaDeleteModal, 'AdminPanel:MediaDeleteModal');
+setMullionDebugDisplayName(MediaDeleteModal, 'AdminPanel:MediaDeleteModal');

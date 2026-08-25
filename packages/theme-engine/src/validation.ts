@@ -268,7 +268,7 @@ export function isValidTheme(
     return true;
   } catch (err) {
     if (isDev && err instanceof ThemeValidationError) {
-      console.warn('[WPSG Theme]', err.message);
+      console.warn('[MULLION Theme]', err.message);
     }
     return false;
   }
@@ -337,7 +337,7 @@ export function warnLowContrast(
 
   if (ratio < 4.5) {
     console.warn(
-      `[WPSG Theme] "${themeId}": text/background contrast ratio ${ratio.toFixed(2)} is below WCAG AA threshold (4.5:1). ` +
+      `[MULLION Theme] "${themeId}": text/background contrast ratio ${ratio.toFixed(2)} is below WCAG AA threshold (4.5:1). ` +
       `Consider adjusting colors.text or colors.background.`,
     );
   }

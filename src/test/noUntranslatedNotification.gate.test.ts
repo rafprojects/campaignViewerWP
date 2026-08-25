@@ -1,5 +1,5 @@
 /**
- * [P71-E] Verifies the `wpsg/no-untranslated-notification` lint gate is actually
+ * [P71-E] Verifies the `mullion/no-untranslated-notification` lint gate is actually
  * wired into the project's eslint.config.js and behaves as intended — the
  * "deliberately introduce a violation, confirm it's caught; remove it, confirm
  * it passes" check the phase's acceptance criteria call for.
@@ -10,7 +10,7 @@
 import { ESLint } from 'eslint';
 import { beforeAll, describe, expect, it } from 'vitest';
 
-const RULE_ID = 'wpsg/no-untranslated-notification';
+const RULE_ID = 'mullion/no-untranslated-notification';
 
 let eslint: ESLint;
 
@@ -21,7 +21,7 @@ async function ruleMessages(code: string) {
   return result.messages.filter((m) => m.ruleId === RULE_ID);
 }
 
-describe('wpsg/no-untranslated-notification gate', () => {
+describe('mullion/no-untranslated-notification gate', () => {
   beforeAll(() => {
     eslint = new ESLint({ cwd: process.cwd() });
   });

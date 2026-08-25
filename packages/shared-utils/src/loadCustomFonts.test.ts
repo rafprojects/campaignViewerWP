@@ -3,7 +3,7 @@ import { loadCustomFonts } from './loadCustomFonts';
 
 describe('loadCustomFonts', () => {
   afterEach(() => {
-    document.getElementById('wpsg-custom-fonts')?.remove();
+    document.getElementById('mullion-custom-fonts')?.remove();
   });
 
   it('escapes font-family values before injecting CSS', () => {
@@ -33,7 +33,7 @@ describe('loadCustomFonts', () => {
       },
     ]);
 
-    expect(document.getElementById('wpsg-custom-fonts')).toBeNull();
+    expect(document.getElementById('mullion-custom-fonts')).toBeNull();
   });
 
   it('does not replace the style tag when CSS is unchanged', () => {
@@ -49,10 +49,10 @@ describe('loadCustomFonts', () => {
     ];
 
     loadCustomFonts(fonts);
-    const initialNode = document.getElementById('wpsg-custom-fonts');
+    const initialNode = document.getElementById('mullion-custom-fonts');
 
     loadCustomFonts(fonts);
 
-    expect(document.getElementById('wpsg-custom-fonts')).toBe(initialNode);
+    expect(document.getElementById('mullion-custom-fonts')).toBe(initialNode);
   });
 });

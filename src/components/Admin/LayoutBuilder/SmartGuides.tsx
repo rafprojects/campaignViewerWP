@@ -4,7 +4,7 @@
  */
 
 import type { GuideLine } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useBuilderOverlayColors, type BuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Props ────────────────────────────────────────────────────
@@ -133,4 +133,4 @@ export function SmartGuides({
   );
 }
 
-setWpsgDebugDisplayName(SmartGuides, 'LayoutBuilder:SmartGuides');
+setMullionDebugDisplayName(SmartGuides, 'LayoutBuilder:SmartGuides');

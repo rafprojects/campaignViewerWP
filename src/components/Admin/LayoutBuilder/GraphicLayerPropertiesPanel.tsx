@@ -48,7 +48,7 @@ import type {
   SlotShadow,
 } from '@/types';
 import { DEFAULT_MASK_LAYER } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Options ──────────────────────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ function FilterEffectsControls({
   effects: SlotFilterEffects;
   set: (patch: Partial<SlotFilterEffects>) => void;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Stack gap={4}>
       <Text size="xs" c="dimmed">{t('lb_gl_brightness', 'Brightness')}</Text>
@@ -143,7 +143,7 @@ function ShadowControls({
   onToggle: (on: boolean) => void;
   set: (patch: Partial<SlotShadow>) => void;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const sh = shadow ?? { offsetX: 0, offsetY: 4, blur: 8, color: 'rgba(0,0,0,0.5)' };
   const enabled = Boolean(shadow);
   return (
@@ -187,7 +187,7 @@ export function GraphicLayerPropertiesPanel({
   onBringForward,
   onSendBackward,
 }: GraphicLayerPropertiesPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const shapeOptions = SHAPE_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_shape_${o.value}`, o.label) }));
   const blendOptions = BLEND_MODE_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_slot_blend_${o.value}`, o.label) }));
   const displayName = overlay.name || t('lb_gl_default_name', 'Graphic Layer {{index}}', { index: overlayIndex });
@@ -594,4 +594,4 @@ export function GraphicLayerPropertiesPanel({
   );
 }
 
-setWpsgDebugDisplayName(GraphicLayerPropertiesPanel, 'LayoutBuilder:GraphicLayerPropertiesPanel');
+setMullionDebugDisplayName(GraphicLayerPropertiesPanel, 'LayoutBuilder:GraphicLayerPropertiesPanel');

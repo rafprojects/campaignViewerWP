@@ -29,7 +29,7 @@ export function TextLayerContent({ layer }: { layer: LayoutTextLayer }) {
   const Tag = textLayerElement(layer.semanticTag);
   return (
     <div style={TEXT_LAYER_WRAPPER_STYLE}>
-      <Tag data-wpsg-text-role={layer.semanticTag} style={textLayerTextStyle(layer)}>
+      <Tag data-mullion-text-role={layer.semanticTag} style={textLayerTextStyle(layer)}>
         {layer.content}
       </Tag>
     </div>

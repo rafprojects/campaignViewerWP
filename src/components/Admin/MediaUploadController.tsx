@@ -30,7 +30,7 @@ import type {
 import { useXhrUpload } from '@mullion/shared-utils';
 import { getAssetLibraryQueryKey } from '@/services/layoutTemplateQuery';
 import { getMediaItemsQueryKey } from '@/services/adminQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 /** Sentinel target value for the campaign-agnostic general asset library. */
 export const GENERAL_LIBRARY_TARGET = '__general__';
@@ -61,7 +61,7 @@ export function MediaUploadController({
   title,
   zIndex,
 }: MediaUploadControllerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const queryClient = useQueryClient();
   const dropRef = useRef<HTMLDivElement>(null);
   const { uploadMany, batchProgress, isUploading } = useXhrUpload();
@@ -317,4 +317,4 @@ export function MediaUploadController({
   );
 }
 
-setWpsgDebugDisplayName(MediaUploadController, 'AdminPanel:MediaUploadController');
+setMullionDebugDisplayName(MediaUploadController, 'AdminPanel:MediaUploadController');

@@ -65,8 +65,8 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
         $result = Mullion_Monitoring::attach_metrics($response, $server, $request);
 
         $headers = $result->get_headers();
-        $this->assertArrayHasKey('X-WPSG-Response-Time', $headers);
-        $this->assertIsNumeric($headers['X-WPSG-Response-Time']);
+        $this->assertArrayHasKey('X-MULLION-Response-Time', $headers);
+        $this->assertIsNumeric($headers['X-MULLION-Response-Time']);
     }
 
     public function test_attach_metrics_ignores_non_wpsg_routes() {
@@ -76,7 +76,7 @@ class Mullion_Monitoring_Test extends WP_UnitTestCase {
 
         $result = Mullion_Monitoring::attach_metrics($response, $server, $request);
         $headers = $result->get_headers();
-        $this->assertArrayNotHasKey('X-WPSG-Response-Time', $headers);
+        $this->assertArrayNotHasKey('X-MULLION-Response-Time', $headers);
     }
 
     public function test_attach_metrics_fires_wpsg_rest_metrics_action() {

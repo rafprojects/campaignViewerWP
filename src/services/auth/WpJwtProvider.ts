@@ -6,13 +6,13 @@ interface WpJwtProviderOptions {
   apiBaseUrl: string;
 }
 
-// [WPSG_JWT_DISABLED] — localStorage keys preserved for future standalone SPA use.
+// [MULLION_JWT_DISABLED] — localStorage keys preserved for future standalone SPA use.
 // Enable via MULLION_ENABLE_JWT_AUTH constant in wp-config.php.
 // See docs/FUTURE_TASKS.md § "JWT In-Memory Token Auth" for the planned
 // in-memory token + httpOnly refresh cookie upgrade path.
-const ACCESS_TOKEN_KEY = 'wpsg_access_token';
-const USER_KEY = 'wpsg_user';
-const PERMISSIONS_KEY = 'wpsg_permissions';
+const ACCESS_TOKEN_KEY = 'mullion_access_token';
+const USER_KEY = 'mullion_user';
+const PERMISSIONS_KEY = 'mullion_permissions';
 
 /**
  * JWT-based auth provider for cross-origin / headless deployments.

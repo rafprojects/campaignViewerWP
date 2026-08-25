@@ -50,8 +50,8 @@ const SettingsPanel = lazy(() => import('./components/Admin/SettingsPanel').then
 const getAuthProvider = (apiBaseUrl: string) => {
   // [P20-K] JWT auth is now opt-in. Only instantiate WpJwtProvider when the
   // WordPress site defines MULLION_ENABLE_JWT_AUTH (surfaced as enableJwt in config).
-  const enableJwt = window.__WPSG_CONFIG__?.enableJwt === true;
-  if (enableJwt && window.__WPSG_AUTH_PROVIDER__ === 'wp-jwt') {
+  const enableJwt = window.__MULLION_CONFIG__?.enableJwt === true;
+  if (enableJwt && window.__MULLION_AUTH_PROVIDER__ === 'wp-jwt') {
     return new WpJwtProvider({ apiBaseUrl });
   }
   // [P51-I] Default same-origin deployment: cookie + REST nonce, now behind the
@@ -90,7 +90,7 @@ const buildCompany = (companyId: string): Company => {
   return { id: key, name: key === 'unknown' ? 'Unknown' : titleCase(companyId), logo: '🏷️', brandColor: stringToColor(key) };
 };
 
-const ACCESS_MODE_STORAGE_KEY = 'wpsg_access_mode';
+const ACCESS_MODE_STORAGE_KEY = 'mullion_access_mode';
 
 function AppContent({
   apiBaseUrl,
@@ -109,7 +109,7 @@ function AppContent({
   instanceId?: string;
   authBarMode?: string | undefined;
 }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { permissions, isAuthenticated, isReady, login, logout, user, isAdmin, isSystemAdmin } = useAuth();
   const isOnline = useOnlineStatus();
   const [actionMessage, setActionMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
@@ -159,7 +159,7 @@ function AppContent({
   // can open the correct space's panel without global event listeners.
   useEffect(() => {
     if (!instanceId) return;
-    const key = `__wpsgOpen_${instanceId}` as keyof Window;
+    const key = `__mullionOpen_${instanceId}` as keyof Window;
     (window as unknown as Record<string, unknown>)[key] = (panel: 'admin' | 'settings') => {
       if (panel === 'admin') openAdminPanel();
       else openSettings();
@@ -179,7 +179,7 @@ function AppContent({
     // Restore window scroll for the target view.
     const targetView = savedActiveView === 'admin' && isAdmin ? 'admin' : 'listing';
     try {
-      const scrollKey = `wpsg_view_${rootId}_scroll_${targetView}`;
+      const scrollKey = `mullion_view_${rootId}_scroll_${targetView}`;
       const stored = localStorage.getItem(scrollKey);
       const scrollY = stored !== null ? (JSON.parse(stored) as number) : 0;
       if (scrollY > 0) {
@@ -191,7 +191,7 @@ function AppContent({
   // P36-A2: Capture window scroll position per-view (debounced 200 ms).
   useEffect(() => {
     const activeView = isAdminPanelOpen ? 'admin' : 'listing';
-    const scrollKey = `wpsg_view_${rootId}_scroll_${activeView}`;
+    const scrollKey = `mullion_view_${rootId}_scroll_${activeView}`;
     let timer: ReturnType<typeof setTimeout>;
     const handleScroll = () => {
       clearTimeout(timer);
@@ -386,7 +386,7 @@ function AppContent({
       onAddExternalMedia={externalMediaModal.handleAddExternalMedia}
     >
       <div
-        className="wp-super-gallery"
+        className="mullion-gallery"
         style={resolvedSettings.viewerBgType === 'transparent' ? { background: 'transparent' } : undefined}
       >
         {!isAuthenticated && isReady && (
@@ -542,9 +542,9 @@ interface AppProps {
 }
 
 function App({ accessMode, spaceId, spaceName, instanceId, authBarMode }: AppProps) {
-  const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
+  const apiBaseUrl = window.__MULLION_API_BASE__ ?? window.location.origin;
   const provider = useMemo(() => getAuthProvider(apiBaseUrl), [apiBaseUrl]);
-  const resolvedAccessMode = accessMode ?? window.__WPSG_ACCESS_MODE__ ?? 'lock';
+  const resolvedAccessMode = accessMode ?? window.__MULLION_ACCESS_MODE__ ?? 'lock';
 
   // [P20-K] Keep WP nonce fresh in long-running tabs (no-op when JWT is active).
   useNonceHeartbeat();

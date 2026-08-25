@@ -17,7 +17,7 @@ vi.mock('./LayoutBuilder/PresetGalleryModal', () => ({
 // Spy on the shared pro-upsell helper so gating is observable without a
 // Notifications provider.
 const showProUpsell = vi.fn();
-vi.mock('@/utils/wpsgUpsell', () => ({
+vi.mock('@/utils/mullionUpsell', () => ({
   showProUpsell: (...args: unknown[]) => showProUpsell(...args),
 }));
 
@@ -180,11 +180,11 @@ describe('LayoutTemplateList', () => {
   describe('starter library pro gate', () => {
     afterEach(() => {
       showProUpsell.mockClear();
-      delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+      delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
     });
 
     it('unlicensed: "From Preset" shows upsell and does not open the gallery', async () => {
-      delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+      delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
       render(<LayoutTemplateList apiClient={makeApiClient()} onNotify={vi.fn()} />);
       await screen.findByText('My Template');
 
@@ -196,7 +196,7 @@ describe('LayoutTemplateList', () => {
     });
 
     it('licensed: "From Preset" opens the gallery and does not upsell', async () => {
-      window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+      window.__MULLION_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
       render(<LayoutTemplateList apiClient={makeApiClient()} onNotify={vi.fn()} />);
       await screen.findByText('My Template');
 

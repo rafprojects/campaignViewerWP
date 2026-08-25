@@ -49,8 +49,8 @@ class Mullion_Embed {
     /**
      * Page-global JS config consumed by main.tsx / App.tsx.
      *
-     * Returns the inline JS (no <script> wrapper) that sets window.__WPSG_CONFIG__
-     * plus the legacy __WPSG_AUTH_PROVIDER__ / __WPSG_API_BASE__ globals. All values
+     * Returns the inline JS (no <script> wrapper) that sets window.__MULLION_CONFIG__
+     * plus the legacy __MULLION_AUTH_PROVIDER__ / __MULLION_API_BASE__ globals. All values
      * are page-global (auth/api/nonce); the only settings-derived fields
      * (debug_component_markers, allow_user_theme_override) are admin-only, so the
      * global settings are authoritative regardless of space context.
@@ -78,7 +78,7 @@ class Mullion_Embed {
             // Injected so main.tsx uses the correct URL regardless of which page the SPA loads on.
             'swUrl'                  => home_url('/sw.js'),
             // P62-A: license/entitlement state for pro-feature gating. Read by
-            // src/hooks/useWpsgLicense.ts to drive upsell UI in the LayoutBuilder.
+            // src/hooks/useMullionLicense.ts to drive upsell UI in the LayoutBuilder.
             // Defaults to the free tier (isPro=false) until real Freemius
             // credentials are wired via the mullion_freemius_config filter.
             'license'                => [
@@ -119,10 +119,10 @@ class Mullion_Embed {
             ),
         ];
 
-        return 'window.__WPSG_CONFIG__ = ' . wp_json_encode($config) . ';'
-            . 'window.__WPSG_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';'
-            . 'window.__WPSG_API_BASE__ = ' . wp_json_encode($api_base) . ';'
-            . 'window.__WPSG_I18N__ = ' . wp_json_encode($i18n) . ';';
+        return 'window.__MULLION_CONFIG__ = ' . wp_json_encode($config) . ';'
+            . 'window.__MULLION_AUTH_PROVIDER__ = ' . wp_json_encode($auth_provider) . ';'
+            . 'window.__MULLION_API_BASE__ = ' . wp_json_encode($api_base) . ';'
+            . 'window.__MULLION_I18N__ = ' . wp_json_encode($i18n) . ';';
     }
 
     /**
@@ -215,25 +215,25 @@ class Mullion_Embed {
         $GLOBALS['mullion_instance_ids'][] = $instance_id;
 
         // Accumulate space instances for the WP admin bar (P48-I Layer 4).
-        if (!isset($GLOBALS['wpsg_spaces_on_page'])) {
-            $GLOBALS['wpsg_spaces_on_page'] = [];
+        if (!isset($GLOBALS['mullion_spaces_on_page'])) {
+            $GLOBALS['mullion_spaces_on_page'] = [];
         }
-        $GLOBALS['wpsg_spaces_on_page'][$instance_id] = [
+        $GLOBALS['mullion_spaces_on_page'][$instance_id] = [
             'id'   => $space_id,
             'slug' => $space_slug,
             'name' => $space_name,
         ];
         if (!has_action('admin_bar_menu', [self::class, 'register_admin_bar_nodes'])) {
             add_action('admin_bar_menu', [self::class, 'register_admin_bar_nodes'], 90);
-            // Emit __WPSG_PAGE_SPACES__ after all shortcodes have accumulated their entries.
+            // Emit __MULLION_PAGE_SPACES__ after all shortcodes have accumulated their entries.
             // Priority 1 fires before wp_print_footer_scripts (priority 10+) so the global
             // is set before the React bundle loads.
             add_action('wp_footer', [self::class, 'emit_page_spaces_js'], 1);
         }
 
-        $classes = ['wp-super-gallery'];
+        $classes = ['mullion-gallery'];
         if ($atts['compact'] === 'true') {
-            $classes[] = 'wp-super-gallery--compact';
+            $classes[] = 'mullion-gallery--compact';
         }
 
         wp_enqueue_script('wp-super-gallery-app');
@@ -310,7 +310,7 @@ class Mullion_Embed {
         $node_config = esc_attr(wp_json_encode($node_config_data));
 
         // Global page config: emitted once per page load (page-global values only).
-        // Space-specific settings live in data-wpsg-config on each mount node.
+        // Space-specific settings live in data-mullion-config on each mount node.
         if (empty($GLOBALS['mullion_config_emitted'])) {
             $GLOBALS['mullion_config_emitted'] = true;
             // admin_bar_delegation_js() is emitted once here alongside page config.
@@ -415,7 +415,7 @@ class Mullion_Embed {
         // edge-to-edge, and before the mount node so it reads as a page-level hint.
         $unresolved_notice = self::render_unresolved_space_notice($unresolved_space_refs);
 
-        return $config_script . $unresolved_notice . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-wpsg-props="' . $props . '" data-wpsg-config="' . $node_config . '"></div>' . $bleed_close;
+        return $config_script . $unresolved_notice . $bleed_style . $bleed_open . '<div id="' . esc_attr($instance_id) . '" class="' . esc_attr(implode(' ', $classes)) . '" data-mullion-props="' . $props . '" data-mullion-config="' . $node_config . '"></div>' . $bleed_close;
     }
 
     /**
@@ -517,12 +517,12 @@ class Mullion_Embed {
             /* translators: %s: the shortcode reference that did not resolve, e.g. space="acme". */
             __(
                 'Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice.',
-                'wp-super-gallery'
+                'mullion-gallery'
             ),
             $ref_label
         );
 
-        return '<div class="wpsg-shortcode-notice" role="status" style="'
+        return '<div class="mullion-shortcode-notice" role="status" style="'
             . 'margin:0 0 12px;padding:10px 14px;border:1px solid #f0b849;border-left-width:4px;'
             . 'background:#fcf9e8;color:#3c2f00;border-radius:4px;font-size:14px;line-height:1.5;">'
             . esc_html($message)
@@ -531,20 +531,20 @@ class Mullion_Embed {
 
     /**
      * JS snippet emitted once per page. Listens for WP admin bar clicks that
-     * carry [data-wpsg-open] and routes them to the per-instance opener
-     * registered by each React root (window.__wpsgOpen_<instanceId>).
+     * carry [data-mullion-open] and routes them to the per-instance opener
+     * registered by each React root (window.__mullionOpen_<instanceId>).
      */
     private static function admin_bar_delegation_js(): string {
         return <<<'JS'
 (function(){
   document.addEventListener('click',function(e){
-    var btn=e.target.closest('[data-wpsg-open]');
+    var btn=e.target.closest('[data-mullion-open]');
     if(!btn)return;
     var a=btn.closest('a');
     var href=a?a.getAttribute('href'):'';
     var instanceId=href?href.replace(/^#/,''):'';
-    var panel=btn.getAttribute('data-wpsg-open');
-    var opener=instanceId&&window['__wpsgOpen_'+instanceId];
+    var panel=btn.getAttribute('data-mullion-open');
+    var opener=instanceId&&window['__mullionOpen_'+instanceId];
     if(opener){e.preventDefault();opener(panel);}
   });
 })();
@@ -552,12 +552,12 @@ JS;
     }
 
     /**
-     * Emits window.__WPSG_PAGE_SPACES__ into the footer after all shortcodes have
+     * Emits window.__MULLION_PAGE_SPACES__ into the footer after all shortcodes have
      * rendered so the React SpaceSwitcher can read the full list on mount.
      * Only emitted for users with manage_wpsg capability.
      */
     public static function emit_page_spaces_js(): void {
-        if (empty($GLOBALS['wpsg_spaces_on_page']) || !is_array($GLOBALS['wpsg_spaces_on_page'])) {
+        if (empty($GLOBALS['mullion_spaces_on_page']) || !is_array($GLOBALS['mullion_spaces_on_page'])) {
             return;
         }
         if (!current_user_can('manage_wpsg') && !current_user_can('manage_options')) {
@@ -569,7 +569,7 @@ JS;
         // access to (in either isolation mode), so the SpaceSwitcher never
         // offers a space it cannot reach.
         $spaces = [];
-        foreach ($GLOBALS['wpsg_spaces_on_page'] as $instance_id => $info) {
+        foreach ($GLOBALS['mullion_spaces_on_page'] as $instance_id => $info) {
             if (!Mullion_REST_Base::current_actor_can_access_space((int) $info['id'])) {
                 continue;
             }
@@ -583,17 +583,17 @@ JS;
         if (empty($spaces)) {
             return;
         }
-        echo '<script>window.__WPSG_PAGE_SPACES__ = ' . wp_json_encode($spaces) . ';</script>' . "\n";
+        echo '<script>window.__MULLION_PAGE_SPACES__ = ' . wp_json_encode($spaces) . ';</script>' . "\n";
     }
 
     /**
-     * Registers per-space WP admin bar nodes from $GLOBALS['wpsg_spaces_on_page'].
+     * Registers per-space WP admin bar nodes from $GLOBALS['mullion_spaces_on_page'].
      * Hooked at priority 90 (after WP core nodes).
      *
      * @param \WP_Admin_Bar $wp_admin_bar
      */
     public static function register_admin_bar_nodes(\WP_Admin_Bar $wp_admin_bar): void {
-        if (empty($GLOBALS['wpsg_spaces_on_page']) || !is_array($GLOBALS['wpsg_spaces_on_page'])) {
+        if (empty($GLOBALS['mullion_spaces_on_page']) || !is_array($GLOBALS['mullion_spaces_on_page'])) {
             return;
         }
         if (!current_user_can('manage_wpsg')) {
@@ -604,7 +604,7 @@ JS;
         // wpsg_editor sees only the spaces it has been granted access to, in
         // either isolation mode).
         $accessible = array_filter(
-            $GLOBALS['wpsg_spaces_on_page'],
+            $GLOBALS['mullion_spaces_on_page'],
             static function ($info) {
                 return Mullion_REST_Base::current_actor_can_access_space((int) $info['id']);
             }
@@ -632,14 +632,14 @@ JS;
             $wp_admin_bar->add_node([
                 'id'     => 'wpsg-space-' . $slug . '-settings',
                 'parent' => 'wpsg-space-' . $slug,
-                'title'  => '<span data-wpsg-open="settings">Settings</span>',
+                'title'  => '<span data-mullion-open="settings">Settings</span>',
                 'href'   => '#' . $slug,
                 'meta'   => ['html' => true],
             ]);
             $wp_admin_bar->add_node([
                 'id'     => 'wpsg-space-' . $slug . '-admin',
                 'parent' => 'wpsg-space-' . $slug,
-                'title'  => '<span data-wpsg-open="admin">Admin Panel</span>',
+                'title'  => '<span data-mullion-open="admin">Admin Panel</span>',
                 'href'   => '#' . $slug,
                 'meta'   => ['html' => true],
             ]);

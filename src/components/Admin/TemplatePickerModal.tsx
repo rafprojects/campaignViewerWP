@@ -23,7 +23,7 @@ interface Props {
 }
 
 export function TemplatePickerModal({ opened, onClose, apiClient, onSelect }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [templates, setTemplates] = useState<CampaignTemplate[]>([]);
   const [loading, setLoading] = useState(false);
 

@@ -26,7 +26,7 @@ export const ACTION_DEFAULTS: Record<ShortcutActionId, ShortcutActionDef> = {
 
 export const ACTION_IDS = Object.keys(ACTION_DEFAULTS) as ShortcutActionId[];
 
-const STORAGE_KEY = 'wpsg_admin_shortcuts';
+const STORAGE_KEY = 'mullion_admin_shortcuts';
 
 // Keys that cannot be remapped: navigation fundamentals and common browser shortcuts.
 const RESERVED_KEYS = new Set([

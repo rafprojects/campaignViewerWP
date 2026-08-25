@@ -35,7 +35,7 @@ export function getAssetLibraryQueryKey(apiClient: ApiClient, spaceId?: string |
 
 function getApiBase(): string {
   return (
-    (window as unknown as Record<string, string>).__WPSG_API_BASE__ ??
+    (window as unknown as Record<string, string>).__MULLION_API_BASE__ ??
     window.location.origin
   );
 }

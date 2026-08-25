@@ -146,8 +146,8 @@ export default tseslint.config({
     '**/*.test.{ts,tsx}',
     '**/*.stories.{ts,tsx}',
   ],
-  plugins: { wpsg: { rules: { 'no-untranslated-notification': noUntranslatedNotification } } },
+  plugins: { mullion: { rules: { 'no-untranslated-notification': noUntranslatedNotification } } },
   rules: {
-    'wpsg/no-untranslated-notification': 'error',
+    'mullion/no-untranslated-notification': 'error',
   },
 });

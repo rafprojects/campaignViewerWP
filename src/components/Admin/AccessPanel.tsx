@@ -6,7 +6,7 @@ import type { CampaignSelectItem } from '@/components/Common/CampaignSelector';
 import { useAccessGrants, useCompanies, prefetchAllCampaignAccess } from '@/services/adminQuery';
 import { useAdminAccessState } from '@/hooks/useAdminAccessState';
 import { useAccessRows } from '@/hooks/useAccessRows';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { AccessTab } from './AccessTab';
 
 const ArchiveCompanyModal = lazy(() => import('./ArchiveCompanyModal').then((m) => ({ default: m.ArchiveCompanyModal })));
@@ -187,4 +187,4 @@ export function AccessPanel({
   );
 }
 
-setWpsgDebugDisplayName(AccessPanel, 'AccessPanel');
+setMullionDebugDisplayName(AccessPanel, 'AccessPanel');

@@ -9,7 +9,7 @@
 import { createContext } from 'react';
 import type { MantineThemeOverride } from '@mantine/core';
 import type { ThemeMeta } from '@mullion/theme-engine';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -49,4 +49,4 @@ export interface ThemeContextValue {
 // ---------------------------------------------------------------------------
 
 export const ThemeContext = createContext<ThemeContextValue | null>(null);
-setWpsgDebugDisplayName(ThemeContext, 'WPSGThemeContext');
+setMullionDebugDisplayName(ThemeContext, 'MULLIONThemeContext');

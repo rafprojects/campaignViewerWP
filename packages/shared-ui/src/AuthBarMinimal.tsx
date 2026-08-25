@@ -21,7 +21,7 @@ interface AuthBarMinimalProps {
 }
 
 function callOpener(instanceId: string, panel: 'settings' | 'admin') {
-  const opener = (window as unknown as Record<string, unknown>)[`__wpsgOpen_${instanceId}`];
+  const opener = (window as unknown as Record<string, unknown>)[`__mullionOpen_${instanceId}`];
   if (typeof opener === 'function') (opener as (p: string) => void)(panel);
 }
 
@@ -38,7 +38,7 @@ export function AuthBarMinimal({
   instanceId,
   pageSpaces,
 }: AuthBarMinimalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
 

@@ -32,7 +32,7 @@ export const DEFAULT_CSS_VAR_PREFIX = '--mullion';
 /**
  * Generate a CSS string containing all `<prefix>-*` custom property
  * declarations for a given theme. The string is scoped to a selector
- * (default `:host` for Shadow DOM, or `.wp-super-gallery` for normal DOM).
+ * (default `:host` for Shadow DOM, or `.mullion-gallery` for normal DOM).
  *
  * @param rc - Resolved colors from colorGen
  * @param def - Full theme definition (for non-color tokens)

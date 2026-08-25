@@ -45,7 +45,7 @@ import { AutoGridDialog } from './AutoGridDialog';
 import { BuilderHistoryPanel } from './BuilderHistoryPanel';
 import { BuilderHistoryDropdown } from './BuilderHistoryDropdown';
 import { useAssetLibrary } from '@/services/layoutTemplateQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useRootId } from '@mullion/shared-ui';
 import { useBuilderWorkspacePrefs } from '@/hooks/useBuilderWorkspacePrefs';
 import { useBuilderCampaignMedia } from '@/hooks/useBuilderCampaignMedia';
@@ -103,7 +103,7 @@ export function LayoutBuilderModal({
   listingMode = false,
   spaceId,
 }: LayoutBuilderModalProps) {
-  const { t: tr } = useTranslation('wpsg');
+  const { t: tr } = useTranslation('mullion');
   const builder = useLayoutBuilderState(initialTemplate ?? createEmptyTemplate());
   const rootId = useRootId();
   const { colorScheme } = useTheme();
@@ -132,8 +132,8 @@ export function LayoutBuilderModal({
 
   const dockTheme = useMemo(
     () => ({
-      name: `wpsg-builder-shell-${colorScheme}`,
-      className: 'dockview-theme-wpsg',
+      name: `mullion-builder-shell-${colorScheme}`,
+      className: 'dockview-theme-mullion',
     }),
     [colorScheme],
   );
@@ -235,7 +235,7 @@ export function LayoutBuilderModal({
       const t = builder.normalizeZIndices();
 
       // ── DEBUG: Log what we're about to save ──
-      debugGroup('[WPSG] Layout Save — pre-flight');
+      debugGroup('[MULLION] Layout Save — pre-flight');
       debugLog('Slots being sent:', t.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
       debugGroupEnd();
 
@@ -247,7 +247,7 @@ export function LayoutBuilderModal({
       }
 
       // ── DEBUG: Log what came back from the server ──
-      debugGroup('[WPSG] Layout Save — response');
+      debugGroup('[MULLION] Layout Save — response');
       debugLog('Slots returned:', saved.slots.map((s, i) => `${i + 1}:${s.id}→mediaId=${s.mediaId ?? '(none)'}`));
       debugGroupEnd();
 
@@ -707,4 +707,4 @@ export function LayoutBuilderModal({
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderModal, 'LayoutBuilder:LayoutBuilderModal');
+setMullionDebugDisplayName(LayoutBuilderModal, 'LayoutBuilder:LayoutBuilderModal');

@@ -2839,8 +2839,8 @@ msgid "Enable Component Debug Names & Markers"
 msgstr "启用组件调试名称和标记"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:688
-msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
-msgstr "启用后，已部署的构建会保留明确的 React DevTools 组件名称，并将 data-wpsg-component/data-wpsg-slot 属性注入到 DOM 中，用于元素检查和 QA 选择器。即使关闭此项，本地开发环境仍可能显示源组件名称。"
+msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-mullion-component/data-mullion-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+msgstr "启用后，已部署的构建会保留明确的 React DevTools 组件名称，并将 data-mullion-component/data-mullion-slot 属性注入到 DOM 中，用于元素检查和 QA 选择器。即使关闭此项，本地开发环境仍可能显示源组件名称。"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:689
 msgid "Data Maintenance"
@@ -6245,8 +6245,8 @@ msgid "Revoke access"
 msgstr "撤销访问权限"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1804
-msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
-msgstr "无访问授权。任何拥有 manage_wpsg 能力的人都可以访问此空间。"
+msgid "No access grants. Everyone with the manage_mullion capability can access this space."
+msgstr "无访问授权。任何拥有 manage_mullion 能力的人都可以访问此空间。"
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1805
 msgid "Grant access"
@@ -9134,8 +9134,8 @@ msgid "Keep React DevTools names and emit DOM component markers in deployed buil
 msgstr "在已部署的构建中保留 React DevTools 名称并发出 DOM 组件标记。"
 
 #: includes/settings/class-wpsg-settings-core-fields.php:302
-msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
-msgstr "在生产构建中为 React DevTools 添加明确的组件名称，并注入 data-wpsg-component/data-wpsg-slot 属性，用于浏览器元素检查、QA 选择器和 UI 表面调试。"
+msgid "Adds explicit component names for React DevTools in production builds and injects data-mullion-component/data-mullion-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgstr "在生产构建中为 React DevTools 添加明确的组件名称，并注入 data-mullion-component/data-mullion-slot 属性，用于浏览器元素检查、QA 选择器和 UI 表面调试。"
 
 #: includes/settings/class-wpsg-settings-core-fields.php:394
 msgid "Enable smooth animations and transitions."

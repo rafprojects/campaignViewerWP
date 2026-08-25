@@ -48,7 +48,7 @@ import { GraphicLayerContent } from './GraphicLayerContent';
 import { TextLayerContent } from './TextLayerContent';
 import { useViewportHeight } from '@mullion/shared-utils';
 import { sanitizeCssUrl, toCssOrNumber } from '@mullion/shared-utils';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 // ── TiltWrapper: applies mouse-reactive 3D tilt to children ──────────────────
@@ -108,7 +108,7 @@ function TiltWrapper({
 // ── Slot CSS class helpers ────────────────────────────────────────────────────
 
 function slotCssClass(instanceId: string, slotId: string): string {
-  return `wpsg-lb-slot-${instanceId}-${slotId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+  return `mullion-lb-slot-${instanceId}-${slotId.replace(/[^a-zA-Z0-9_-]/g, '_')}`;
 }
 
 // ── GallerySlotView: renders one slot (a function component so hooks work) ───
@@ -138,7 +138,7 @@ function GallerySlotView({
   glowSpread,
   positionClassName,
 }: GallerySlotViewProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   // Px dimensions (used for mask position computation)
   const pxW = (slot.width / 100) * effectiveWidth;
   const pxH = (slot.height / 100) * canvasHeight;
@@ -223,7 +223,7 @@ function GallerySlotView({
     // Clip-path + glow: handled via inline merged filter, no CSS class
     if (needsInlineGlow) return '';
     const suffix = slot.hoverEffect === 'glow' ? '-glow' : '-pop';
-    return isClip ? `wpsg-tile-lb${suffix}` : `wpsg-tile-lb-rect${suffix}`;
+    return isClip ? `mullion-tile-lb${suffix}` : `mullion-tile-lb-rect${suffix}`;
   })();
 
   // Build merged filter: slot effects + optional glow on hover
@@ -449,7 +449,7 @@ export function LayoutBuilderGallery({
   renderItem,
   listingMode,
 }: LayoutBuilderGalleryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const isListingMode = !!(items && renderItem && listingMode);
   const effectiveTemplateId = isListingMode
     ? (settings.campaignListingLayoutTemplateId ?? '')
@@ -557,7 +557,7 @@ function LayoutBuilderGalleryInner({
   items,
   renderItem,
 }: InnerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
   const viewportHeight = useViewportHeight();
@@ -718,7 +718,7 @@ function LayoutBuilderGalleryInner({
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack {...getWpsgDebugProps('LayoutBuilderGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getMullionDebugProps('LayoutBuilderGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       {/* Hover and slot position styles injected into DOM */}
       <style>{hoverStylesCss}</style>
       <style>{slotPositionCss}</style>
@@ -737,7 +737,7 @@ function LayoutBuilderGalleryInner({
       {/* Mismatch warning — admin/editor only (B-8); never shown to public viewers */}
       {!isListingMode && isAdmin && hasMismatch && (
         <Box
-          {...getWpsgDebugProps('LayoutBuilderGallery', 'mismatch-warning')}
+          {...getMullionDebugProps('LayoutBuilderGallery', 'mismatch-warning')}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -760,7 +760,7 @@ function LayoutBuilderGalleryInner({
       {/* Admin: slot assignment summary — only relevant in media mode */}
       {!isListingMode && isAdmin && (summary.cleared.length > 0 || summary.empty.length > 0) && (
         <Box
-          {...getWpsgDebugProps('LayoutBuilderGallery', 'assignment-summary')}
+          {...getMullionDebugProps('LayoutBuilderGallery', 'assignment-summary')}
           style={{
             display: 'flex',
             gap: 8,
@@ -801,7 +801,7 @@ function LayoutBuilderGalleryInner({
 
       {/* Canvas container */}
       <div
-        {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas-shell')}
+        {...getMullionDebugProps('LayoutBuilderGallery', 'canvas-shell')}
         ref={containerRef}
         style={{
           width: '100%',
@@ -815,7 +815,7 @@ function LayoutBuilderGalleryInner({
           const radiusCss = toCssOrNumber(settings.imageBorderRadius || 0, settings.imageBorderRadiusUnit ?? 'px');
           const canvasEl = (
             <div
-              {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas')}
+              {...getMullionDebugProps('LayoutBuilderGallery', 'canvas')}
               style={{
                 position: band ? 'absolute' : 'relative',
                 width: canvasW,
@@ -982,7 +982,7 @@ function LayoutBuilderGalleryInner({
           );
           return band ? (
             <div
-              {...getWpsgDebugProps('LayoutBuilderGallery', 'canvas-window')}
+              {...getMullionDebugProps('LayoutBuilderGallery', 'canvas-window')}
               style={{
                 position: 'relative',
                 width: '100%',
@@ -1014,4 +1014,4 @@ function LayoutBuilderGalleryInner({
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderGallery, 'LayoutBuilderGallery');
+setMullionDebugDisplayName(LayoutBuilderGallery, 'LayoutBuilderGallery');

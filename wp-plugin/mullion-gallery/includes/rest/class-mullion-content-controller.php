@@ -943,9 +943,9 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
                 $count_args['meta_query'] = [['key' => '_wpsg_space_id', 'value' => $space_id, 'type' => 'NUMERIC']];
             }
             $total = wp_count_terms(array_merge(['taxonomy' => 'wpsg_company'], $count_args));
-            $response->header('X-WPSG-Total', (string) $total);
-            $response->header('X-WPSG-Page', (string) $page);
-            $response->header('X-WPSG-Per-Page', (string) $per_page);
+            $response->header('X-MULLION-Total', (string) $total);
+            $response->header('X-MULLION-Page', (string) $page);
+            $response->header('X-MULLION-Per-Page', (string) $per_page);
             return $response;
         }
 
@@ -1067,9 +1067,9 @@ class Mullion_Content_Controller extends Mullion_REST_Base {
         set_transient($cache_key, $response_data, $ttl);
 
         $response = new WP_REST_Response($response_data, 200);
-        $response->header('X-WPSG-Total', (string) $total);
-        $response->header('X-WPSG-Page', (string) $page);
-        $response->header('X-WPSG-Per-Page', (string) $per_page);
+        $response->header('X-MULLION-Total', (string) $total);
+        $response->header('X-MULLION-Page', (string) $page);
+        $response->header('X-MULLION-Per-Page', (string) $per_page);
         return $response;
     }
 

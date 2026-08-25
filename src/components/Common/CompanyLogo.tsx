@@ -1,5 +1,5 @@
 import { Image } from '@mantine/core';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface CompanyLogoProps {
   logo: string;
@@ -16,4 +16,4 @@ export function CompanyLogo({ logo, companyName, size = 20 }: CompanyLogoProps) 
   return <span>{logo}</span>;
 }
 
-setWpsgDebugDisplayName(CompanyLogo, 'CompanyLogo');
+setMullionDebugDisplayName(CompanyLogo, 'CompanyLogo');

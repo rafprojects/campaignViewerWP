@@ -7,7 +7,7 @@ import { DEFAULT_GALLERY_BEHAVIOR_SETTINGS } from '@/types';
 import type { ApiClient } from '@/services/apiClient';
 import { useTypographyStyle } from '@/hooks/useTypographyStyle';
 import { toCss, toCssOrNumber } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { RequestAccessForm } from './RequestAccessForm';
 import { CompanyLogo } from '@/components/Common/CompanyLogo';
 import styles from './CampaignCard.module.scss';
@@ -24,7 +24,7 @@ interface CampaignCardProps {
 
 export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   ({ campaign, hasAccess, onClick, settings, apiClient, maxWidth, maxWidthUnit = 'px' }, ref) => {
-    const { t } = useTranslation('wpsg');
+    const { t } = useTranslation('mullion');
     const borderRadius = settings?.cardBorderRadius ?? 8;
     const borderRadiusUnit = settings?.cardBorderRadiusUnit ?? 'px';
     const borderWidth = settings?.cardBorderWidth ?? 4;
@@ -255,4 +255,4 @@ export const CampaignCard = forwardRef<HTMLButtonElement, CampaignCardProps>(
   },
 );
 
-setWpsgDebugDisplayName(CampaignCard, 'CampaignCard');
+setMullionDebugDisplayName(CampaignCard, 'CampaignCard');

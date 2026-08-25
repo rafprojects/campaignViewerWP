@@ -26,7 +26,7 @@ import { SearchableEntityInput } from '@/components/Common/SearchableEntityInput
 import { PendingRequestsPanel } from './PendingRequestsPanel';
 import type { ApiClient } from '@/services/apiClient';
 import type { AdminAccessState } from '@/hooks/useAdminAccessState';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 type AccessViewMode = 'campaign' | 'company' | 'all';
 
@@ -96,7 +96,7 @@ export function AccessTab({
   isMobile = false,
   isSystemAdmin = false,
 }: AccessTabProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const {
     userSearchResults,
     userSearchQuery,
@@ -407,7 +407,7 @@ export function AccessTab({
               )}
 
               {/* P53-D: access grants are viewer-only — editing/managing comes from the
-                  wpsg_editor role, not from per-campaign grants. Hidden when action is 'deny'. */}
+                  mullion_editor role, not from per-campaign grants. Hidden when action is 'deny'. */}
               {accessAction !== 'deny' && (
                 <Select
                   label={<Text size="sm" fw={500}>{t('admin_access_th_role', 'Role')}</Text>}
@@ -469,4 +469,4 @@ export function AccessTab({
   );
 }
 
-setWpsgDebugDisplayName(AccessTab, 'AdminPanel:AccessTab');
+setMullionDebugDisplayName(AccessTab, 'AdminPanel:AccessTab');

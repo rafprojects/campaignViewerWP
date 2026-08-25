@@ -9,7 +9,7 @@ import { useCanvasTransform } from '@mullion/shared-ui';
 import { buildFilterCss, getBlendModeCss, buildOverlayBg } from '@mullion/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
 import { useBuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── MaskDragOverlay: draggable mask position/size on canvas ──
 
@@ -26,7 +26,7 @@ interface MaskDragOverlayProps {
  * and allows dragging to adjust mask position (maskLayer.x / y).
  */
 function MaskDragOverlay({ maskLayer, maskUrl, slotWidth, slotHeight, onUpdate }: MaskDragOverlayProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const ref = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
   const liveRef = useRef<{ x: number; y: number } | null>(null);
@@ -195,7 +195,7 @@ function MaskDragOverlay({ maskLayer, maskUrl, slotWidth, slotHeight, onUpdate }
   );
 }
 
-setWpsgDebugDisplayName(MaskDragOverlay, 'LayoutBuilder:MaskDragOverlay');
+setMullionDebugDisplayName(MaskDragOverlay, 'LayoutBuilder:MaskDragOverlay');
 
 // ── SlotIndexBadge ────────────────────────────────────────────
 
@@ -376,7 +376,7 @@ export function LayoutSlotComponent({
   showSlotIndices = true,
   isInMultiSelect = false,
 }: LayoutSlotComponentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const rndRef = useRef<Rnd>(null);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   // Tracks whether this slot was part of a multi-select at mousedown, so dragStop
@@ -451,8 +451,8 @@ export function LayoutSlotComponent({
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     if (
-      e.dataTransfer.types.includes('application/x-wpsg-media-id') ||
-      e.dataTransfer.types.includes('application/x-wpsg-asset-url')
+      e.dataTransfer.types.includes('application/x-mullion-media-id') ||
+      e.dataTransfer.types.includes('application/x-mullion-asset-url')
     ) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
@@ -470,7 +470,7 @@ export function LayoutSlotComponent({
       setIsDragOver(false);
 
       // Design Asset drop → apply as mask image if slot has a mask layer
-      const assetUrl = e.dataTransfer.getData('application/x-wpsg-asset-url');
+      const assetUrl = e.dataTransfer.getData('application/x-mullion-asset-url');
       if (assetUrl && slot.maskLayer && onSlotUpdate) {
         onSlotUpdate(slot.id, {
           maskLayer: { ...slot.maskLayer, url: assetUrl },
@@ -480,12 +480,12 @@ export function LayoutSlotComponent({
       }
 
       // Media drop → assign media to slot
-      if (!e.dataTransfer.types.includes('application/x-wpsg-media-id')) return;
-      const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
+      if (!e.dataTransfer.types.includes('application/x-mullion-media-id')) return;
+      const mediaId = e.dataTransfer.getData('application/x-mullion-media-id');
       if (mediaId && onMediaDrop) {
         let meta: { attachmentId?: number; url?: string } | undefined;
         try {
-          const raw = e.dataTransfer.getData('application/x-wpsg-media-meta');
+          const raw = e.dataTransfer.getData('application/x-mullion-media-meta');
           if (raw) meta = JSON.parse(raw);
         } catch { /* ignore parse errors */ }
         onMediaDrop(slot.id, mediaId, meta);
@@ -991,4 +991,4 @@ export function LayoutSlotComponent({
   );
 }
 
-setWpsgDebugDisplayName(LayoutSlotComponent, 'LayoutBuilder:LayoutSlotComponent');
+setMullionDebugDisplayName(LayoutSlotComponent, 'LayoutBuilder:LayoutSlotComponent');

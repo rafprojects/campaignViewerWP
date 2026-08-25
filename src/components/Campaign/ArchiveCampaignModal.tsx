@@ -1,7 +1,7 @@
 import { Button, Group, Modal, Stack, Text } from '@mantine/core';
 import { useTranslation } from 'react-i18next';
 import type { Campaign } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface ArchiveCampaignModalProps {
   opened: boolean;
@@ -17,7 +17,7 @@ interface ArchiveCampaignModalContentProps {
 }
 
 function ArchiveCampaignModalContent({ campaign, onClose, onConfirm }: ArchiveCampaignModalContentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Stack gap="md">
       <Text>
@@ -39,7 +39,7 @@ function ArchiveCampaignModalContent({ campaign, onClose, onConfirm }: ArchiveCa
   );
 }
 
-setWpsgDebugDisplayName(ArchiveCampaignModalContent, 'ArchiveCampaignModalContent');
+setMullionDebugDisplayName(ArchiveCampaignModalContent, 'ArchiveCampaignModalContent');
 
 export function ArchiveCampaignModal({
   opened,
@@ -47,7 +47,7 @@ export function ArchiveCampaignModal({
   onClose,
   onConfirm,
 }: ArchiveCampaignModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Modal
       opened={opened}
@@ -62,4 +62,4 @@ export function ArchiveCampaignModal({
   );
 }
 
-setWpsgDebugDisplayName(ArchiveCampaignModal, 'ArchiveCampaignModal');
+setMullionDebugDisplayName(ArchiveCampaignModal, 'ArchiveCampaignModal');

@@ -75,7 +75,7 @@ function useAdapterHelpers(
 
 /** Accordion items: Viewport & Layout, Tile Appearance, Transitions. */
 export function GalleryStyleAccordion({ settings, updateSetting, tooltipLabel }: MediaDisplaySettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { mounted, value, onChange } = usePersistentAccordion('gallery-style', 'viewport');
   const { gallerySizingMode, galleryManualHeight, getAdapterSettingValue, updateAdapterSetting, updateViewerCommonSetting } =
     useAdapterHelpers(settings, updateSetting);
@@ -352,7 +352,7 @@ export function GalleryStyleAccordion({ settings, updateSetting, tooltipLabel }:
 
 /** Accordion items: Navigation (arrows, dots), Thumbnail Strip. */
 export function GalleryNavigationAccordion({ settings, updateSetting, tooltipLabel: _tooltipLabel }: MediaDisplaySettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { mounted, value, onChange } = usePersistentAccordion('gallery-navigation', 'navigation');
   const { getAdapterSettingValue, updateAdapterSetting } = useAdapterHelpers(settings, updateSetting);
 

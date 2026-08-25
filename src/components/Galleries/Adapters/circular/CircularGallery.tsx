@@ -24,7 +24,7 @@ import { buildTileStyles } from '@/components/Galleries/Adapters/_shared/tileHov
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 const SCOPE = 'circle';
 
@@ -36,7 +36,7 @@ interface CircularGalleryProps {
 }
 
 export function CircularGallery({ media, settings, runtime }: CircularGalleryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const common = resolveGalleryComponentCommonSettings(settings, runtime);
@@ -64,24 +64,24 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack {...getWpsgDebugProps('CircularGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getMullionDebugProps('CircularGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       <AdapterHeading common={common} heading={heading} icon={<IconCircles size={18} />} />
 
       <style>{buildTileStyles({ scope: SCOPE, settings })}</style>
 
-      <Box {...getWpsgDebugProps('CircularGallery', 'grid')} style={{ display: 'flex', flexWrap: 'wrap', gap: `${toCss(gapY, gapYUnit)} ${toCss(gapX, gapXUnit)}`, justifyContent: common.adapterJustifyContent || 'center' }}>
+      <Box {...getMullionDebugProps('CircularGallery', 'grid')} style={{ display: 'flex', flexWrap: 'wrap', gap: `${toCss(gapY, gapYUnit)} ${toCss(gapX, gapXUnit)}`, justifyContent: common.adapterJustifyContent || 'center' }}>
         {media.map((item, idx) => {
           const thumbSrc = item.thumbnail || item.url;
           const isVideo = item.type === 'video';
           const label = item.caption || item.title || t('gallery_item_label', '{{type}} {{index}}', { type: isVideo ? t('gallery_video_type', 'Video') : t('gallery_image_type', 'Image'), index: idx + 1 });
           return (
             <Box
-              {...getWpsgDebugProps('CircularGallery', 'card')}
+              {...getMullionDebugProps('CircularGallery', 'card')}
               key={item.id}
               component="button"
               onClick={() => openAt(idx)}
               aria-label={label}
-              className={`wpsg-tile-${SCOPE}`}
+              className={`mullion-tile-${SCOPE}`}
               style={{
                 width: toCssOrNumber(tSize, tileSizeUnit),
                 height: toCssOrNumber(tSize, tileSizeUnit),
@@ -109,7 +109,7 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
               />
               {/* Overlay */}
               <Box
-                className="wpsg-circle-overlay"
+                className="mullion-circle-overlay"
                 style={{
                   position: 'absolute', inset: 0,
                   borderRadius: '50%',
@@ -122,7 +122,7 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
                   ? <IconPlayerPlay size={tSize * 0.28} color="white"
                     style={{ opacity: 0.85, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                   : <IconZoomIn size={tSize * 0.24} color="white"
-                    className="wpsg-circle-zoom"
+                    className="mullion-circle-zoom"
                     style={{ opacity: 0, transition: 'opacity 0.2s ease' }} />
                 }
               </Box>
@@ -144,10 +144,10 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
       </Box>
 
       <style>{`
-        .wpsg-tile-circle:hover .wpsg-circle-overlay {
+        .mullion-tile-circle:hover .mullion-circle-overlay {
           background: rgba(0,0,0,0.28) !important;
         }
-        .wpsg-tile-circle:hover .wpsg-circle-zoom {
+        .mullion-tile-circle:hover .mullion-circle-zoom {
           opacity: 1 !important;
         }
       `}</style>
@@ -158,4 +158,4 @@ export function CircularGallery({ media, settings, runtime }: CircularGalleryPro
   );
 }
 
-setWpsgDebugDisplayName(CircularGallery, 'CircularGallery');
+setMullionDebugDisplayName(CircularGallery, 'CircularGallery');

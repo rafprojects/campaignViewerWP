@@ -46,7 +46,7 @@ import {
 } from '@/services/adminQuery';
 import { useTabVisibility } from '@mullion/shared-utils';
 import { useOnlineStatus } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SelectItem {
   value: string;
@@ -103,10 +103,10 @@ function StatCard({
   );
 }
 
-setWpsgDebugDisplayName(StatCard, 'AdminPanel:StatCard');
+setMullionDebugDisplayName(StatCard, 'AdminPanel:StatCard');
 
 export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false }: AnalyticsDashboardProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [campaignId, setCampaignId] = useState<string | null>(campaigns[0]?.value ?? null);
   const [preset, setPreset] = useState<RangePreset>('30');
   const dateRange = useMemo(() => getDateRange(preset), [preset]);
@@ -444,4 +444,4 @@ export function AnalyticsDashboard({ apiClient, campaigns, isSystemAdmin = false
   );
 }
 
-setWpsgDebugDisplayName(AnalyticsDashboard, 'AdminPanel:AnalyticsDashboard');
+setMullionDebugDisplayName(AnalyticsDashboard, 'AdminPanel:AnalyticsDashboard');

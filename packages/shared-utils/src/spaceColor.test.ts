@@ -5,14 +5,14 @@ const PALETTE = ['blue', 'orange', 'green', 'red', 'violet', 'pink'] as const;
 
 describe('spaceColor', () => {
   it('always returns a color that is in the known palette', () => {
-    const inputs = ['gallery-1', 'wpsg-hero-0', 'a', 'products-space', '123'];
+    const inputs = ['gallery-1', 'mullion-hero-0', 'a', 'products-space', '123'];
     for (const id of inputs) {
       expect(PALETTE as readonly string[]).toContain(spaceColor(id));
     }
   });
 
   it('is deterministic — same instanceId always yields the same color', () => {
-    const ids = ['gallery-1', 'gallery-2', 'hero', 'products', 'wpsg-about-0'];
+    const ids = ['gallery-1', 'gallery-2', 'hero', 'products', 'mullion-about-0'];
     for (const id of ids) {
       const first = spaceColor(id);
       expect(spaceColor(id)).toBe(first);

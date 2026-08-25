@@ -45,7 +45,7 @@ const campaignsPayload = {
 };
 
 describe('AdminPanel', () => {
-  // AdminPanel persists active tab via useLocalStorage('wpsg_admin_active_tab').
+  // AdminPanel persists active tab via useLocalStorage('mullion_admin_active_tab').
   // Clear localStorage between tests to prevent tab state leaking across tests.
   beforeEach(() => {
     localStorage.clear();
@@ -165,7 +165,7 @@ describe('AdminPanel', () => {
     // P47-F: campaign creation is gated to a concrete space — "New campaign" is
     // disabled in the default "All spaces" view. Pre-select a space (persisted
     // via useReloadSafeView under the default 'root' rootId) so the button is enabled.
-    localStorage.setItem('wpsg_view_root_admin_space', JSON.stringify('1'));
+    localStorage.setItem('mullion_view_root_admin_space', JSON.stringify('1'));
     const apiClient = withDefaults({
       get: vi.fn().mockResolvedValue({ items: [] }),
       post: vi.fn().mockResolvedValue({ id: '200' }),

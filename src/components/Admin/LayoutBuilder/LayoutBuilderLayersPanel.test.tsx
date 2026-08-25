@@ -10,7 +10,7 @@ import '@testing-library/jest-dom/vitest';
 
 // Spy on the shared pro-upsell helper (no Notifications provider needed).
 const showProUpsell = vi.fn();
-vi.mock('@/utils/wpsgUpsell', () => ({
+vi.mock('@/utils/mullionUpsell', () => ({
   showProUpsell: (...args: unknown[]) => showProUpsell(...args),
 }));
 
@@ -66,11 +66,11 @@ describe('LayoutBuilderLayersPanel — text-layer pro gate', () => {
     showProUpsell.mockClear();
   });
   afterEach(() => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
   });
 
   it('unlicensed: clicking "Add text" upsells and does not add a text layer', () => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
     render(<LayoutBuilderLayersPanel {...panelProps} />);
 
     fireEvent.click(screen.getByLabelText('Add text'));
@@ -81,7 +81,7 @@ describe('LayoutBuilderLayersPanel — text-layer pro gate', () => {
   });
 
   it('licensed: clicking "Add text" adds a text layer and does not upsell', () => {
-    window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+    window.__MULLION_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
     render(<LayoutBuilderLayersPanel {...panelProps} />);
 
     fireEvent.click(screen.getByLabelText('Add text'));
@@ -91,7 +91,7 @@ describe('LayoutBuilderLayersPanel — text-layer pro gate', () => {
   });
 
   it('has no structural a11y violations', async () => {
-    window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+    window.__MULLION_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
     const { container } = render(<LayoutBuilderLayersPanel {...panelProps} />);
     await expectNoA11yViolations(container);
   });

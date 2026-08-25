@@ -25,7 +25,7 @@ import { useSwipe } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import {
   resolveAdapterShellStyle,
   resolveGalleryComponentCommonSettings,
@@ -61,7 +61,7 @@ export function StackedDeckAdapter({
   runtime,
   containerDimensions,
 }: StackedDeckAdapterProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -155,14 +155,14 @@ export function StackedDeckAdapter({
   const count = media.length;
 
   return (
-    <Stack gap="xs" style={adapterSizing} {...getWpsgDebugProps('StackedDeckAdapter')}>
+    <Stack gap="xs" style={adapterSizing} {...getMullionDebugProps('StackedDeckAdapter')}>
       <AdapterHeading common={common} heading={heading} />
 
       <Box
         tabIndex={0}
         onKeyDown={handleKeyDown}
         {...swipeHandlers}
-        {...getWpsgDebugProps('StackedDeckAdapter', 'stage')}
+        {...getMullionDebugProps('StackedDeckAdapter', 'stage')}
         style={{
           position: 'relative',
           height: containerHeight,
@@ -206,7 +206,7 @@ export function StackedDeckAdapter({
                 role="button"
                 tabIndex={isVisible ? 0 : -1}
                 aria-label={item.caption || item.title || t('gallery_item_position', 'Item {{index}} of {{total}}', { index: idx + 1, total: count })}
-                className={`wpsg-stacked-card${isTop ? ' wpsg-stacked-top' : ''}`}
+                className={`mullion-stacked-card${isTop ? ' mullion-stacked-top' : ''}`}
                 onClick={() => handleCardClick(idx)}
                 onKeyDown={(e) => {
                   if ((e.key === 'Enter' || e.key === ' ') && isVisible) {
@@ -215,7 +215,7 @@ export function StackedDeckAdapter({
                     handleCardClick(idx);
                   }
                 }}
-                {...getWpsgDebugProps('StackedDeckAdapter', 'card')}
+                {...getMullionDebugProps('StackedDeckAdapter', 'card')}
                 style={{
                   position: 'absolute',
                   top: cardTop,
@@ -252,7 +252,7 @@ export function StackedDeckAdapter({
 
                 {/* Icon overlay */}
                 <Box
-                  className="wpsg-sd-overlay"
+                  className="mullion-sd-overlay"
                   style={{
                     position: 'absolute',
                     inset: 0,
@@ -274,7 +274,7 @@ export function StackedDeckAdapter({
                     <IconZoomIn
                       size={40}
                       color="white"
-                      className="wpsg-sd-zoom"
+                      className="mullion-sd-zoom"
                       style={{
                         opacity: 0,
                         transition: 'opacity 0.2s ease',
@@ -291,17 +291,17 @@ export function StackedDeckAdapter({
 
       {/* Card transitions + top-card hover affordance */}
       <style>{`
-        .wpsg-stacked-card {
+        .mullion-stacked-card {
           transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, box-shadow 0.35s ease;
         }
-        .wpsg-stacked-card.wpsg-stacked-top:hover .wpsg-sd-overlay {
+        .mullion-stacked-card.mullion-stacked-top:hover .mullion-sd-overlay {
           background: rgba(0,0,0,0.22) !important;
         }
-        .wpsg-stacked-card.wpsg-stacked-top:hover .wpsg-sd-zoom {
+        .mullion-stacked-card.mullion-stacked-top:hover .mullion-sd-zoom {
           opacity: 1 !important;
         }
         @media (prefers-reduced-motion: reduce) {
-          .wpsg-stacked-card {
+          .mullion-stacked-card {
             transition: none;
           }
         }
@@ -320,4 +320,4 @@ export function StackedDeckAdapter({
   );
 }
 
-setWpsgDebugDisplayName(StackedDeckAdapter, 'StackedDeckAdapter');
+setMullionDebugDisplayName(StackedDeckAdapter, 'StackedDeckAdapter');

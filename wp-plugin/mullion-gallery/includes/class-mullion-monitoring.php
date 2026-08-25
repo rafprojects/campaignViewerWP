@@ -34,7 +34,7 @@ class Mullion_Monitoring {
         $elapsed_ms = null;
         if (self::$rest_start) {
             $elapsed_ms = round((microtime(true) - self::$rest_start) * 1000, 2);
-            $response->header('X-WPSG-Response-Time', (string) $elapsed_ms);
+            $response->header('X-MULLION-Response-Time', (string) $elapsed_ms);
         }
 
         $status = is_wp_error($response) ? 500 : (method_exists($response, 'get_status') ? $response->get_status() : 200);

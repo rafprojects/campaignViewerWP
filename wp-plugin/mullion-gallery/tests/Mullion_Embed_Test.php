@@ -14,7 +14,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $ref->setAccessible( true );
         $ref->setValue( null, null );
         unset( $GLOBALS['mullion_has_shortcode'] );
-        // P47-E emits window.__WPSG_CONFIG__ once per page, guarded by this global.
+        // P47-E emits window.__MULLION_CONFIG__ once per page, guarded by this global.
         // Reset it so each test's render_shortcode() re-emits the config script.
         unset( $GLOBALS['mullion_config_emitted'] );
         delete_option( Mullion_Settings::OPTION_NAME );
@@ -43,14 +43,14 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     public function test_render_shortcode_contains_gallery_div() {
         $output = Mullion_Embed::render_shortcode();
 
-        $this->assertStringContainsString( 'class="wp-super-gallery"', $output );
-        $this->assertStringContainsString( 'data-wpsg-props=', $output );
+        $this->assertStringContainsString( 'class="mullion-gallery"', $output );
+        $this->assertStringContainsString( 'data-mullion-props=', $output );
     }
 
     public function test_render_shortcode_includes_config_script() {
         $output = Mullion_Embed::render_shortcode();
 
-        $this->assertStringContainsString( 'window.__WPSG_CONFIG__', $output );
+        $this->assertStringContainsString( 'window.__MULLION_CONFIG__', $output );
     }
 
     /**
@@ -65,7 +65,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         $output = Mullion_Embed::render_shortcode();
 
-        $this->assertStringContainsString( 'window.__WPSG_CONFIG__', $output );
+        $this->assertStringContainsString( 'window.__MULLION_CONFIG__', $output );
         $this->assertStringNotContainsString( '"restNonce"', $output );
     }
 
@@ -88,11 +88,11 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $output = Mullion_Embed::render_shortcode( [ 'campaign' => 'my-campaign' ] );
 
         $decoded_props = null;
-        if ( preg_match( '/data-wpsg-props="([^"]+)"/', $output, $m ) ) {
+        if ( preg_match( '/data-mullion-props="([^"]+)"/', $output, $m ) ) {
             $decoded_props = json_decode( html_entity_decode( $m[1] ), true );
         }
 
-        $this->assertNotNull( $decoded_props, 'data-wpsg-props should be valid JSON' );
+        $this->assertNotNull( $decoded_props, 'data-mullion-props should be valid JSON' );
         $this->assertEquals( 'my-campaign', $decoded_props['campaign'] );
     }
 
@@ -100,7 +100,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $output = Mullion_Embed::render_shortcode( [ 'company' => 'acme-corp' ] );
 
         $decoded_props = null;
-        if ( preg_match( '/data-wpsg-props="([^"]+)"/', $output, $m ) ) {
+        if ( preg_match( '/data-mullion-props="([^"]+)"/', $output, $m ) ) {
             $decoded_props = json_decode( html_entity_decode( $m[1] ), true );
         }
 
@@ -111,13 +111,13 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
     public function test_render_shortcode_compact_true_adds_modifier_class() {
         $output = Mullion_Embed::render_shortcode( [ 'compact' => 'true' ] );
 
-        $this->assertStringContainsString( 'wp-super-gallery--compact', $output );
+        $this->assertStringContainsString( 'mullion-gallery--compact', $output );
     }
 
     public function test_render_shortcode_compact_false_omits_modifier_class() {
         $output = Mullion_Embed::render_shortcode( [ 'compact' => 'false' ] );
 
-        $this->assertStringNotContainsString( 'wp-super-gallery--compact', $output );
+        $this->assertStringNotContainsString( 'mullion-gallery--compact', $output );
     }
 
     public function test_render_shortcode_sets_wpsg_has_shortcode_global() {
@@ -133,12 +133,12 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         $output = Mullion_Embed::render_shortcode();
 
-        // P47-E: theme is emitted per-node in the (HTML-encoded) data-wpsg-config.
+        // P47-E: theme is emitted per-node in the (HTML-encoded) data-mullion-config.
         $decoded_config = null;
-        if ( preg_match( '/data-wpsg-config="([^"]+)"/', $output, $m ) ) {
+        if ( preg_match( '/data-mullion-config="([^"]+)"/', $output, $m ) ) {
             $decoded_config = json_decode( html_entity_decode( $m[1] ), true );
         }
-        $this->assertNotNull( $decoded_config, 'data-wpsg-config should be valid JSON' );
+        $this->assertNotNull( $decoded_config, 'data-mullion-config should be valid JSON' );
         $this->assertEquals( 'nord', $decoded_config['theme'] );
     }
 
@@ -209,11 +209,11 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         // An explicit space= that does not resolve to any space.
         $output = Mullion_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
 
-        $this->assertStringContainsString( 'wpsg-shortcode-notice', $output, 'admin should see the fallback notice' );
+        $this->assertStringContainsString( 'mullion-shortcode-notice', $output, 'admin should see the fallback notice' );
         // The stale reference is named in the notice.
         $this->assertStringContainsString( 'deleted-space-xyz', $output );
         // The gallery still renders normally alongside the notice.
-        $this->assertStringContainsString( 'class="wp-super-gallery"', $output );
+        $this->assertStringContainsString( 'class="mullion-gallery"', $output );
 
         wp_set_current_user( 0 );
     }
@@ -223,9 +223,9 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         $output = Mullion_Embed::render_shortcode( [ 'space' => 'deleted-space-xyz' ] );
 
-        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'visitors must never see the notice' );
+        $this->assertStringNotContainsString( 'mullion-shortcode-notice', $output, 'visitors must never see the notice' );
         // The gallery still renders normally (falls back to the default space).
-        $this->assertStringContainsString( 'class="wp-super-gallery"', $output );
+        $this->assertStringContainsString( 'class="mullion-gallery"', $output );
     }
 
     public function test_omitted_space_reference_shows_no_notice_even_for_admin() {
@@ -234,7 +234,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         // No explicit space/campaign/company: the default is intentional, not an error.
         $output = Mullion_Embed::render_shortcode();
 
-        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'the intentional-default case must not warn' );
+        $this->assertStringNotContainsString( 'mullion-shortcode-notice', $output, 'the intentional-default case must not warn' );
 
         wp_set_current_user( 0 );
     }
@@ -252,7 +252,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         // An explicit space= that DOES resolve must not trigger the notice.
         $output = Mullion_Embed::render_shortcode( [ 'space' => $space->slug ] );
 
-        $this->assertStringNotContainsString( 'wpsg-shortcode-notice', $output, 'a valid reference must not warn' );
+        $this->assertStringNotContainsString( 'mullion-shortcode-notice', $output, 'a valid reference must not warn' );
 
         wp_set_current_user( 0 );
     }
@@ -276,7 +276,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $output = Mullion_Embed::render_shortcode( [ 'campaign' => 'p72d-inherits-default' ] );
 
         $this->assertStringNotContainsString(
-            'wpsg-shortcode-notice',
+            'mullion-shortcode-notice',
             $output,
             'a campaign that exists but has no space assignment must not be reported as stale'
         );
@@ -294,7 +294,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $output = Mullion_Embed::render_shortcode( [ 'company' => 'p72d-co' ] );
 
         $this->assertStringNotContainsString(
-            'wpsg-shortcode-notice',
+            'mullion-shortcode-notice',
             $output,
             'a company that exists but has no space assignment must not be reported as stale'
         );
@@ -307,7 +307,7 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
 
         $output = Mullion_Embed::render_shortcode( [ 'campaign' => 'no-such-campaign-xyz' ] );
 
-        $this->assertStringContainsString( 'wpsg-shortcode-notice', $output );
+        $this->assertStringContainsString( 'mullion-shortcode-notice', $output );
         $this->assertStringContainsString( 'no-such-campaign-xyz', $output );
 
         wp_set_current_user( 0 );
@@ -330,8 +330,8 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         ] );
 
         // Scope the assertion to the notice itself — the mount node's
-        // data-wpsg-props legitimately echoes every attribute back.
-        $this->assertSame( 1, preg_match( '/<div class="wpsg-shortcode-notice".*?<\/div>/s', $output, $m ) );
+        // data-mullion-props legitimately echoes every attribute back.
+        $this->assertSame( 1, preg_match( '/<div class="mullion-shortcode-notice".*?<\/div>/s', $output, $m ) );
         $notice = $m[0];
 
         $this->assertStringContainsString( 'deleted-space-xyz', $notice, 'the stale ref is named' );

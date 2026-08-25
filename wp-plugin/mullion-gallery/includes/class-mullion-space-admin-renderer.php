@@ -3,7 +3,7 @@
  * WP-admin "Gallery Spaces" page (P47-K).
  *
  * Registers a submenu under the Campaigns CPT that mounts the React space
- * management UI (#wpsg-spaces-admin) for full create / archive / per-space
+ * management UI (#mullion-spaces-admin) for full create / archive / per-space
  * settings / access-grant management — reusing the REST API and the same
  * Vite bundle the shortcode uses, rather than re-implementing CRUD in PHP.
  *
@@ -69,7 +69,7 @@ class Mullion_Space_Admin_Renderer {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Gallery Spaces', 'mullion-gallery') . '</h1>';
         echo '<p>' . esc_html__('Create spaces, edit per-space settings, and manage access grants.', 'mullion-gallery') . '</p>';
-        echo '<div id="wpsg-spaces-admin"></div>';
+        echo '<div id="mullion-spaces-admin"></div>';
         echo '</div>';
     }
 }

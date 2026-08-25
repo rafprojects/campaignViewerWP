@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 /**
  * Parsing + validation for the two attributes PHP stamps onto each mount host:
- * `data-wpsg-props` (shortcode props) and `data-wpsg-config` (per-node config).
+ * `data-mullion-props` (shortcode props) and `data-mullion-config` (per-node config).
  *
  * Extracted from main.tsx so the mount-attribute boundary can be unit-tested
  * without importing main.tsx's side effects (Sentry init, SW registration,
@@ -18,7 +18,7 @@ export type MountProps = Record<string, unknown>
 export const ALLOWED_PROPS = new Set(['campaign', 'company', 'space'])
 
 export const parseProps = (node: Element): MountProps => {
-  const raw = node.getAttribute('data-wpsg-props')
+  const raw = node.getAttribute('data-mullion-props')
   if (!raw) return {}
   try {
     const parsed = JSON.parse(raw)
@@ -67,15 +67,15 @@ const pruneUndefinedKeys = <T extends Record<string, unknown>>(value: T): T =>
   ) as T
 
 /**
- * P69-C: runtime allowlist + type-check for `data-wpsg-config`, giving it the
- * same treatment `parseProps` gives `data-wpsg-props`. The attribute is
+ * P69-C: runtime allowlist + type-check for `data-mullion-config`, giving it the
+ * same treatment `parseProps` gives `data-mullion-props`. The attribute is
  * PHP-generated today, but validating here keeps the mount-config boundary
  * consistent: unknown keys are stripped and wrong-typed known keys are dropped
  * (so downstream defaults apply) rather than passed through via an unchecked
  * `as NodeConfig` assertion.
  */
 export const parseNodeConfig = (node: Element): NodeConfig => {
-  const raw = node.getAttribute('data-wpsg-config')
+  const raw = node.getAttribute('data-mullion-config')
   if (!raw) return {}
   try {
     const parsed = JSON.parse(raw)

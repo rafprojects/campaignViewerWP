@@ -23,7 +23,7 @@ import { AdapterHeading } from './_shared/AdapterHeading';
 import { AdapterLightbox } from './_shared/AdapterLightbox';
 import { resolveBoxShadow } from '@mullion/shared-utils';
 import { combineMaxWidthConstraints, resolveBreakpointValue } from '@mullion/shared-utils';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { resolveGalleryComponentCommonSettings, resolveGalleryHeading } from './_shared/runtimeCommon';
 import {
   getCarouselAlign,
@@ -173,7 +173,7 @@ export interface MediaCarouselInnerProps {
 
 /** @internal Exported for backward-compat wrappers — prefer MediaCarouselAdapter. */
 export function MediaCarouselInner({ media, settings, commonSettings, breakpoint, maxWidth }: MediaCarouselInnerProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   // ── Embla setup ──────────────────────────────────────────────────
 
   const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
@@ -618,12 +618,12 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
     : undefined;
 
   return (
-    <Stack {...getWpsgDebugProps('MediaCarouselAdapter')} gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
+    <Stack {...getMullionDebugProps('MediaCarouselAdapter')} gap="md" style={{ width: '100%', maxWidth: configuredMaxWidth }}>
       <AdapterHeading common={commonSettings} heading={heading} icon={<LabelIcon size={18} />} />
 
       {/* Frame container */}
       <Box
-        {...getWpsgDebugProps('MediaCarouselAdapter', 'frame')}
+        {...getMullionDebugProps('MediaCarouselAdapter', 'frame')}
         pos="relative"
         data-testid={testId}
         role="region"
@@ -647,7 +647,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
       >
         {/* Embla viewport */}
         <div
-          {...getWpsgDebugProps('MediaCarouselAdapter', 'viewport')}
+          {...getMullionDebugProps('MediaCarouselAdapter', 'viewport')}
           ref={emblaRef}
           style={{
             overflow: 'hidden',
@@ -660,7 +660,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
         >
           {/* Embla container */}
           <div
-            {...getWpsgDebugProps('MediaCarouselAdapter', 'track')}
+            {...getMullionDebugProps('MediaCarouselAdapter', 'track')}
             style={{
               display: 'flex',
               touchAction: 'pan-y pinch-zoom',
@@ -710,7 +710,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
       </Box>
 
       {/* Caption */}
-      <Text {...getWpsgDebugProps('MediaCarouselAdapter', 'caption')} size="sm" c="dimmed">
+      <Text {...getMullionDebugProps('MediaCarouselAdapter', 'caption')} size="sm" c="dimmed">
         {currentItem?.caption || (isCurrentVideo ? t('carousel_untitled_video', 'Untitled video') : t('carousel_untitled_image', 'Untitled image'))}
       </Text>
 
@@ -740,7 +740,7 @@ export function MediaCarouselInner({ media, settings, commonSettings, breakpoint
   );
 }
 
-setWpsgDebugDisplayName(MediaCarouselInner, 'MediaCarouselInner');
+setMullionDebugDisplayName(MediaCarouselInner, 'MediaCarouselInner');
 
 // ── P35-G: Campaign listing carousel ────────────────────────────────────────
 // Lightweight Embla wrapper that renders arbitrary items (campaign cards) as
@@ -754,7 +754,7 @@ interface CampaignListingCarouselProps {
 }
 
 function CampaignListingCarousel({ items, renderItem, settings }: CampaignListingCarouselProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const visibleCards = normalizeCarouselVisibleCards(settings.carouselVisibleCards);
   const gap = settings.carouselGap;
   const gapUnit = settings.carouselGapUnit ?? 'px';
@@ -801,7 +801,7 @@ function CampaignListingCarousel({ items, renderItem, settings }: CampaignListin
 
   return (
     <Box
-      {...getWpsgDebugProps('MediaCarouselAdapter', 'listing-carousel')}
+      {...getMullionDebugProps('MediaCarouselAdapter', 'listing-carousel')}
       data-testid="campaign-listing-carousel"
       role="region"
       aria-label={t('carousel_campaign_listing', 'Campaign listing')}
@@ -874,4 +874,4 @@ function CampaignListingCarousel({ items, renderItem, settings }: CampaignListin
   );
 }
 
-setWpsgDebugDisplayName(CampaignListingCarousel, 'CampaignListingCarousel');
+setMullionDebugDisplayName(CampaignListingCarousel, 'CampaignListingCarousel');

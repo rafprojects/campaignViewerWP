@@ -11,7 +11,7 @@ import { IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
 import type { MediaUsageCampaignRef } from '@/services/apiClient';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface MediaUsageBadgeProps {
   /** Count already known from the batch summary call in MediaTab. */
@@ -28,10 +28,10 @@ interface MediaUsageBadgeContentProps {
 }
 
 function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeContentProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   if (loading) {
     return (
-      <Stack {...getWpsgDebugProps('MediaUsageBadge', 'loading')} align="center" py="xs">
+      <Stack {...getMullionDebugProps('MediaUsageBadge', 'loading')} align="center" py="xs">
         <Loader size="xs" />
       </Stack>
     );
@@ -50,7 +50,7 @@ function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeConte
   }
 
   return (
-    <Stack {...getWpsgDebugProps('MediaUsageBadge', 'detail')} gap="xs">
+    <Stack {...getMullionDebugProps('MediaUsageBadge', 'detail')} gap="xs">
       {detail.length === 0 ? (
         <Text size="sm" c="dimmed">
           {t('admin_usage_none', 'Not used in any campaign.')}
@@ -76,10 +76,10 @@ function MediaUsageBadgeContent({ loading, error, detail }: MediaUsageBadgeConte
   );
 }
 
-setWpsgDebugDisplayName(MediaUsageBadgeContent, 'AdminPanel:MediaUsageBadge:Content');
+setMullionDebugDisplayName(MediaUsageBadgeContent, 'AdminPanel:MediaUsageBadge:Content');
 
 export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: MediaUsageBadgeProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [opened, setOpened] = useState(false);
   const [detail, setDetail] = useState<MediaUsageCampaignRef[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -111,7 +111,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: Medi
 
   return (
     <Popover
-      {...getWpsgDebugProps('MediaUsageBadge')}
+      {...getMullionDebugProps('MediaUsageBadge')}
       opened={opened}
       onChange={handleOpen}
       withArrow
@@ -121,7 +121,7 @@ export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: Medi
     >
       <Popover.Target>
         <Badge
-          {...getWpsgDebugProps('MediaUsageBadge', 'badge')}
+          {...getMullionDebugProps('MediaUsageBadge', 'badge')}
           color={color}
           variant="light"
           size={size}
@@ -136,11 +136,11 @@ export function MediaUsageBadge({ count, mediaId, apiClient, size = 'sm' }: Medi
         </Badge>
       </Popover.Target>
 
-      <Popover.Dropdown {...getWpsgDebugProps('MediaUsageBadge', 'dropdown')}>
+      <Popover.Dropdown {...getMullionDebugProps('MediaUsageBadge', 'dropdown')}>
         <MediaUsageBadgeContent loading={loading} error={error} detail={detail} />
       </Popover.Dropdown>
     </Popover>
   );
 }
 
-setWpsgDebugDisplayName(MediaUsageBadge, 'AdminPanel:MediaUsageBadge');
+setMullionDebugDisplayName(MediaUsageBadge, 'AdminPanel:MediaUsageBadge');

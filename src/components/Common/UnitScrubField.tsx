@@ -2,7 +2,7 @@ import { type ReactNode, useRef } from 'react';
 import { NumberInput, Select, type NumberInputProps } from '@mantine/core';
 import { IconArrowsHorizontal } from '@tabler/icons-react';
 import { UNIT_MAX_DEFAULTS } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface UnitScrubFieldProps {
   /** Label for the field. Also doubles as the drag-to-scrub handle when present. */
@@ -166,4 +166,4 @@ function resolveMax(unit: string, explicitMax?: number): number {
   return UNIT_MAX_DEFAULTS[unit] ?? UNIT_MAX_DEFAULTS.px ?? 9999;
 }
 
-setWpsgDebugDisplayName(UnitScrubField, 'UnitScrubField');
+setMullionDebugDisplayName(UnitScrubField, 'UnitScrubField');

@@ -41,7 +41,7 @@ import { buildBoxShadowStyles } from '@/components/Galleries/Adapters/_shared/ti
 import { toCss, toCssOrNumber } from '@mullion/shared-utils';
 import { resolveListingColumns } from '@/utils/gridLayout';
 import { resolveColumnsFromWidth } from '@mullion/shared-utils';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { resolveAdapterShellStyle, resolveGalleryComponentCommonSettings, resolveGalleryHeading } from '../_shared/runtimeCommon';
 
 const SCOPE = 'masonry';
@@ -67,7 +67,7 @@ interface MasonryGalleryProps {
 }
 
 export function MasonryGallery({ media, settings, runtime, containerDimensions, items, renderItem }: MasonryGalleryProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   // P35-E: listing-mode detection
   const isListingMode = !!(items && renderItem);
 
@@ -102,7 +102,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
 
     return (
       <Box
-        {...getWpsgDebugProps('MasonryGallery', 'listing-grid')}
+        {...getMullionDebugProps('MasonryGallery', 'listing-grid')}
         data-testid="masonry-listing-grid"
         style={{
           columns: effectiveColumns,
@@ -163,7 +163,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
   const adapterSizing = resolveAdapterShellStyle(common);
 
   return (
-    <Stack {...getWpsgDebugProps('MasonryGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
+    <Stack {...getMullionDebugProps('MasonryGallery')} gap="md" style={{ ...adapterSizing, ...(adapterPad ? { padding: toCssOrNumber(adapterPad, adapterPadUnit) } : {}) }}>
       <AdapterHeading common={common} heading={heading} icon={<IconColumns size={18} />} titleStyle={galleryLabelStyle} />
 
       <style>{buildBoxShadowStyles(SCOPE, settings)}</style>
@@ -184,8 +184,8 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
             return (
               <button
                 {...props}
-                {...getWpsgDebugProps('MasonryGallery', 'tile')}
-                className={`wpsg-tile-${SCOPE}${waterfallEnabled ? ' wpsg-waterfall-tile' : ''} ${className ?? ''}`}
+                {...getMullionDebugProps('MasonryGallery', 'tile')}
+                className={`mullion-tile-${SCOPE}${waterfallEnabled ? ' mullion-waterfall-tile' : ''} ${className ?? ''}`}
                 style={{
                   ...style,
                   overflow: 'hidden',
@@ -220,10 +220,10 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
             return (
               <Box
                 style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius }}
-                className="wpsg-mas-overlay"
+                className="mullion-mas-overlay"
               >
                 <Box
-                  className="wpsg-mas-icon-wrap"
+                  className="mullion-mas-icon-wrap"
                   style={{
                     position: 'absolute', inset: 0,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -235,7 +235,7 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
                     ? <IconPlayerPlay size={iconSize} color="white"
                       style={{ opacity: 0.8, filter: 'drop-shadow(0 1px 6px rgba(0,0,0,0.9))' }} />
                     : <IconZoomIn size={iconSize} color="white"
-                      className="wpsg-mas-zoom"
+                      className="mullion-mas-zoom"
                       style={{
                         opacity: 0, transition: 'opacity 0.2s ease',
                         filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.8))'
@@ -257,10 +257,10 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
       />
 
       <style>{`
-        .react-photo-album--masonry .react-photo-album--button:hover .wpsg-mas-icon-wrap {
+        .react-photo-album--masonry .react-photo-album--button:hover .mullion-mas-icon-wrap {
           background: rgba(0,0,0,0.28) !important;
         }
-        .react-photo-album--masonry .react-photo-album--button:hover .wpsg-mas-zoom {
+        .react-photo-album--masonry .react-photo-album--button:hover .mullion-mas-zoom {
           opacity: 1 !important;
         }
         ${waterfallEnabled ? `
@@ -268,15 +268,15 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
            Applies on initial mount; fill-mode 'both' keeps tiles visible after
            completion. Reduced-motion users get no motion — opacity still fades in
            so the tile is not permanently invisible when animation: none is applied. */
-        @keyframes wpsg-waterfall-enter {
+        @keyframes mullion-waterfall-enter {
           from { opacity: 0; transform: translateY(20px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        .wpsg-waterfall-tile {
-          animation: wpsg-waterfall-enter ${ENTRANCE_DURATION_MS}ms ease both;
+        .mullion-waterfall-tile {
+          animation: mullion-waterfall-enter ${ENTRANCE_DURATION_MS}ms ease both;
         }
         @media (prefers-reduced-motion: reduce) {
-          .wpsg-waterfall-tile {
+          .mullion-waterfall-tile {
             animation: none !important;
           }
         }` : ''}
@@ -288,4 +288,4 @@ export function MasonryGallery({ media, settings, runtime, containerDimensions, 
   );
 }
 
-setWpsgDebugDisplayName(MasonryGallery, 'MasonryGallery');
+setMullionDebugDisplayName(MasonryGallery, 'MasonryGallery');

@@ -15,7 +15,7 @@ export interface User {
  * P33-A: Per-campaign access level for RBAC.
  *
  * Precedence (highest → lowest):
- *   site-wide `manage_wpsg` capability > campaign `owner` > campaign `editor` > campaign `viewer`
+ *   site-wide `manage_mullion` capability > campaign `owner` > campaign `editor` > campaign `viewer`
  *
  * Company-level grants propagate to every campaign in the company at the
  * `access_level` stored on the company grant.  A campaign-level grant for the

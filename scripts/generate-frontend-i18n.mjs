@@ -13,7 +13,7 @@
  *   1. `wp i18n make-pot` harvests the English defaults into the .pot, so a
  *      single .po/.mo per locale translates BOTH the PHP and React surfaces.
  *   2. Mullion_Frontend_Strings::get_translated() resolves the active-locale
- *      translation at runtime for injection into window.__WPSG_I18N__.strings.
+ *      translation at runtime for injection into window.__MULLION_I18N__.strings.
  *
  * Usage:
  *   node scripts/generate-frontend-i18n.mjs           # (re)write the manifest
@@ -61,7 +61,7 @@ function buildManifest(strings) {
  * gettext pipeline. Each i18next key maps to its English default wrapped in
  * __(), so \`wp i18n make-pot\` harvests the strings into the .pot AND
  * get_translated() can resolve the active-locale translation for injection
- * into window.__WPSG_I18N__.strings (consumed by src/i18n.ts).
+ * into window.__MULLION_I18N__.strings (consumed by src/i18n.ts).
  *
  * @package Mullion
  */

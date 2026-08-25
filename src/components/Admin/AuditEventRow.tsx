@@ -1,6 +1,6 @@
 import { Badge, Table, Text } from '@mantine/core';
 import type { AuditEntry } from '@/services/adminQuery';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 const SEVERITY_COLORS = {
   info: 'blue',
@@ -46,4 +46,4 @@ export function AuditEventRow({ entry, showCampaignCol = false }: AuditEventRowP
   );
 }
 
-setWpsgDebugDisplayName(AuditEventRow, 'AdminPanel:AuditEventRow');
+setMullionDebugDisplayName(AuditEventRow, 'AdminPanel:AuditEventRow');

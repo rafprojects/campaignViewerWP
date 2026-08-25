@@ -65,7 +65,7 @@ describe('buildSlotEntranceCss', () => {
 describe('entranceKeyframeName', () => {
   it('produces a CSS-safe identifier from instance + slot id', () => {
     const name = entranceKeyframeName('inst1', 'slot-abc.123');
-    expect(name).toBe('wpsgLbEnter_inst1_slot_abc_123');
+    expect(name).toBe('mullionLbEnter_inst1_slot_abc_123');
     expect(name).toMatch(/^[a-zA-Z_][a-zA-Z0-9_]*$/);
   });
 });

@@ -447,9 +447,9 @@ class Mullion_P39IN1_Webhook_Test extends WP_UnitTestCase {
 
         remove_all_filters('pre_http_request');
 
-        $this->assertArrayHasKey('X-WPSG-Signature', $captured_headers);
+        $this->assertArrayHasKey('X-MULLION-Signature', $captured_headers);
         $expected_sig = 'sha256=' . hash_hmac('sha256', $captured_body, $secret);
-        $this->assertSame($expected_sig, $captured_headers['X-WPSG-Signature']);
+        $this->assertSame($expected_sig, $captured_headers['X-MULLION-Signature']);
     }
 
     // ── WP action hooks ────────────────────────────────────────────────────────

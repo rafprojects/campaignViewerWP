@@ -9,7 +9,7 @@ import {
   normalizeThemeScopeToken,
 } from './themeScope';
 
-const TOKEN_PATTERN = /^wpsg-theme-[a-z0-9]+$/;
+const TOKEN_PATTERN = /^mullion-theme-[a-z0-9]+$/;
 
 describe('themeScope utilities', () => {
   afterEach(() => {
@@ -42,19 +42,19 @@ describe('themeScope utilities', () => {
     const scopeToken = ensureHostThemeScopeToken(host);
 
     expect(scopeToken).toBe('gallery_scope__');
-    expect(host.dataset.wpsgThemeScope).toBe('gallery_scope__');
-    expect(buildThemeScopeSelector(scopeToken)).toBe('[data-wpsg-theme-scope="gallery_scope__"]');
-    expect(buildThemeStyleElementId(scopeToken)).toBe('wpsg-theme-vars-gallery_scope__');
+    expect(host.dataset.mullionThemeScope).toBe('gallery_scope__');
+    expect(buildThemeScopeSelector(scopeToken)).toBe('[data-mullion-theme-scope="gallery_scope__"]');
+    expect(buildThemeStyleElementId(scopeToken)).toBe('mullion-theme-vars-gallery_scope__');
   });
 
-  it('falls back to host.dataset.wpsgKey, then a generated token, for the scope source', () => {
+  it('falls back to host.dataset.mullionKey, then a generated token, for the scope source', () => {
     const withKey = document.createElement('div');
-    withKey.dataset.wpsgKey = 'fromKey';
+    withKey.dataset.mullionKey = 'fromKey';
     expect(ensureHostThemeScopeToken(withKey)).toBe('fromKey');
 
     const bare = document.createElement('div');
     expect(ensureHostThemeScopeToken(bare)).toMatch(TOKEN_PATTERN);
-    expect(bare.dataset.wpsgThemeScope).toMatch(TOKEN_PATTERN);
+    expect(bare.dataset.mullionThemeScope).toMatch(TOKEN_PATTERN);
   });
 
   it('escapes selector values via the manual fallback when CSS.escape is unavailable', () => {

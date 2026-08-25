@@ -2,7 +2,7 @@ import { memo } from 'react';
 import type { SettingsData } from '@/contexts/SettingsStore';
 import type { UpdateGallerySetting } from '../GalleryAdapterSettingsSection';
 import { CampaignViewerSettingsSection } from '../CampaignViewerSettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsViewerTabProps {
   settings: SettingsData;
@@ -20,4 +20,4 @@ export const SettingsViewerTab = memo(function SettingsViewerTab({
     />
   );
 });
-setWpsgDebugDisplayName(SettingsViewerTab, 'SettingsPanel:ViewerTab');
+setMullionDebugDisplayName(SettingsViewerTab, 'SettingsPanel:ViewerTab');

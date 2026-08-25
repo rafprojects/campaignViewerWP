@@ -28,18 +28,18 @@ describe('WpJwtProvider', () => {
 
   it('clears expired token on init', async () => {
     const expiredToken = buildToken(Math.floor(Date.now() / 1000) - 60);
-    localStorage.setItem('wpsg_access_token', expiredToken);
+    localStorage.setItem('mullion_access_token', expiredToken);
 
     const provider = new WpJwtProvider({ apiBaseUrl });
     const session = await provider.init();
 
     expect(session).toBeNull();
-    expect(localStorage.getItem('wpsg_access_token')).toBeNull();
+    expect(localStorage.getItem('mullion_access_token')).toBeNull();
   });
 
   it('returns token when valid and not expired', async () => {
     const validToken = buildToken(Math.floor(Date.now() / 1000) + 60 * 60);
-    localStorage.setItem('wpsg_access_token', validToken);
+    localStorage.setItem('mullion_access_token', validToken);
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
@@ -69,9 +69,9 @@ describe('WpJwtProvider', () => {
     await expect(provider.login('test@example.com', 'bad-pass')).rejects.toThrow('Invalid username.');
   });
 
-  it('marks user as editor when permissions response indicates manage_wpsg only (P53-A)', async () => {
-    localStorage.setItem('wpsg_access_token', buildToken(Math.floor(Date.now() / 1000) + 3600));
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'test@example.com', role: 'viewer' }));
+  it('marks user as editor when permissions response indicates manage_mullion only (P53-A)', async () => {
+    localStorage.setItem('mullion_access_token', buildToken(Math.floor(Date.now() / 1000) + 3600));
+    localStorage.setItem('mullion_user', JSON.stringify({ id: '1', email: 'test@example.com', role: 'viewer' }));
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
@@ -83,13 +83,13 @@ describe('WpJwtProvider', () => {
     const permissions = await provider.getPermissions();
 
     expect(permissions).toEqual(['1']);
-    const updatedUser = JSON.parse(localStorage.getItem('wpsg_user') ?? '{}');
+    const updatedUser = JSON.parse(localStorage.getItem('mullion_user') ?? '{}');
     expect(updatedUser.role).toBe('editor');
   });
 
   it('marks user as admin when permissions response indicates system admin (P53-A)', async () => {
-    localStorage.setItem('wpsg_access_token', buildToken(Math.floor(Date.now() / 1000) + 3600));
-    localStorage.setItem('wpsg_user', JSON.stringify({ id: '1', email: 'test@example.com', role: 'viewer' }));
+    localStorage.setItem('mullion_access_token', buildToken(Math.floor(Date.now() / 1000) + 3600));
+    localStorage.setItem('mullion_user', JSON.stringify({ id: '1', email: 'test@example.com', role: 'viewer' }));
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
@@ -100,12 +100,12 @@ describe('WpJwtProvider', () => {
     const provider = new WpJwtProvider({ apiBaseUrl });
     await provider.getPermissions();
 
-    const updatedUser = JSON.parse(localStorage.getItem('wpsg_user') ?? '{}');
+    const updatedUser = JSON.parse(localStorage.getItem('mullion_user') ?? '{}');
     expect(updatedUser.role).toBe('admin');
   });
 
   it('returns empty permissions when cached value is invalid', async () => {
-    localStorage.setItem('wpsg_permissions', '{bad-json');
+    localStorage.setItem('mullion_permissions', '{bad-json');
 
     const provider = new WpJwtProvider({ apiBaseUrl });
     const permissions = await provider.getPermissions();
@@ -121,7 +121,7 @@ describe('WpJwtProvider', () => {
   });
 
   it('returns null user for invalid stored JSON', async () => {
-    localStorage.setItem('wpsg_user', '{bad');
+    localStorage.setItem('mullion_user', '{bad');
 
     const provider = new WpJwtProvider({ apiBaseUrl });
     const user = await provider.getUser();
@@ -131,17 +131,17 @@ describe('WpJwtProvider', () => {
 
   it('clears access token when expired on getAccessToken', async () => {
     const expiredToken = buildToken(Math.floor(Date.now() / 1000) - 10);
-    localStorage.setItem('wpsg_access_token', expiredToken);
+    localStorage.setItem('mullion_access_token', expiredToken);
 
     const provider = new WpJwtProvider({ apiBaseUrl });
     const token = await provider.getAccessToken();
 
     expect(token).toBeNull();
-    expect(localStorage.getItem('wpsg_access_token')).toBeNull();
+    expect(localStorage.getItem('mullion_access_token')).toBeNull();
   });
 
   it('returns cached permissions without calling fetch', async () => {
-    localStorage.setItem('wpsg_permissions', JSON.stringify(['cached']));
+    localStorage.setItem('mullion_permissions', JSON.stringify(['cached']));
 
     const provider = new WpJwtProvider({ apiBaseUrl });
     const permissions = await provider.getPermissions();
@@ -152,7 +152,7 @@ describe('WpJwtProvider', () => {
 
   it('returns empty permissions when permissions request fails', async () => {
     const token = buildToken(Math.floor(Date.now() / 1000) + 3600);
-    localStorage.setItem('wpsg_access_token', token);
+    localStorage.setItem('mullion_access_token', token);
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
@@ -167,7 +167,7 @@ describe('WpJwtProvider', () => {
   });
 
   it('keeps token when payload is not decodable', async () => {
-    localStorage.setItem('wpsg_access_token', 'bad.token');
+    localStorage.setItem('mullion_access_token', 'bad.token');
 
     const provider = new WpJwtProvider({ apiBaseUrl });
     const token = await provider.getAccessToken();
@@ -177,7 +177,7 @@ describe('WpJwtProvider', () => {
 
   it('clears token when validate endpoint rejects it', async () => {
     const token = buildToken(Math.floor(Date.now() / 1000) + 3600);
-    localStorage.setItem('wpsg_access_token', token);
+    localStorage.setItem('mullion_access_token', token);
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: false,
@@ -189,6 +189,6 @@ describe('WpJwtProvider', () => {
     const session = await provider.init();
 
     expect(session).toBeNull();
-    expect(localStorage.getItem('wpsg_access_token')).toBeNull();
+    expect(localStorage.getItem('mullion_access_token')).toBeNull();
   });
 });

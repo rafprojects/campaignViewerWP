@@ -156,6 +156,6 @@ export function resolveAdapter(id: string): ComponentType<GalleryAdapterProps> {
   if (classic) return classic.component;
 
   throw new Error(
-    `[WPSG] No adapter registered for id="${id}" and no "classic" fallback found.`,
+    `[MULLION] No adapter registered for id="${id}" and no "classic" fallback found.`,
   );
 }

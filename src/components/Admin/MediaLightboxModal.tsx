@@ -2,7 +2,7 @@ import { ActionIcon, Box, Image, Modal, Text } from '@mantine/core';
 import { IconChevronLeft, IconChevronRight, IconX } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { MediaItem } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface MediaLightboxModalProps {
   opened: boolean;
@@ -21,7 +21,7 @@ export function MediaLightboxModal({
   onPrev,
   onNext,
 }: MediaLightboxModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const currentItem = imageItems[lightboxIndex];
   const ariaLabel = t('admin_media_lb_aria', 'Media lightbox: {{caption}} ({{index}} of {{total}})', { caption: currentItem?.caption || t('admin_media_type_image', 'Image'), index: lightboxIndex + 1, total: imageItems.length });
 
@@ -100,4 +100,4 @@ export function MediaLightboxModal({
   );
 }
 
-setWpsgDebugDisplayName(MediaLightboxModal, 'AdminPanel:MediaLightboxModal');
+setMullionDebugDisplayName(MediaLightboxModal, 'AdminPanel:MediaLightboxModal');

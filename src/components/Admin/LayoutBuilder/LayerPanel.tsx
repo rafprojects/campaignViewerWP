@@ -5,7 +5,7 @@ import { IconChevronDown, IconChevronRight, IconLayersLinked, IconLayersOff } fr
 import { buildLayerList, getLayerName, type GroupLayerItem } from '@/utils/layerList';
 import { LayerRow } from './LayerRow';
 import type { LayoutTemplate } from '@/types';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -113,7 +113,7 @@ export function LayerPanel({
   onReparentGroup,
   filterText,
 }: LayerPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const layers = buildLayerList(template);
 
   // ── Filter layers ─────────────────────────────────────────
@@ -465,4 +465,4 @@ export function LayerPanel({
   );
 }
 
-setWpsgDebugDisplayName(LayerPanel, 'LayoutBuilder:LayerPanel');
+setMullionDebugDisplayName(LayerPanel, 'LayoutBuilder:LayerPanel');

@@ -5,7 +5,7 @@
  * - Renders children when no error
  * - Catches errors via getDerivedStateFromError
  * - Shows default error UI (generic copy for public viewers)
- * - P69-D: raw error message gated behind isAdmin / wpsg_debug
+ * - P69-D: raw error message gated behind isAdmin / mullion_debug
  * - Try Again button calls handleReset and clears state
  * - Custom fallback prop renders instead of default UI
  * - onReset callback is invoked on reset
@@ -55,7 +55,7 @@ describe('ErrorBoundary', () => {
 
     expect(screen.getByRole('alert')).toBeInTheDocument();
     expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
-    // P69-D: a public viewer (no isAdmin, no wpsg_debug) sees generic copy, not
+    // P69-D: a public viewer (no isAdmin, no mullion_debug) sees generic copy, not
     // the raw exception message, which may carry internal details.
     expect(
       screen.getByText(/An unexpected error occurred while loading this component/i),
@@ -75,16 +75,16 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText(/Test explosion/)).toBeInTheDocument();
   });
 
-  it('shows the raw error message when wpsg_debug is set, even for a non-admin (P69-D)', () => {
+  it('shows the raw error message when mullion_debug is set, even for a non-admin (P69-D)', () => {
     const spy = suppressConsoleError();
-    localStorage.setItem('wpsg_debug', '1');
+    localStorage.setItem('mullion_debug', '1');
     render(
       <ErrorBoundary isAdmin={false}>
         <Bomb shouldThrow />
       </ErrorBoundary>,
     );
     spy.mockRestore();
-    localStorage.removeItem('wpsg_debug');
+    localStorage.removeItem('mullion_debug');
 
     expect(screen.getByText(/Test explosion/)).toBeInTheDocument();
   });

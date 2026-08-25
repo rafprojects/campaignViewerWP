@@ -147,8 +147,8 @@ export class WpNonceProvider implements AuthProvider {
 
   private apiBase(): string {
     return (
-      window.__WPSG_CONFIG__?.apiBase ??
-      window.__WPSG_API_BASE__ ??
+      window.__MULLION_CONFIG__?.apiBase ??
+      window.__MULLION_API_BASE__ ??
       window.location.origin
     );
   }

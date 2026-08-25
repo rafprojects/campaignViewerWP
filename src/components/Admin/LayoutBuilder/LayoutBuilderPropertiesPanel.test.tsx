@@ -54,18 +54,18 @@ const panelProps = {} as never;
 
 describe('LayoutBuilderPropertiesPanel — text-layer pro gate', () => {
   afterEach(() => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
   });
 
   it('licensed: renders the text properties editor', async () => {
-    window.__WPSG_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
+    window.__MULLION_CONFIG__ = { license: { isPro: true, tier: null, upgradeUrl: '' } };
     render(<LayoutBuilderPropertiesPanel {...panelProps} />);
 
     expect(await screen.findByTestId('text-props-editor')).toBeInTheDocument();
   });
 
   it('unlicensed: shows the upsell instead of the editor (no silent edit-loss)', () => {
-    delete (window as { __WPSG_CONFIG__?: unknown }).__WPSG_CONFIG__;
+    delete (window as { __MULLION_CONFIG__?: unknown }).__MULLION_CONFIG__;
     render(<LayoutBuilderPropertiesPanel {...panelProps} />);
 
     expect(screen.queryByTestId('text-props-editor')).not.toBeInTheDocument();

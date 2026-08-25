@@ -1,7 +1,7 @@
 /**
- * useWpsgLicense — read pro/free license state (P62-A).
+ * useMullionLicense — read pro/free license state (P62-A).
  *
- * Reads `window.__WPSG_CONFIG__.license`, emitted by Mullion_Embed::page_config_js()
+ * Reads `window.__MULLION_CONFIG__.license`, emitted by Mullion_Embed::page_config_js()
  * on both the front-end shortcode page and the wp-admin Spaces/Admin pages.
  * The value flows from the PHP entitlement seam (Mullion_License), which defaults
  * to the free tier (isPro=false) until real Freemius credentials are wired via
@@ -14,7 +14,7 @@
 /** Placeholder pricing URL used when the config omits one (pre-M3). */
 const DEFAULT_UPGRADE_URL = 'https://your-site.tld/pricing';
 
-export interface WpsgLicenseInfo {
+export interface MullionLicenseInfo {
   /** True when a valid pro license is active. */
   isPro: boolean;
   /** Machine-readable tier label (e.g. "single" / "5-site" / "agency"), or null. */
@@ -23,8 +23,8 @@ export interface WpsgLicenseInfo {
   upgradeUrl: string;
 }
 
-export function useWpsgLicense(): WpsgLicenseInfo {
-  const license = window.__WPSG_CONFIG__?.license;
+export function useMullionLicense(): MullionLicenseInfo {
+  const license = window.__MULLION_CONFIG__?.license;
   return {
     isPro: license?.isPro ?? false,
     tier: license?.tier ?? null,

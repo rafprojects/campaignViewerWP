@@ -2,7 +2,7 @@ import { Button, Group, ScrollArea, Skeleton, Table, Text, TextInput } from '@ma
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CampaignSelector, type CampaignSelectItem } from '@/components/Common/CampaignSelector';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import type { AuditFilters } from '@/services/adminQuery';
 
 function mergeFilter(base: AuditFilters, key: keyof AuditFilters, value: string): AuditFilters {
@@ -34,7 +34,7 @@ function AuditSkeletonRows() {
   );
 }
 
-setWpsgDebugDisplayName(AuditSkeletonRows, 'AdminPanel:AuditSkeletonRows');
+setMullionDebugDisplayName(AuditSkeletonRows, 'AdminPanel:AuditSkeletonRows');
 
 interface AuditTabProps {
   campaignSelectData: CampaignSelectItem[];
@@ -66,7 +66,7 @@ export function AuditTab({
   exportingZip,
   auditError,
 }: AuditTabProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <>
       <Text size="sm" fw={600} id="audit-heading" mb={2}>
@@ -144,7 +144,7 @@ export function AuditTab({
           offsetScrollbars
           type="always"
           scrollbars="y"
-          className="wpsg-scrollarea"
+          className="mullion-scrollarea"
           h={360}
         >
           <Table.ScrollContainer minWidth={680}>
@@ -167,4 +167,4 @@ export function AuditTab({
   );
 }
 
-setWpsgDebugDisplayName(AuditTab, 'AdminPanel:AuditTab');
+setMullionDebugDisplayName(AuditTab, 'AdminPanel:AuditTab');

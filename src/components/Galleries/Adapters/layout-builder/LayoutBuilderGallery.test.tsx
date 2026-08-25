@@ -760,7 +760,7 @@ describe('LayoutBuilderGallery overlay rendering', () => {
       expect(overlayImg).toBeTruthy();
       // Opacity is on the positioned wrapper — the parent of the shared
       // GraphicLayerContent element (P50-J inserts one content wrapper).
-      const content = overlayImg.closest('[data-wpsg-graphic-layer]')!;
+      const content = overlayImg.closest('[data-mullion-graphic-layer]')!;
       const wrapper = content.parentElement as HTMLElement;
       expect(wrapper.style.opacity).toBe('0.7');
     });
@@ -798,7 +798,7 @@ describe('LayoutBuilderGallery overlay rendering', () => {
       expect(overlayImg).toBeTruthy();
       // pointer-events is on the positioned wrapper — the parent of the shared
       // GraphicLayerContent element (P50-J inserts one content wrapper).
-      const content = overlayImg.closest('[data-wpsg-graphic-layer]')!;
+      const content = overlayImg.closest('[data-mullion-graphic-layer]')!;
       const wrapper = content.parentElement as HTMLElement;
       expect(wrapper.style.pointerEvents).toBe('none');
     });

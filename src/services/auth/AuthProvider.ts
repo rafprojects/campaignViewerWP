@@ -2,7 +2,7 @@
  * The caller's app-level tier (P53-A). Mirrors the backend
  * {@link Mullion_Permissions::actor_has_tier} seam:
  *   - `viewer` — logged in, read-only
- *   - `editor` — `wpsg_editor` (manage_wpsg): space-scoped app admin
+ *   - `editor` — `mullion_editor` (manage_mullion): space-scoped app admin
  *   - `admin`  — system admin (manage_options): full control, superset of editor
  */
 export type AuthRole = 'viewer' | 'editor' | 'admin';
@@ -15,7 +15,7 @@ export interface AuthUser {
 
 /**
  * Resolve the tier from the backend's two boolean signals. `isSystemAdmin`
- * (manage_options) wins; `isAdmin` (manage_wpsg) is editor-or-above. The single
+ * (manage_options) wins; `isAdmin` (manage_mullion) is editor-or-above. The single
  * place WP providers turn the `/permissions` flags into a role.
  */
 export function resolveRole(isAdmin: boolean, isSystemAdmin: boolean): AuthRole {

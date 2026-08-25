@@ -22,18 +22,18 @@ describe('useMediaViewPrefs — defaults', () => {
 describe('useMediaViewPrefs — legacy sort mode migration (lines 54-56)', () => {
   it('migrates legacy global sortMode key to root-scoped key on mount', () => {
     // Seed the legacy key
-    localStorage.setItem('wpsg_media_sortMode', 'title');
+    localStorage.setItem('mullion_media_sortMode', 'title');
     renderHook(() => useMediaViewPrefs('camp-1', 'root-1'));
     // Legacy key should be removed
-    expect(localStorage.getItem('wpsg_media_sortMode')).toBeNull();
+    expect(localStorage.getItem('mullion_media_sortMode')).toBeNull();
     // Root-scoped key should have the migrated value (safeLocalStorage stores raw)
-    expect(localStorage.getItem('wpsg_media_sortMode_root-1')).toBe('title');
+    expect(localStorage.getItem('mullion_media_sortMode_root-1')).toBe('title');
   });
 
   it('is a no-op when legacy key does not exist (line 54 false branch)', () => {
     const spy = vi.spyOn(localStorage, 'removeItem');
     renderHook(() => useMediaViewPrefs('camp-1', 'root-1'));
-    expect(spy).not.toHaveBeenCalledWith('wpsg_media_sortMode');
+    expect(spy).not.toHaveBeenCalledWith('mullion_media_sortMode');
     spy.mockRestore();
   });
 });

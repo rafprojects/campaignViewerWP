@@ -21,14 +21,14 @@ import { useBuilderDock } from './BuilderDockContext';
 import { LayerPanel } from './LayerPanel';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import { buildLayerList } from '@/utils/layerList';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useRootId } from '@mullion/shared-ui';
-import { useWpsgLicense } from '@/hooks/useWpsgLicense';
-import { showProUpsell } from '@/utils/wpsgUpsell';
+import { useMullionLicense } from '@/hooks/useMullionLicense';
+import { showProUpsell } from '@/utils/mullionUpsell';
 
 export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
-  const { t: tr } = useTranslation('wpsg');
-  const { isPro, upgradeUrl } = useWpsgLicense();
+  const { t: tr } = useTranslation('mullion');
+  const { isPro, upgradeUrl } = useMullionLicense();
   const [filterQuery, setFilterQuery] = useState('');
 
   const {
@@ -447,7 +447,7 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
             dockApiRef.current?.getPanel('media')?.api.setActive();
             setDesignAssetsOpen(true);
             try {
-              localStorage.setItem(`wpsg_builder_${rootId}_design_assets_open`, 'true');
+              localStorage.setItem(`mullion_builder_${rootId}_design_assets_open`, 'true');
             } catch { /* ignore */ }
             requestAnimationFrame(() =>
               bgSectionRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -533,4 +533,4 @@ export function LayoutBuilderLayersPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderLayersPanel, 'LayoutBuilder:LayoutBuilderLayersPanel');
+setMullionDebugDisplayName(LayoutBuilderLayersPanel, 'LayoutBuilder:LayoutBuilderLayersPanel');

@@ -9,7 +9,7 @@
  * gettext pipeline. Each i18next key maps to its English default wrapped in
  * __(), so `wp i18n make-pot` harvests the strings into the .pot AND
  * get_translated() can resolve the active-locale translation for injection
- * into window.__WPSG_I18N__.strings (consumed by src/i18n.ts).
+ * into window.__MULLION_I18N__.strings (consumed by src/i18n.ts).
  *
  * @package Mullion
  */
@@ -685,7 +685,7 @@ class Mullion_Frontend_Strings {
             'set_adv_login_maxw' => __('Login Form Max Width (px)', 'mullion-gallery'),
             'set_adv_developer' => __('Developer & Debugging', 'mullion-gallery'),
             'set_adv_debug_markers' => __('Enable Component Debug Names & Markers', 'mullion-gallery'),
-            'set_adv_debug_markers_desc' => __('When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off.', 'mullion-gallery'),
+            'set_adv_debug_markers_desc' => __('When enabled, deployed builds keep explicit React DevTools component names and inject data-mullion-component/data-mullion-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off.', 'mullion-gallery'),
             'set_adv_data_maint' => __('Data Maintenance', 'mullion-gallery'),
             'set_adv_purge_after' => __('Archive Purge After (days)', 'mullion-gallery'),
             'set_adv_purge_after_desc' => __('Archived campaigns older than this are moved to trash. Set to 0 to disable automatic purging.', 'mullion-gallery'),
@@ -1805,7 +1805,7 @@ class Mullion_Frontend_Strings {
             'admin_space_revoke_confirm_body' => __('Revoke access to this space for {{name}}?', 'mullion-gallery'),
             'admin_space_revoke_confirm_button' => __('Revoke', 'mullion-gallery'),
             'admin_space_revoke_confirm_cancel' => __('Cancel', 'mullion-gallery'),
-            'admin_space_no_grants' => __('No access grants. Everyone with the manage_wpsg capability can access this space.', 'mullion-gallery'),
+            'admin_space_no_grants' => __('No access grants. Everyone with the manage_mullion capability can access this space.', 'mullion-gallery'),
             'admin_space_grant_divider' => __('Grant access', 'mullion-gallery'),
             'admin_space_email_label' => __('User email', 'mullion-gallery'),
             'admin_space_email_ph' => __('user@example.com', 'mullion-gallery'),

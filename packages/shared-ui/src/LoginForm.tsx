@@ -10,7 +10,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSubmit, compact = false, minPasswordLength = 6 }: LoginFormProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const form = useForm({
     initialValues: {
       email: '',

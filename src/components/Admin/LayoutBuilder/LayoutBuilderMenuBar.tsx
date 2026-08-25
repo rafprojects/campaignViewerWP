@@ -133,7 +133,7 @@ export function LayoutBuilderMenuBar({
   layoutScope, setLayoutScope,
   guideCount, onClearGuides,
 }: LayoutBuilderMenuBarProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const panelTitle = useCallback((id: SidePanel) => t(`lb_menu_panel_${id}`, PANEL_LABELS[id]), [t]);
   // Track which side panels are open — queried from dockview on each menu open.
   const [openPanels, setOpenPanels] = useState<Set<SidePanel>>(new Set(SIDE_PANELS));
@@ -190,8 +190,8 @@ export function LayoutBuilderMenuBar({
     if (!api) return;
     // Clear persisted layout for the active scope.
     const key = layoutScope === 'per-template' && templateId
-      ? `wpsg_builder_${rootId}_template_${templateId}_layout`
-      : `wpsg_builder_${rootId}_layout`;
+      ? `mullion_builder_${rootId}_template_${templateId}_layout`
+      : `mullion_builder_${rootId}_layout`;
     try { localStorage.removeItem(key); } catch { /* ignore */ }
     // Remove all panels and restore defaults.
     for (const id of SIDE_PANELS) {

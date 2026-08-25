@@ -46,7 +46,7 @@ describe('TextLayerContent (P59-C render)', () => {
     render(<TextLayerContent layer={makeText({ semanticTag: 'caption', content: 'Cap' })} />);
     const el = screen.getByText('Cap');
     expect(el.tagName).toBe('P');
-    expect(el).toHaveAttribute('data-wpsg-text-role', 'caption');
+    expect(el).toHaveAttribute('data-mullion-text-role', 'caption');
   });
 
   it('applies typography color and alignment from the layer', () => {

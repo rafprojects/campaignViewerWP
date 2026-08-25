@@ -58,7 +58,7 @@ const CAPABILITY_I18N_KEYS: Record<AdapterCapability, string> = {
 function translateCapability(cap: AdapterCapability): string {
   const fallback = CAPABILITY_LABELS[cap];
   if (!fallback) return cap;
-  return i18n.t(CAPABILITY_I18N_KEYS[cap], fallback, { ns: 'wpsg' });
+  return i18n.t(CAPABILITY_I18N_KEYS[cap], fallback, { ns: 'mullion' });
 }
 
 const renderAdapterOption: NonNullable<SelectProps['renderOption']> = ({ option }) => {
@@ -117,14 +117,14 @@ function fieldLabel(label: string, onReset: () => void): ReactNode {
   return (
     <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', gap: 4 }}>
       <span>{label}</span>
-      <Tooltip label={i18n.t('set_ad_reset_default', 'Reset to default', { ns: 'wpsg' })} withArrow position="top" offset={4}>
+      <Tooltip label={i18n.t('set_ad_reset_default', 'Reset to default', { ns: 'mullion' })} withArrow position="top" offset={4}>
         <ActionIcon
           size="xs"
           variant="subtle"
           color="gray"
           style={{ opacity: 0.7, flexShrink: 0 }}
           onClick={(e) => { e.stopPropagation(); onReset(); }}
-          aria-label={i18n.t('set_ad_reset_label', 'Reset {{label}} to default', { ns: 'wpsg', label })}
+          aria-label={i18n.t('set_ad_reset_label', 'Reset {{label}} to default', { ns: 'mullion', label })}
         >
           <IconRefresh size={14} />
         </ActionIcon>
@@ -160,14 +160,14 @@ function renderSettingFields(
       if (field.control === 'number') {
         const numValue = getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined;
         const numError = numValue !== undefined && (numValue < field.min || numValue > field.max)
-          ? i18n.t('set_ad_err_range', 'Enter a value between {{min}} and {{max}}', { ns: 'wpsg', min: field.min, max: field.max })
+          ? i18n.t('set_ad_err_range', 'Enter a value between {{min}} and {{max}}', { ns: 'mullion', min: field.min, max: field.max })
           : undefined;
         const reset = () => updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
         return (
           <NumberInput
             key={`${group}-${String(field.key)}`}
             label={fieldLabel(tFieldLabel(group, field), reset)}
-            description={i18n.t('set_sg_num_hint', '{{desc}} ({{min}}–{{max}}, default: {{fallback}})', { ns: 'wpsg', desc: tFieldDescription(group, field), min: field.min, max: field.max, fallback: field.fallback })}
+            description={i18n.t('set_sg_num_hint', '{{desc}} ({{min}}–{{max}}, default: {{fallback}})', { ns: 'mullion', desc: tFieldDescription(group, field), min: field.min, max: field.max, fallback: field.fallback })}
             {...(numValue !== undefined ? { value: numValue } : {})}
             onChange={(value) => updateSetting(field.key, (typeof value === 'number' ? value : field.fallback) as GalleryBehaviorSettings[typeof field.key])}
             min={field.min}
@@ -181,7 +181,7 @@ function renderSettingFields(
       if (field.control === 'dimension') {
         const dimValue = getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as number | undefined;
         const dimError = dimValue !== undefined && dimValue > field.max
-          ? i18n.t('set_ad_err_max', 'Value exceeds maximum of {{max}}', { ns: 'wpsg', max: field.max })
+          ? i18n.t('set_ad_err_max', 'Value exceeds maximum of {{max}}', { ns: 'mullion', max: field.max })
           : undefined;
         const reset = options?.batchGalleryConfigUpdate
           ? () => options.batchGalleryConfigUpdate!([
@@ -196,7 +196,7 @@ function renderSettingFields(
           <DimensionInput
             key={`${group}-${String(field.key)}`}
             label={fieldLabel(tFieldLabel(group, field), reset)}
-            description={i18n.t('set_sg_dim_hint', '{{desc}} (max: {{max}}, default: {{fallback}})', { ns: 'wpsg', desc: tFieldDescription(group, field), max: field.max, fallback: field.fallback })}
+            description={i18n.t('set_sg_dim_hint', '{{desc}} (max: {{max}}, default: {{fallback}})', { ns: 'mullion', desc: tFieldDescription(group, field), max: field.max, fallback: field.fallback })}
             value={(dimValue ?? field.fallback)}
             unit={(getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.unitKey) as string | undefined) ?? 'px'}
             onValueChange={(value) => updateSetting(field.key, value as GalleryBehaviorSettings[typeof field.key])}
@@ -219,8 +219,8 @@ function renderSettingFields(
             value={String((getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as boolean | undefined) ?? field.fallback)}
             onChange={(value) => updateSetting(field.key, ((value ?? String(field.fallback)) === 'true') as GalleryBehaviorSettings[typeof field.key])}
             data={[
-              { value: 'true', label: i18n.t('set_ad_on', 'On', { ns: 'wpsg' }) },
-              { value: 'false', label: i18n.t('set_ad_off', 'Off', { ns: 'wpsg' }) },
+              { value: 'true', label: i18n.t('set_ad_on', 'On', { ns: 'mullion' }) },
+              { value: 'false', label: i18n.t('set_ad_off', 'Off', { ns: 'mullion' }) },
             ]}
           />
         );
@@ -256,7 +256,7 @@ function renderSettingFields(
       // select (fallthrough)
       const selectValue = getResolvedAdapterFieldValue(resolvedAdapterSettings, settings, field.key) as string | undefined;
       const selectError = selectValue !== undefined && !field.options.some((o) => o.value === selectValue)
-        ? i18n.t('set_ad_err_invalid', 'Stored value "{{value}}" is not a valid option', { ns: 'wpsg', value: selectValue })
+        ? i18n.t('set_ad_err_invalid', 'Stored value "{{value}}" is not a valid option', { ns: 'mullion', value: selectValue })
         : undefined;
       const reset = () => updateSetting(field.key, field.fallback as GalleryBehaviorSettings[typeof field.key]);
       return (
@@ -321,7 +321,7 @@ function renderSettingGroup(
 }
 
 export function GalleryAdapterSettingsSection({ settings, updateSetting }: GalleryAdapterSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const bpLabel = (breakpoint: GalleryConfigBreakpoint) => t(`admin_bp_${breakpoint}`, BREAKPOINT_LABELS[breakpoint]);
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const resolvedAdapterSettings = collectGalleryAdapterSettingValues(resolvedGalleryConfig);
@@ -567,7 +567,7 @@ export function GalleryAdapterSettingsSection({ settings, updateSetting }: Galle
             <input
               ref={importFileRef}
               type="file"
-              accept=".json,.wpsg.json"
+              accept=".json,.mullion.json"
               style={{ display: 'none' }}
               onChange={handleImport}
             />

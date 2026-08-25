@@ -30,7 +30,7 @@ import { PersistentGuidesOverlay } from './PersistentGuidesOverlay';
 import { buildGradientCss, templateToGradientOpts } from '@mullion/shared-utils';
 import { sanitizeCssUrl } from '@mullion/shared-utils';
 import { ASSET_MIME } from './DesignAssetsGrid';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -176,7 +176,7 @@ export function LayoutCanvas({
   activeBreakpoint = 'desktop',
   breakpointViewportPx,
 }: LayoutCanvasProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const canvasRef = useRef<HTMLDivElement>(null);
   const { scale, isHandTool } = useCanvasTransform();
   const viewportHeight = useViewportHeight();
@@ -517,7 +517,7 @@ export function LayoutCanvas({
     (e: React.DragEvent) => {
       if (
         e.dataTransfer.types.includes(ASSET_MIME) ||
-        e.dataTransfer.types.includes('application/x-wpsg-media-id')
+        e.dataTransfer.types.includes('application/x-mullion-media-id')
       ) {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
@@ -542,9 +542,9 @@ export function LayoutCanvas({
       }
 
       // Campaign media drop → new slot
-      const mediaId = e.dataTransfer.getData('application/x-wpsg-media-id');
+      const mediaId = e.dataTransfer.getData('application/x-mullion-media-id');
       if (mediaId && onMediaCanvasDrop) {
-        const metaRaw = e.dataTransfer.getData('application/x-wpsg-media-meta');
+        const metaRaw = e.dataTransfer.getData('application/x-mullion-media-meta');
         let meta: { attachmentId?: number | undefined; url?: string | undefined } = {};
         try { meta = metaRaw ? JSON.parse(metaRaw) : {}; } catch { /* ignore */ }
         onMediaCanvasDrop(mediaId, meta, pctX, pctY);
@@ -1029,4 +1029,4 @@ export function LayoutCanvas({
   );
 }
 
-setWpsgDebugDisplayName(LayoutCanvas, 'LayoutBuilder:LayoutCanvas');
+setMullionDebugDisplayName(LayoutCanvas, 'LayoutBuilder:LayoutCanvas');

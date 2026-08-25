@@ -21,7 +21,7 @@ import { DotNavigator } from '@/components/Galleries/Shared/DotNavigator';
 import { Box } from '@mantine/core';
 import type { Campaign, GalleryBehaviorSettings } from '@/types';
 import type { Breakpoint } from '@/hooks/useBreakpoint';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getMullionDebugProps } from '@/utils/mullionDebug';
 
 const LOAD_MORE_SIZE = 12;
 
@@ -60,7 +60,7 @@ export function CardGalleryHostPagination({
   renderAdapter,
   emptyNode,
 }: CardGalleryHostPaginationProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const displayMode = settings.cardDisplayMode ?? 'load-more';
 
   // ── Pagination state ─────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ export function CardGalleryHostPagination({
     <>
       {/* Pagination shell — relative container for overlay arrows; holds keyboard focus. */}
       <Box
-        {...getWpsgDebugProps('CardGallery', 'pagination-shell')}
+        {...getMullionDebugProps('CardGallery', 'pagination-shell')}
         ref={gridContainerRef}
         style={{ position: 'relative', overflow: 'hidden' }}
         tabIndex={displayMode === 'paginated' ? 0 : undefined}

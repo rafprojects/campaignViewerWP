@@ -14,7 +14,7 @@ import {
   shouldUseEqualHeightPerTypeLayout,
 } from '@/utils/campaignGalleryRenderPlan';
 import { resolveCampaignViewerGalleryShellLayout } from '@/utils/campaignViewerLayout';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 import { CampaignGalleryAdapterRenderer } from './CampaignGalleryAdapterRenderer';
 import { GallerySectionWrapper } from './GallerySectionWrapper';
@@ -106,4 +106,4 @@ export function PerTypeGallerySection({ campaign, settings: s, breakpoint, isAdm
   );
 }
 
-setWpsgDebugDisplayName(PerTypeGallerySection, 'PerTypeGallerySection');
+setMullionDebugDisplayName(PerTypeGallerySection, 'PerTypeGallerySection');

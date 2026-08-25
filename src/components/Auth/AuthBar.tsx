@@ -4,12 +4,12 @@ import { Box, Container, Group, Button, Tooltip, ActionIcon, Text, Menu } from '
 import { useMediaQuery } from '@mantine/hooks';
 import { IconSettings, IconLogout, IconDashboard, IconDotsVertical } from '@tabler/icons-react';
 import type { GalleryBehaviorSettings } from '@/types';
-import { getWpsgDebugProps } from '@/utils/wpsgDebug';
+import { getMullionDebugProps } from '@/utils/mullionDebug';
 import { useCampaignContext } from '@/contexts/CampaignContext';
 import { usePageSpaces } from '@/hooks/usePageSpaces';
 import { AuthBarFloating, AuthBarMinimal, SpaceSwitcher } from '@mullion/shared-ui';
 import { spaceColor } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface AuthBarProps {
   email: string;
@@ -164,7 +164,7 @@ export function AuthBar({
   );
 }
 
-setWpsgDebugDisplayName(AuthBar, 'AuthBar');
+setMullionDebugDisplayName(AuthBar, 'AuthBar');
 
 /** The original full-width bar, with optional auto-hide behavior. */
 function AuthBarFull({
@@ -181,12 +181,12 @@ function AuthBarFull({
   instanceId,
   pageSpaces,
 }: Omit<AuthBarProps, 'displayMode' | 'dragMargin'> & { autoHide?: boolean; pageSpaces?: import('@mullion/shared-ui').SpaceSwitcherSpace[] | undefined }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [activeInstanceId, setActiveInstanceId] = useState(instanceId);
   const color = instanceId ? spaceColor(activeInstanceId ?? instanceId) : undefined;
 
   const callOpener = useCallback((id: string, panel: 'settings' | 'admin') => {
-    const opener = (window as unknown as Record<string, unknown>)[`__wpsgOpen_${id}`];
+    const opener = (window as unknown as Record<string, unknown>)[`__mullionOpen_${id}`];
     if (typeof opener === 'function') (opener as (p: string) => void)(panel);
   }, []);
 
@@ -209,7 +209,7 @@ function AuthBarFull({
 
   return (
     <Box
-      {...getWpsgDebugProps('AuthBar')}
+      {...getMullionDebugProps('AuthBar')}
       component="nav"
       aria-label={t('auth_user_nav_label', 'User navigation')}
       style={{
@@ -223,8 +223,8 @@ function AuthBarFull({
         transition: 'transform 0.3s ease',
       }}
     >
-      <Container {...getWpsgDebugProps('AuthBar', 'container')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
-        <Group {...getWpsgDebugProps('AuthBar', 'content')} justify="space-between" wrap="nowrap" gap="sm">
+      <Container {...getMullionDebugProps('AuthBar', 'container')} {...(containerSize !== undefined ? { size: containerSize } : {})} fluid={containerFluid} py="sm" style={containerPaddingStyle}>
+        <Group {...getMullionDebugProps('AuthBar', 'content')} justify="space-between" wrap="nowrap" gap="sm">
           {!isAuthenticated ? (
             <>
               <Text size="sm" c="dimmed">{t('auth_sign_in_prompt', 'Sign in to access private campaigns.')}</Text>
@@ -242,11 +242,11 @@ function AuthBarFull({
                   styles={{ dropdown: color ? { borderColor: `var(--mantine-color-${color}-5)` } : {} }}
                 >
                   <Menu.Target>
-                    <ActionIcon {...getWpsgDebugProps('AuthBar', 'menu-trigger')} variant="default" size="lg" aria-label={t('auth_user_menu_label', 'User menu')}>
+                    <ActionIcon {...getMullionDebugProps('AuthBar', 'menu-trigger')} variant="default" size="lg" aria-label={t('auth_user_menu_label', 'User menu')}>
                       <IconDotsVertical size={18} />
                     </ActionIcon>
                   </Menu.Target>
-                  <Menu.Dropdown {...getWpsgDebugProps('AuthBar', 'menu-dropdown')}>
+                  <Menu.Dropdown {...getMullionDebugProps('AuthBar', 'menu-dropdown')}>
                     {isAdmin && (
                       <>
                         <Menu.Item leftSection={<IconDashboard size={16} />} onClick={handleOpenAdmin}>
@@ -274,13 +274,13 @@ function AuthBarFull({
                 </Menu>
               ) : (
                 /* ── Desktop: inline controls ── */
-                <Group {...getWpsgDebugProps('AuthBar', 'desktop-actions')} gap="sm" wrap="nowrap">
+                <Group {...getMullionDebugProps('AuthBar', 'desktop-actions')} gap="sm" wrap="nowrap">
                   {isAdmin && (
                     <>
                       <Button
                         variant="default"
                         onClick={handleOpenAdmin}
-                        className="wpsg-admin-btn"
+                        className="mullion-admin-btn"
                         size="sm"
                       >
                         {t('auth_admin_panel', 'Admin Panel')}
@@ -289,7 +289,7 @@ function AuthBarFull({
                         <ActionIcon
                           variant="default"
                           size="lg"
-                          className="wpsg-admin-btn"
+                          className="mullion-admin-btn"
                           onClick={handleOpenSettings}
                           aria-label={t('auth_settings', 'Settings')}
                         >
@@ -321,4 +321,4 @@ function AuthBarFull({
   );
 }
 
-setWpsgDebugDisplayName(AuthBarFull, 'AuthBarFull');
+setMullionDebugDisplayName(AuthBarFull, 'AuthBarFull');

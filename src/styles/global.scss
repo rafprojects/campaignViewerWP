@@ -13,7 +13,7 @@
 // Gold source: docs/THEME_SYSTEM_ASSESSMENT.md
 // ==========================================================================
 
-.wp-super-gallery {
+.mullion-gallery {
   color: var(--mullion-color-text);
   background-color: var(--mullion-color-background);
   font-family: var(--mullion-font-family);
@@ -21,12 +21,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.wp-super-gallery * {
+.mullion-gallery * {
   box-sizing: border-box;
 }
 
 // Screen-reader only utility
-.wp-super-gallery .wpsg-sr-only {
+.mullion-gallery .mullion-sr-only {
   position: absolute !important;
   width: 1px !important;
   height: 1px !important;
@@ -38,12 +38,12 @@
   border: 0 !important;
 }
 
-.wp-super-gallery img {
+.mullion-gallery img {
   display: block;
   max-width: 100%;
 }
 
-.wp-super-gallery button {
+.mullion-gallery button {
   font: inherit;
   // Ensure minimum touch target size for mobile (44x44px WCAG guideline)
   min-height: 36px;
@@ -51,65 +51,65 @@
 }
 
 @media (max-width: 576px) {
-  .wp-super-gallery button {
+  .mullion-gallery button {
     min-height: 44px;
     min-width: 44px;
   }
   
   // Improve text legibility on mobile
-  .wp-super-gallery {
+  .mullion-gallery {
     font-size: 16px; // Prevents iOS zoom on focus
   }
   
   // Prevent text overflow on small screens
-  .wp-super-gallery h1,
-  .wp-super-gallery h2,
-  .wp-super-gallery h3 {
+  .mullion-gallery h1,
+  .mullion-gallery h2,
+  .mullion-gallery h3 {
     word-wrap: break-word;
     overflow-wrap: break-word;
   }
 }
 
 // ScrollArea tuning: visible scrollbar on desktop, hidden on mobile with touch momentum
-.wp-super-gallery .wpsg-scrollarea {
+.mullion-gallery .mullion-scrollarea {
   max-height: 360px;
   overflow: hidden;
 }
 
-.wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-viewport] {
+.mullion-gallery .mullion-scrollarea [data-radix-scroll-area-viewport] {
   max-height: 360px;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
 // Mantine ScrollArea uses data-mantine-scroll-area and data-radix-scroll-area attributes
-.wp-super-gallery .wpsg-scrollarea [data-mantine-scrollbar],
-.wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-scrollbar] {
+.mullion-gallery .mullion-scrollarea [data-mantine-scrollbar],
+.mullion-gallery .mullion-scrollarea [data-radix-scroll-area-scrollbar] {
   opacity: 1 !important;
   visibility: visible !important;
 }
 
-.wp-super-gallery .wpsg-scrollarea [data-mantine-scrollbar-thumb],
-.wp-super-gallery .wpsg-scrollarea [data-radix-scroll-area-thumb] {
+.mullion-gallery .mullion-scrollarea [data-mantine-scrollbar-thumb],
+.mullion-gallery .mullion-scrollarea [data-radix-scroll-area-thumb] {
   background-color: var(--mullion-color-text-muted) !important;
   opacity: 0.65 !important;
 }
 
 @media (max-width: 576px) {
-  .wp-super-gallery .wpsg-scrollarea {
+  .mullion-gallery .mullion-scrollarea {
     max-height: 280px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   
-  .wp-super-gallery .wpsg-scrollarea::-webkit-scrollbar {
+  .mullion-gallery .mullion-scrollarea::-webkit-scrollbar {
     width: 0;
     height: 0;
   }
 }
 
 // Container utilities (maps to Mantine Container component)
-.wp-super-gallery__container {
+.mullion-gallery__container {
   width: 100%;
   max-width: 80rem;
   margin: 0 auto;
@@ -117,7 +117,7 @@
 }
 
 // Auth bar styling (top navigation with app controls)
-.wp-super-gallery__banner {
+.mullion-gallery__banner {
   margin: 1rem auto 0;
   max-width: 80rem;
   padding: 0.75rem 1rem;
@@ -126,14 +126,14 @@
   text-align: center;
 }
 
-.wp-super-gallery__authbar {
+.mullion-gallery__authbar {
   margin: 1rem auto 0;
   max-width: 80rem;
   padding: 0.75rem 0;
 }
 
 // Inner auth bar styling — colors from theme variables
-.wp-super-gallery__authbar-inner {
+.mullion-gallery__authbar-inner {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
@@ -148,7 +148,7 @@
 }
 
 // Auth button
-.wp-super-gallery__authbar-button {
+.mullion-gallery__authbar-button {
   border: 1px solid var(--mullion-color-border);
   background: var(--mullion-color-background);
   color: var(--mullion-color-text);
@@ -157,12 +157,12 @@
   cursor: pointer;
 }
 
-.wp-super-gallery__authbar-button:hover {
+.mullion-gallery__authbar-button:hover {
   background: var(--mullion-color-surface2);
 }
 
 // Error banner — uses theme error color
-.wp-super-gallery__banner--error {
+.mullion-gallery__banner--error {
   background: var(--mullion-color-error);
   opacity: 0.85;
   border: 1px solid var(--mullion-color-error);
@@ -170,7 +170,7 @@
 }
 
 // Success banner — uses theme success color
-.wp-super-gallery__banner--success {
+.mullion-gallery__banner--success {
   background: var(--mullion-color-success);
   opacity: 0.85;
   border: 1px solid var(--mullion-color-success);
@@ -178,14 +178,14 @@
 }
 
 // Admin button with hover effects (for Admin Panel and Settings buttons)
-.wp-super-gallery .wpsg-admin-btn {
+.mullion-gallery .mullion-admin-btn {
   background-color: var(--mullion-color-surface2);
   border-color: var(--mullion-color-border);
   color: var(--mullion-color-text);
   transition: transform 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
 }
 
-.wp-super-gallery .wpsg-admin-btn:hover {
+.mullion-gallery .mullion-admin-btn:hover {
   background-color: var(--mullion-color-surface3);
   border-color: var(--mullion-color-primary);
   color: var(--mullion-color-text);
@@ -196,31 +196,31 @@
 // Mantine active/selected state helpers. These stay in CSS so selectors like
 // [data-active] and [data-selected] are handled by the browser instead of
 // leaking through React inline style objects.
-.wpsg-mantine-tabs-tab[data-active] {
+.mullion-mantine-tabs-tab[data-active] {
   color: var(--mullion-color-text);
   border-color: var(--mullion-color-primary);
 }
 
-.wpsg-mantine-segmented-control-label[data-active] {
+.mullion-mantine-segmented-control-label[data-active] {
   color: var(--mullion-color-text);
 }
 
 // Select dropdowns may render in a portal, so selected option styling
-// cannot rely on the .wp-super-gallery ancestor being present.
-.wpsg-mantine-select-option[data-selected] {
+// cannot rely on the .mullion-gallery ancestor being present.
+.mullion-mantine-select-option[data-selected] {
   background-color: var(--mullion-color-primary);
   color: #ffffff;
 }
 
 // Compact layout variant
-.wp-super-gallery--compact .wp-super-gallery__container {
+.mullion-gallery--compact .mullion-gallery__container {
   max-width: 64rem;
   padding: 0 1rem;
 }
 
 // Responsive breakpoint (maps to Mantine md breakpoint: 768px)
 @media (min-width: 768px) {
-  .wp-super-gallery__container {
+  .mullion-gallery__container {
     padding: 0 2rem;
   }
 }

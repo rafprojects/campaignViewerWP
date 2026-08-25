@@ -8,8 +8,8 @@ import { SlotPropertiesPanel } from './SlotPropertiesPanel';
 import { GraphicLayerPropertiesPanel } from './GraphicLayerPropertiesPanel';
 import { MaskPropertiesPanel } from './MaskPropertiesPanel';
 import { BackgroundPropertiesPanel } from './BackgroundPropertiesPanel';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
-import { useWpsgLicense } from '@/hooks/useWpsgLicense';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
+import { useMullionLicense } from '@/hooks/useMullionLicense';
 
 // P62-G: gate the Pro text editor behind the build flag so the free WP.org build
 // dead-code-eliminates TextPropertiesPanel (and its heavyweight TypographyEditor).
@@ -26,8 +26,8 @@ const ASPECT_PRESETS = [
 ] as const;
 
 export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
-  const { t } = useTranslation('wpsg');
-  const { isPro } = useWpsgLicense();
+  const { t } = useTranslation('mullion');
+  const { isPro } = useMullionLicense();
   const {
     builder,
     selectedSlot,
@@ -244,4 +244,4 @@ export function LayoutBuilderPropertiesPanel(_props: IDockviewPanelProps) {
   );
 }
 
-setWpsgDebugDisplayName(LayoutBuilderPropertiesPanel, 'LayoutBuilder:LayoutBuilderPropertiesPanel');
+setMullionDebugDisplayName(LayoutBuilderPropertiesPanel, 'LayoutBuilder:LayoutBuilderPropertiesPanel');

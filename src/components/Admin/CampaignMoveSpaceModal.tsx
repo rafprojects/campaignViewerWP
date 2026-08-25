@@ -11,7 +11,7 @@ import {
 import { IconArrowsExchange, IconInfoCircle } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
 import type { AdminCampaign, SpaceInfo } from '@/services/adminQuery';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface CampaignMoveSpaceModalProps {
   /** Campaign to move; null when modal is closed. */
@@ -37,7 +37,7 @@ export function CampaignMoveSpaceModal({
   onConfirm,
   onClose,
 }: CampaignMoveSpaceModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [targetId, setTargetId] = useState<string | null>(null);
 
   const targetOptions = useMemo(
@@ -61,16 +61,16 @@ export function CampaignMoveSpaceModal({
 
   return (
     <Modal
-      {...getWpsgDebugProps('CampaignMoveSpaceModal')}
+      {...getMullionDebugProps('CampaignMoveSpaceModal')}
       opened={source !== null}
       onClose={onClose}
-      title={<span {...getWpsgDebugProps('CampaignMoveSpaceModal', 'title')}>{t('admin_move_title', 'Move Campaign to Space')}</span>}
+      title={<span {...getMullionDebugProps('CampaignMoveSpaceModal', 'title')}>{t('admin_move_title', 'Move Campaign to Space')}</span>}
       size="sm"
       aria-label={t('admin_move_aria', 'Move campaign to space')}
-      closeButtonProps={getWpsgDebugProps('CampaignMoveSpaceModal', 'close')}
-      overlayProps={getWpsgDebugProps('CampaignMoveSpaceModal', 'overlay')}
+      closeButtonProps={getMullionDebugProps('CampaignMoveSpaceModal', 'close')}
+      overlayProps={getMullionDebugProps('CampaignMoveSpaceModal', 'overlay')}
     >
-      <Stack {...getWpsgDebugProps('CampaignMoveSpaceModal', 'stack')} gap="md">
+      <Stack {...getMullionDebugProps('CampaignMoveSpaceModal', 'stack')} gap="md">
         <div>
           <Text size="sm" c="dimmed" mb={4}>{t('admin_move_campaign_label', 'Campaign:')}</Text>
           <Text fw={600}>{source?.title}</Text>
@@ -94,7 +94,7 @@ export function CampaignMoveSpaceModal({
           {t('admin_move_info', 'All analytics, audit history, media references, and access requests move with the campaign. The source space will no longer list it.')}
         </Alert>
 
-        <Group {...getWpsgDebugProps('CampaignMoveSpaceModal', 'actions')} justify="flex-end" mt="xs">
+        <Group {...getMullionDebugProps('CampaignMoveSpaceModal', 'actions')} justify="flex-end" mt="xs">
           <Button variant="subtle" onClick={onClose} disabled={isSaving}>
             {t('admin_cancel', 'Cancel')}
           </Button>
@@ -112,4 +112,4 @@ export function CampaignMoveSpaceModal({
   );
 }
 
-setWpsgDebugDisplayName(CampaignMoveSpaceModal, 'AdminPanel:CampaignMoveSpaceModal');
+setMullionDebugDisplayName(CampaignMoveSpaceModal, 'AdminPanel:CampaignMoveSpaceModal');

@@ -10,7 +10,7 @@ export interface ContainerDimensions {
   height: number;
 }
 
-/** A single tag from the wpsg_media_tag taxonomy, as returned by the media REST endpoint. */
+/** A single tag from the mullion_media_tag taxonomy, as returned by the media REST endpoint. */
 export interface MediaTag {
   id: number;
   name: string;
@@ -45,7 +45,7 @@ export interface MediaItem {
    */
   filesize?: number | undefined;
   /**
-   * Tags from the wpsg_media_tag taxonomy assigned to this attachment.
+   * Tags from the mullion_media_tag taxonomy assigned to this attachment.
    * Present only for source === 'upload' items that have at least one tag.
    * Undefined (not an empty array) when no tags are assigned.
    * Reserved for future filterable-gallery work.

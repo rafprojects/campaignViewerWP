@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, NumberInput, Switch, Button, Stack, Group, Text } from '@mantine/core';
 import { computeGridSlots } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface AutoGridDialogProps {
   opened: boolean;
@@ -23,7 +23,7 @@ function toNum(v: string | number, fallback: number): number {
  * geometry used to generate them.
  */
 export function AutoGridDialog({ opened, onClose, onGenerate, hasExistingSlots = false }: AutoGridDialogProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [rows, setRows] = useState(2);
   const [cols, setCols] = useState(3);
   const [gapPct, setGapPct] = useState(2);
@@ -107,4 +107,4 @@ export function AutoGridDialog({ opened, onClose, onGenerate, hasExistingSlots =
   );
 }
 
-setWpsgDebugDisplayName(AutoGridDialog, 'LayoutBuilder:AutoGridDialog');
+setMullionDebugDisplayName(AutoGridDialog, 'LayoutBuilder:AutoGridDialog');

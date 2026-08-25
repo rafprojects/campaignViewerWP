@@ -24,7 +24,7 @@ import type { LayoutSlot, MaskLayer } from '@/types';
 import { DEFAULT_MASK_LAYER } from '@/types';
 import type { AssetLibraryItem } from './BuilderDockContext';
 import { DesignAssetsGrid } from './DesignAssetsGrid';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 // ── Props ────────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ export interface MaskPropertiesPanelProps {
 // ── Inline helpers (shared with SlotPropertiesPanel) ─────────
 
 function PropRow({ label, children, tooltip }: { label: string; children: React.ReactNode; tooltip?: string }) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   return (
     <Group gap={6} align="center" wrap="nowrap" style={{ minHeight: 28 }}>
       <Group gap={2} align="center" wrap="nowrap" style={{ width: 70, flexShrink: 0 }}>
@@ -58,7 +58,7 @@ function PropRow({ label, children, tooltip }: { label: string; children: React.
   );
 }
 
-setWpsgDebugDisplayName(PropRow, 'LayoutBuilder:MaskPropertiesPanel:PropRow');
+setMullionDebugDisplayName(PropRow, 'LayoutBuilder:MaskPropertiesPanel:PropRow');
 
 function SectionHeader({ label }: { label: string }) {
   return (
@@ -75,7 +75,7 @@ function SectionHeader({ label }: { label: string }) {
   );
 }
 
-setWpsgDebugDisplayName(SectionHeader, 'LayoutBuilder:MaskPropertiesPanel:SectionHeader');
+setMullionDebugDisplayName(SectionHeader, 'LayoutBuilder:MaskPropertiesPanel:SectionHeader');
 
 // ── Component ────────────────────────────────────────────────
 
@@ -85,7 +85,7 @@ export function MaskPropertiesPanel({
   onUploadMask,
   assetLibrary,
 }: MaskPropertiesPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [isUploading, setIsUploading] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const resetRef = useRef<() => void>(null);
@@ -332,4 +332,4 @@ export function MaskPropertiesPanel({
   );
 }
 
-setWpsgDebugDisplayName(MaskPropertiesPanel, 'LayoutBuilder:MaskPropertiesPanel');
+setMullionDebugDisplayName(MaskPropertiesPanel, 'LayoutBuilder:MaskPropertiesPanel');

@@ -19,18 +19,18 @@ function notify(message: { type: 'error' | 'success'; text: string }) {
 
 /**
  * P52-B — Standalone mount for the WP-admin "Asset Library" page
- * (#wpsg-assets-admin).
+ * (#mullion-assets-admin).
  *
  * Renders only the GlobalAssetManager — not the full gallery App — wrapped in
  * the minimal provider tree it needs. Auth is cookie + REST nonce (read from
- * window.__WPSG_CONFIG__ by the HTTP transport). Mounts in light DOM (no shadow
+ * window.__MULLION_CONFIG__ by the HTTP transport). Mounts in light DOM (no shadow
  * root) to live inside wp-admin.
  */
 export function mountGlobalAssets(host: HTMLElement): void {
-  if (host.hasAttribute('data-wpsg-mounted')) return;
-  host.setAttribute('data-wpsg-mounted', 'true');
+  if (host.hasAttribute('data-mullion-mounted')) return;
+  host.setAttribute('data-mullion-mounted', 'true');
 
-  const apiBaseUrl = window.__WPSG_API_BASE__ ?? window.location.origin;
+  const apiBaseUrl = window.__MULLION_API_BASE__ ?? window.location.origin;
   const apiClient = new ApiClient({
     baseUrl: apiBaseUrl,
     getNonce: getWpNonce,

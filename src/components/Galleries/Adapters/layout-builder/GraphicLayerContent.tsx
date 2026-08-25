@@ -18,7 +18,7 @@ import { getClipPathForShape } from '@mullion/shared-utils';
 import { buildFilterCss, getBlendModeCss } from '@mullion/shared-utils';
 import { buildGraphicLayerTransform } from '@mullion/shared-utils';
 import { useFeatheredMask } from '@/hooks/useFeatheredMask';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface GraphicLayerContentProps {
   layer: LayoutGraphicLayer;
@@ -97,7 +97,7 @@ export function GraphicLayerContent({ layer, pixelWidth, pixelHeight }: GraphicL
     // Double-container border technique (same as LayoutSlotComponent): the only
     // reliable CSS approach for a border that follows an arbitrary clip/mask.
     return (
-      <div style={wrapperStyle} data-wpsg-graphic-layer="clipped">
+      <div style={wrapperStyle} data-mullion-graphic-layer="clipped">
         {borderWidth > 0 && (
           <div
             style={{
@@ -134,11 +134,11 @@ export function GraphicLayerContent({ layer, pixelWidth, pixelHeight }: GraphicL
         border: borderWidth > 0 ? `${borderWidth}px solid ${layer.borderColor || '#ffffff'}` : undefined,
         boxSizing: 'border-box',
       }}
-      data-wpsg-graphic-layer="rect"
+      data-mullion-graphic-layer="rect"
     >
       {img}
     </div>
   );
 }
 
-setWpsgDebugDisplayName(GraphicLayerContent, 'LayoutBuilder:GraphicLayerContent');
+setMullionDebugDisplayName(GraphicLayerContent, 'LayoutBuilder:GraphicLayerContent');

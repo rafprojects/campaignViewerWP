@@ -3,16 +3,16 @@ import { test, expect } from '@playwright/test';
 test('admin actions call REST endpoints', async ({ page }) => {
   await page.addInitScript(() => {
     const globals = window as Window & {
-      __WPSG_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
-      __WPSG_API_BASE__?: string;
-      __WPSG_CONFIG__?: { enableJwt?: boolean };
+      __MULLION_AUTH_PROVIDER__?: 'wp-jwt' | 'none';
+      __MULLION_API_BASE__?: string;
+      __MULLION_CONFIG__?: { enableJwt?: boolean };
     };
-    globals.__WPSG_AUTH_PROVIDER__ = 'wp-jwt';
-    globals.__WPSG_API_BASE__ = 'http://localhost:5173';
-    globals.__WPSG_CONFIG__ = { enableJwt: true };
-    localStorage.setItem('wpsg_access_token', 'fake-token');
+    globals.__MULLION_AUTH_PROVIDER__ = 'wp-jwt';
+    globals.__MULLION_API_BASE__ = 'http://localhost:5173';
+    globals.__MULLION_CONFIG__ = { enableJwt: true };
+    localStorage.setItem('mullion_access_token', 'fake-token');
     localStorage.setItem(
-      'wpsg_user',
+      'mullion_user',
       JSON.stringify({ id: '1', email: 'admin@example.com', role: 'admin' }),
     );
   });

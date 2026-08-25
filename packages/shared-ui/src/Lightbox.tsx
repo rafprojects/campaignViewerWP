@@ -49,7 +49,7 @@ export interface LightboxProps {
 }
 
 export function Lightbox({ isOpen, media, currentIndex, onPrev, onNext, onClose, videoMaxWidth, videoMaxWidthUnit, videoHeight, videoHeightUnit, mediaMaxHeight }: LightboxProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const current = media[currentIndex];
 
   // Resolve lightbox sizing — settings → props → hardcoded defaults

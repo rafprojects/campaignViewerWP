@@ -10,7 +10,7 @@ vi.mock('./LayoutBuilder/LayoutBuilderModal', () => ({
 vi.mock('./LayoutBuilder/PresetGalleryModal', () => ({
   PresetGalleryModal: () => <div data-testid="preset-gallery-modal" />,
 }));
-vi.mock('@/utils/wpsgUpsell', () => ({ showProUpsell: vi.fn() }));
+vi.mock('@/utils/mullionUpsell', () => ({ showProUpsell: vi.fn() }));
 
 const mockTemplate = {
   id: 'tpl-1',

@@ -31,7 +31,7 @@ import { useMediaDimensions } from '@mullion/shared-utils';
 import { AdapterHeading } from '../_shared/AdapterHeading';
 import { AdapterLightbox } from '../_shared/AdapterLightbox';
 import { LazyImage } from '@/components/CampaignGallery/LazyImage';
-import { getWpsgDebugProps, setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { getMullionDebugProps, setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import {
   resolveAdapterShellStyle,
   resolveGalleryComponentCommonSettings,
@@ -63,7 +63,7 @@ export function PinterestAdapter({
   runtime,
   containerDimensions,
 }: PinterestAdapterProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { currentIndex, setCurrentIndex, next, prev } = useCarousel(media.length);
   const { isOpen: lightboxOpen, open: openLightbox, close: closeLightbox } = useLightbox({
     enableArrowNavigation: true,
@@ -111,7 +111,7 @@ export function PinterestAdapter({
   );
 
   return (
-    <Stack gap="xs" style={adapterSizing} {...getWpsgDebugProps('PinterestAdapter')}>
+    <Stack gap="xs" style={adapterSizing} {...getMullionDebugProps('PinterestAdapter')}>
       <AdapterHeading common={common} heading={heading} />
 
       {media.length === 0 ? (
@@ -128,7 +128,7 @@ export function PinterestAdapter({
         </Box>
       ) : (
         <Box
-          {...getWpsgDebugProps('PinterestAdapter', 'grid')}
+          {...getMullionDebugProps('PinterestAdapter', 'grid')}
           style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${cols}, 1fr)`,
@@ -168,7 +168,7 @@ export function PinterestAdapter({
                 }}
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
-                {...getWpsgDebugProps('PinterestAdapter', 'tile')}
+                {...getMullionDebugProps('PinterestAdapter', 'tile')}
                 style={{
                   gridColumn: `span ${colSpan}`,
                   gridRow: `span ${rowSpan}`,
@@ -248,4 +248,4 @@ export function PinterestAdapter({
   );
 }
 
-setWpsgDebugDisplayName(PinterestAdapter, 'PinterestAdapter');
+setMullionDebugDisplayName(PinterestAdapter, 'PinterestAdapter');

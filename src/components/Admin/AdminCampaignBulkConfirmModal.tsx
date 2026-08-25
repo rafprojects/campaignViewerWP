@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { ConfirmModal } from '@/components/Common/ConfirmModal';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 type BulkCampaignAction = 'archive' | 'restore';
 
@@ -21,7 +21,7 @@ export function AdminCampaignBulkConfirmModal({
   onClose,
   onConfirm,
 }: AdminCampaignBulkConfirmModalProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
 
   const title = action === 'archive'
     ? t('admin_bulk_archive_title', 'Archive {{count}} campaign?', { count })
@@ -47,4 +47,4 @@ export function AdminCampaignBulkConfirmModal({
   );
 }
 
-setWpsgDebugDisplayName(AdminCampaignBulkConfirmModal, 'AdminCampaignBulkConfirmModal');
+setMullionDebugDisplayName(AdminCampaignBulkConfirmModal, 'AdminCampaignBulkConfirmModal');

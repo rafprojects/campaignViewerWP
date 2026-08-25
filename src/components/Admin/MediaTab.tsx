@@ -32,7 +32,7 @@ import { useGetSettings } from '@/services/settingsQuery';
 import type { MediaItem, OEmbedResponse } from '@/types';
 import { FALLBACK_IMAGE_SRC } from '@/utils/fallback';
 import { useBreakpoint } from '@/hooks/useBreakpoint';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useRootId } from '@mullion/shared-ui';
 import {
   buildMediaGridShellVars,
@@ -77,7 +77,7 @@ const LIST_MIN_WIDTH = 720;
 type Props = { campaignId: string; apiClient: ApiClient; onCampaignsUpdated?: () => void };
 
 export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: Props) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const rootId = useRootId();
   // P13-C: Query-cached media fetch — instant render on campaign revisit.
   // Local state holds the working copy for optimistic mutations (upload, delete,
@@ -99,7 +99,7 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
 
   // Scroll position preservation across tab switches (sessionStorage, per-campaign)
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const scrollKey = `wpsg_media_scrollTop_${campaignId}`;
+  const scrollKey = `mullion_media_scrollTop_${campaignId}`;
 
   // Restore scroll on mount (after data ready)
   useEffect(() => {
@@ -557,4 +557,4 @@ export default function MediaTab({ campaignId, apiClient, onCampaignsUpdated }: 
   );
 }
 
-setWpsgDebugDisplayName(MediaTab, 'AdminPanel:MediaTab');
+setMullionDebugDisplayName(MediaTab, 'AdminPanel:MediaTab');

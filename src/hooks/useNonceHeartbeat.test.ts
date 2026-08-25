@@ -4,33 +4,33 @@ import { useNonceHeartbeat } from './useNonceHeartbeat';
 
 // Window augmentation for test (matches src/vite-env.d.ts).
 const win = window as Window & {
-  __WPSG_CONFIG__?: {
+  __MULLION_CONFIG__?: {
     restNonce?: string;
     enableJwt?: boolean;
     apiBase?: string;
   };
-  __WPSG_REST_NONCE__?: string;
+  __MULLION_REST_NONCE__?: string;
 };
 
 describe('useNonceHeartbeat', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     globalThis.fetch = vi.fn();
-    // Set up the minimal __WPSG_CONFIG__ for nonce-only mode.
-    win.__WPSG_CONFIG__ = {
+    // Set up the minimal __MULLION_CONFIG__ for nonce-only mode.
+    win.__MULLION_CONFIG__ = {
       restNonce: 'initial-nonce',
     };
-    delete win.__WPSG_REST_NONCE__;
+    delete win.__MULLION_REST_NONCE__;
   });
 
   afterEach(() => {
     vi.useRealTimers();
     vi.restoreAllMocks();
-    delete win.__WPSG_CONFIG__;
+    delete win.__MULLION_CONFIG__;
   });
 
   it('does nothing when JWT is enabled', () => {
-    win.__WPSG_CONFIG__ = { restNonce: 'nonce', enableJwt: true };
+    win.__MULLION_CONFIG__ = { restNonce: 'nonce', enableJwt: true };
 
     renderHook(() => useNonceHeartbeat(5000));
 
@@ -39,7 +39,7 @@ describe('useNonceHeartbeat', () => {
   });
 
   it('does nothing when no nonce is available', () => {
-    win.__WPSG_CONFIG__ = {};
+    win.__MULLION_CONFIG__ = {};
 
     renderHook(() => useNonceHeartbeat(5000));
 
@@ -70,7 +70,7 @@ describe('useNonceHeartbeat', () => {
     );
 
     // Verify global nonce was updated.
-    expect(win.__WPSG_CONFIG__?.restNonce).toBe('refreshed-nonce');
+    expect(win.__MULLION_CONFIG__?.restNonce).toBe('refreshed-nonce');
 
     // Advance past the interval — should fire again.
     await act(async () => {
@@ -95,7 +95,7 @@ describe('useNonceHeartbeat', () => {
     // Should not throw — hook handles errors gracefully.
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
     // Nonce should remain unchanged.
-    expect(win.__WPSG_CONFIG__?.restNonce).toBe('initial-nonce');
+    expect(win.__MULLION_CONFIG__?.restNonce).toBe('initial-nonce');
   });
 
   it('does not update nonce on non-OK response', async () => {
@@ -110,7 +110,7 @@ describe('useNonceHeartbeat', () => {
       vi.advanceTimersByTime(5000);
     });
 
-    expect(win.__WPSG_CONFIG__?.restNonce).toBe('initial-nonce');
+    expect(win.__MULLION_CONFIG__?.restNonce).toBe('initial-nonce');
   });
 
   it('is a no-op when server returns response without nonce field (line 54 false branch)', async () => {
@@ -123,10 +123,10 @@ describe('useNonceHeartbeat', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(0); });
 
     // Nonce should remain unchanged since server returned no nonce
-    expect(win.__WPSG_CONFIG__?.restNonce).toBe('initial-nonce');
+    expect(win.__MULLION_CONFIG__?.restNonce).toBe('initial-nonce');
   });
 
-  it('updates __WPSG_REST_NONCE__ alongside config restNonce on success', async () => {
+  it('updates __MULLION_REST_NONCE__ alongside config restNonce on success', async () => {
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => ({ nonce: 'fresh-nonce' }),
@@ -135,13 +135,13 @@ describe('useNonceHeartbeat', () => {
     renderHook(() => useNonceHeartbeat(5000));
     await act(async () => { await vi.advanceTimersByTimeAsync(0); });
 
-    expect(win.__WPSG_REST_NONCE__).toBe('fresh-nonce');
+    expect(win.__MULLION_REST_NONCE__).toBe('fresh-nonce');
   });
 
-  it('does not set __WPSG_CONFIG__ when it is absent (line 68 false branch)', async () => {
-    delete win.__WPSG_CONFIG__;
-    // Use __WPSG_REST_NONCE__ as the startup nonce instead
-    win.__WPSG_REST_NONCE__ = 'legacy-nonce';
+  it('does not set __MULLION_CONFIG__ when it is absent (line 68 false branch)', async () => {
+    delete win.__MULLION_CONFIG__;
+    // Use __MULLION_REST_NONCE__ as the startup nonce instead
+    win.__MULLION_REST_NONCE__ = 'legacy-nonce';
 
     (globalThis.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
@@ -151,9 +151,9 @@ describe('useNonceHeartbeat', () => {
     renderHook(() => useNonceHeartbeat(5000));
     await act(async () => { await vi.advanceTimersByTimeAsync(0); });
 
-    // __WPSG_CONFIG__ was absent — should not have been created
-    expect(win.__WPSG_CONFIG__).toBeUndefined();
-    expect(win.__WPSG_REST_NONCE__).toBe('refreshed');
+    // __MULLION_CONFIG__ was absent — should not have been created
+    expect(win.__MULLION_CONFIG__).toBeUndefined();
+    expect(win.__MULLION_REST_NONCE__).toBe('refreshed');
   });
 
   it('clears interval on unmount', async () => {

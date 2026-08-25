@@ -28,11 +28,11 @@ const BACKEND_LABELS: Record<string, string> = {
 };
 
 export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel, apiClient }: AdvancedSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { mounted, onChange } = useLazyAccordion();
 
   const { data: healthData, isLoading: isHealthLoading, isError: isHealthError } = useQuery({
-    queryKey: ['wpsgHealth'],
+    queryKey: ['mullionHealth'],
     queryFn: () => apiClient.getHealthData(),
     staleTime: 60 * 1000,
     enabled: mounted.has('adv-cache'),
@@ -329,7 +329,7 @@ export function AdvancedSettingsSection({ settings, updateSetting, tooltipLabel,
               <Stack gap="md">
                 <Switch
                   label={tooltipLabel(t('set_adv_debug_markers', 'Enable Component Debug Names & Markers'), 'debugComponentMarkers')}
-                  description={t('set_adv_debug_markers_desc', 'When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off.')}
+                  description={t('set_adv_debug_markers_desc', 'When enabled, deployed builds keep explicit React DevTools component names and inject data-mullion-component/data-mullion-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off.')}
                   checked={settings.debugComponentMarkers}
                   onChange={(event) => updateSetting('debugComponentMarkers', event.currentTarget.checked)}
                 />

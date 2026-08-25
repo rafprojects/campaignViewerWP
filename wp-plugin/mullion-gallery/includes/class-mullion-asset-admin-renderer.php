@@ -3,7 +3,7 @@
  * WP-admin "Asset Library" page (P52-B).
  *
  * Registers a submenu under the Campaigns CPT that mounts the React global
- * asset manager UI (#wpsg-assets-admin) for full add / delete / tag /
+ * asset manager UI (#mullion-assets-admin) for full add / delete / tag /
  * universal-flag management of the global visual asset library — reusing the
  * REST API and the same Vite bundle the shortcode uses.
  *
@@ -71,7 +71,7 @@ class Mullion_Asset_Admin_Renderer {
         echo '<div class="wrap">';
         echo '<h1>' . esc_html__('Asset Library', 'mullion-gallery') . '</h1>';
         echo '<p>' . esc_html__('Upload and manage global overlay/graphic assets available across all spaces.', 'mullion-gallery') . '</p>';
-        echo '<div id="wpsg-assets-admin"></div>';
+        echo '<div id="mullion-assets-admin"></div>';
         echo '</div>';
     }
 }

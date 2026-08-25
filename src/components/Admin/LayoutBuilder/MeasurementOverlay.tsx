@@ -10,7 +10,7 @@
 import { useMemo } from 'react';
 import type { PctRect } from '@mullion/shared-utils';
 import { computeEdgeDistances, formatMeasurement } from '@mullion/shared-utils';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 import { useBuilderOverlayColors, type BuilderOverlayColors } from '@/hooks/useBuilderOverlayColors';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -169,4 +169,4 @@ export function MeasurementOverlay({ selectionPct, canvasWidth, canvasHeight }: 
   );
 }
 
-setWpsgDebugDisplayName(MeasurementOverlay, 'LayoutBuilder:MeasurementOverlay');
+setMullionDebugDisplayName(MeasurementOverlay, 'LayoutBuilder:MeasurementOverlay');

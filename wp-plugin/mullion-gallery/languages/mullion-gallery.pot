@@ -2891,7 +2891,7 @@ msgid "Enable Component Debug Names & Markers"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:688
-msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-wpsg-component/data-wpsg-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
+msgid "When enabled, deployed builds keep explicit React DevTools component names and inject data-mullion-component/data-mullion-slot attributes into the DOM for Elements inspection and QA selectors. Local dev may still show source component names even when this is off."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:689
@@ -6581,7 +6581,7 @@ msgid "Revoke access to this space for {{name}}?"
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1804
-msgid "No access grants. Everyone with the manage_wpsg capability can access this space."
+msgid "No access grants. Everyone with the manage_mullion capability can access this space."
 msgstr ""
 
 #: includes/i18n/class-wpsg-frontend-strings.php:1805
@@ -10283,7 +10283,7 @@ msgid "Keep React DevTools names and emit DOM component markers in deployed buil
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:302
-msgid "Adds explicit component names for React DevTools in production builds and injects data-wpsg-component/data-wpsg-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
+msgid "Adds explicit component names for React DevTools in production builds and injects data-mullion-component/data-mullion-slot attributes for browser Elements inspection, QA selectors, and UI-surface debugging."
 msgstr ""
 
 #: includes/settings/class-wpsg-settings-core-fields.php:394

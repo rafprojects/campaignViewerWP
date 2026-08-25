@@ -27,7 +27,7 @@ interface GeneralSettingsSectionProps {
 }
 
 export function GeneralSettingsSection({ settings, updateSetting, onThemeChange, isSystemAdmin = false }: GeneralSettingsSectionProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { mounted, onChange } = useLazyAccordion('gen-theme');
 
   return (

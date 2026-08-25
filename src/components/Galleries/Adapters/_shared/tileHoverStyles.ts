@@ -31,11 +31,11 @@ export interface TileStyleOptions {
 }
 
 /**
- * Returns the full <style> element content for hover effects on `.wpsg-tile-{scope}`.
+ * Returns the full <style> element content for hover effects on `.mullion-tile-{scope}`.
  * Also exports a helper to generate the border style string.
  */
 export function buildTileStyles({ scope, settings, extraCss = '' }: TileStyleOptions): string {
-  const cls = `wpsg-tile-${scope}`;
+  const cls = `mullion-tile-${scope}`;
   const { tileHoverBounce, tileGlowEnabled, tileGlowColor, tileGlowSpread } = settings;
   const glowColor = sanitizeCssColor(tileGlowColor) || '#00bfff';
   const glowSpread = tileGlowSpread ?? 8;
@@ -111,7 +111,7 @@ export function tileBorderStyle(settings: GalleryBehaviorSettings): string {
 
 /** Box-shadow for non-clip-path tiles (justified/masonry) where box-shadow works. */
 export function buildBoxShadowStyles(scope: string, settings: GalleryBehaviorSettings): string {
-  const cls = `wpsg-tile-${scope}`;
+  const cls = `mullion-tile-${scope}`;
   const glowColor = sanitizeCssColor(settings.tileGlowColor) || '#00bfff';
   const glowSpread = settings.tileGlowSpread ?? 8;
   const parts: string[] = [];

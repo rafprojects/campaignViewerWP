@@ -30,7 +30,7 @@ interface Options {
 }
 
 export function useCampaignsRows({ campaigns, campaignActions, grantSummary, apiClient, canMoveCampaigns = false, onAddMedia, categoryItems }: Options) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const {
     selectedCampaignIds,
     handleToggleCampaignSelect, handleEdit,

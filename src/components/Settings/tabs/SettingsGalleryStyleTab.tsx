@@ -1,7 +1,7 @@
 import { memo, type ReactNode } from 'react';
 import type { SettingsData } from '@/contexts/SettingsStore';
 import { GalleryStyleAccordion } from '../MediaDisplaySettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsGalleryStyleTabProps {
   settings: SettingsData;
@@ -22,4 +22,4 @@ export const SettingsGalleryStyleTab = memo(function SettingsGalleryStyleTab({
     />
   );
 });
-setWpsgDebugDisplayName(SettingsGalleryStyleTab, 'SettingsPanel:GalleryStyleTab');
+setMullionDebugDisplayName(SettingsGalleryStyleTab, 'SettingsPanel:GalleryStyleTab');

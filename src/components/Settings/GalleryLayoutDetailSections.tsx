@@ -26,7 +26,7 @@ function usesCarouselSettings(settings: GalleryBehaviorSettings): boolean {
 }
 
 export function GalleryLayoutDetailSections({ settings, updateSetting, mountedPanels }: GalleryLayoutDetailSectionsProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const resolvedGalleryConfig = resolveGalleryConfig(settings);
   const resolvedAdapterSettings = collectGalleryAdapterSettingValues(resolvedGalleryConfig);
   const showCarouselSettings = usesCarouselSettings(settings);

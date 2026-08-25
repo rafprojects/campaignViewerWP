@@ -2,7 +2,7 @@ import { memo } from 'react';
 import type { SettingsData } from '@/contexts/SettingsStore';
 import type { UpdateGallerySetting } from '../GalleryAdapterSettingsSection';
 import { GalleryLayoutSettingsSection } from '../GalleryLayoutSettingsSection';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface SettingsGalleryLayoutTabProps {
   settings: SettingsData;
@@ -23,4 +23,4 @@ export const SettingsGalleryLayoutTab = memo(function SettingsGalleryLayoutTab({
     />
   );
 });
-setWpsgDebugDisplayName(SettingsGalleryLayoutTab, 'SettingsPanel:GalleryLayoutTab');
+setMullionDebugDisplayName(SettingsGalleryLayoutTab, 'SettingsPanel:GalleryLayoutTab');

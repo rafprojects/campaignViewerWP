@@ -4,7 +4,7 @@ import { Box, Button, Text, TextInput, Stack, Alert } from '@mantine/core';
 import { IconMail, IconCheck, IconAlertCircle } from '@tabler/icons-react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { ApiClient } from '@/services/apiClient';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 interface RequestAccessFormProps {
   campaignId: string;
@@ -15,7 +15,7 @@ interface RequestAccessFormProps {
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: RequestAccessFormProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const [email, setEmail] = useState('');
   const [submitState, setSubmitState] = useState<SubmitState>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -128,4 +128,4 @@ export function RequestAccessForm({ campaignId, campaignTitle, apiClient }: Requ
   );
 }
 
-setWpsgDebugDisplayName(RequestAccessForm, 'RequestAccessForm');
+setMullionDebugDisplayName(RequestAccessForm, 'RequestAccessForm');

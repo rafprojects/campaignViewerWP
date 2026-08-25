@@ -23,7 +23,7 @@ import {
 import { useRecentFonts } from '@mullion/shared-utils';
 import { FONT_FALLBACK_MAP, getTerminalFamily } from '@/data/fontFallbackMap';
 import { GOOGLE_FONT_NAMES } from '@/data/googleFontNames';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface CustomFontEntry {
   /** Display name, e.g. "BrandSans" */
@@ -124,7 +124,7 @@ function clean(override: TypographyOverride): TypographyOverride {
 }
 
 export function TypographyEditor({ value, onChange, customFonts }: TypographyEditorProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const { recentFonts, addRecentFont } = useRecentFonts();
 
   // Option lists with translatable descriptors. Font names stay as proper nouns;
@@ -492,4 +492,4 @@ export function TypographyEditor({ value, onChange, customFonts }: TypographyEdi
   );
 }
 
-setWpsgDebugDisplayName(TypographyEditor, 'TypographyEditor');
+setMullionDebugDisplayName(TypographyEditor, 'TypographyEditor');

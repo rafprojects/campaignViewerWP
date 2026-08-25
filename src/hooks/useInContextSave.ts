@@ -60,7 +60,7 @@ export function useInContextSave(
             queryClient.setQueryData(queryKey, normalizeSettingsResponse(response));
           }
         } catch (err) {
-          console.error('[WPSG] In-context save failed:', err);
+          console.error('[MULLION] In-context save failed:', err);
           onErrorRef.current?.(err);
           // Revert to server state on failure
           try {

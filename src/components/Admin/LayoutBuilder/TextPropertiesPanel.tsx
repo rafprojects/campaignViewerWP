@@ -11,7 +11,7 @@ import {
 } from '@tabler/icons-react';
 import type { LayoutTextLayer, LayoutTextSemanticTag, LayoutTextAlign, TypographyOverride } from '@/types';
 import { TypographyEditor } from '@/components/Common/TypographyEditor';
-import { setWpsgDebugDisplayName } from '@/utils/wpsgDebug';
+import { setMullionDebugDisplayName } from '@/utils/mullionDebug';
 
 export interface TextPropertiesPanelProps {
   text: LayoutTextLayer;
@@ -37,7 +37,7 @@ export function TextPropertiesPanel({
   text, textIndex, onUpdate, onRename, onRemove,
   onBringToFront, onSendToBack, onBringForward, onSendBackward,
 }: TextPropertiesPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const semanticTagOptions = SEMANTIC_TAG_OPTIONS.map((o) => ({ value: o.value, label: t(`lb_text_tag_${o.value}`, o.label) }));
   const displayName = text.name || t('lb_text_default_name', 'Text Layer {{index}}', { index: textIndex });
   const [nameValue, setNameValue] = useState(displayName);
@@ -167,4 +167,4 @@ export function TextPropertiesPanel({
   );
 }
 
-setWpsgDebugDisplayName(TextPropertiesPanel, 'LayoutBuilder:TextPropertiesPanel');
+setMullionDebugDisplayName(TextPropertiesPanel, 'LayoutBuilder:TextPropertiesPanel');

@@ -83,11 +83,11 @@ interface SettingsDraftStoragePayload {
 }
 
 function settingsDraftKey(rootId: string) {
-  return `wpsg_settings_draft_${rootId}`;
+  return `mullion_settings_draft_${rootId}`;
 }
 
 function settingsTabKey(rootId: string) {
-  return `wpsg_view_${rootId}_settings_tab`;
+  return `mullion_view_${rootId}_settings_tab`;
 }
 
 function readSettingsDraft(rootId: string): SettingsDraftStoragePayload | null {
@@ -218,7 +218,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
   spaceId,
   isSystemAdmin = false,
 }) => {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const isSpaceMode = spaceId != null;
   return <Stack gap="md">
     <Tabs
@@ -341,7 +341,7 @@ const SettingsPanelTabsContent: NamedComponent<SettingsPanelTabsContentProps> = 
 SettingsPanelTabsContent.displayName = 'SettingsPanel:TabsContent';
 
 export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettingsSaved, initialSettings, spaceId, spaceName, instanceId, withinPortal = true, isSystemAdmin = false }: SettingsPanelProps) {
-  const { t } = useTranslation('wpsg');
+  const { t } = useTranslation('mullion');
   const color = instanceId ? spaceColor(instanceId) : undefined;
   // P57-B: Read the exact badge/accent colors from the shadow host element.
   // The Drawer portals to document.body, where `:host`-scoped Mantine CSS

@@ -14,7 +14,7 @@ import i18n from '@/i18n';
  *
  * @param messageKey i18next key for the feature-specific message.
  * @param fallback   English default for the message.
- * @param upgradeUrl Pricing/upgrade URL for the CTA (from useWpsgLicense()).
+ * @param upgradeUrl Pricing/upgrade URL for the CTA (from useMullionLicense()).
  */
 export function showProUpsell(messageKey: string, fallback: string, upgradeUrl: string): void {
   const t = i18n.t.bind(i18n);

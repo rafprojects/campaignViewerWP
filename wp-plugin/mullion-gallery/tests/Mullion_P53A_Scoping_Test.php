@@ -21,7 +21,7 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
     }
 
     public function tearDown(): void {
-        unset($GLOBALS['wpsg_spaces_on_page']);
+        unset($GLOBALS['mullion_spaces_on_page']);
         parent::tearDown();
     }
 
@@ -143,7 +143,7 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
     // ── Page-spaces emit filtering ────────────────────────────────────────
 
     private function set_page_spaces(int $a, int $b): void {
-        $GLOBALS['wpsg_spaces_on_page'] = [
+        $GLOBALS['mullion_spaces_on_page'] = [
             'inst-a' => ['id' => $a, 'slug' => 'alpha', 'name' => 'Alpha Space'],
             'inst-b' => ['id' => $b, 'slug' => 'beta',  'name' => 'Beta Space'],
         ];
@@ -156,7 +156,7 @@ class Mullion_P53A_Scoping_Test extends WP_UnitTestCase {
         $granted = $this->make_space('delegated'); // explicit grant — editor SHOULD see
         $this->grant_space($granted, $editor);
 
-        $GLOBALS['wpsg_spaces_on_page'] = [
+        $GLOBALS['mullion_spaces_on_page'] = [
             'inst-a' => ['id' => $open,    'slug' => 'alpha',  'name' => 'Alpha Space'],
             'inst-b' => ['id' => $deleg,   'slug' => 'beta',   'name' => 'Beta Space'],
             'inst-c' => ['id' => $granted, 'slug' => 'gamma',  'name' => 'Gamma Space'],

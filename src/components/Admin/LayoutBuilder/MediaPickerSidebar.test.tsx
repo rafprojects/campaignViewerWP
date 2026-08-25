@@ -275,10 +275,10 @@ describe('MediaPickerSidebar — drag behavior', () => {
       },
     });
 
-    expect(dataMap['application/x-wpsg-media-id']).toBe('media-1');
-    expect(dataMap['application/x-wpsg-media-meta']).toBeTruthy();
+    expect(dataMap['application/x-mullion-media-id']).toBe('media-1');
+    expect(dataMap['application/x-mullion-media-meta']).toBeTruthy();
 
-    const meta = JSON.parse(dataMap['application/x-wpsg-media-meta']);
+    const meta = JSON.parse(dataMap['application/x-mullion-media-meta']);
     expect(meta.url).toBe('https://example.com/photo.jpg');
   });
 });

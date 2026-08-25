@@ -45,13 +45,13 @@ describe('useBuilderDeepLink', () => {
   });
 
   it('returns null when only other params are present', () => {
-    setSearch('?page=wpsg-gallery&tab=campaigns');
+    setSearch('?page=mullion-gallery&tab=campaigns');
     const { result } = renderHook(() => useBuilderDeepLink());
     expect(result.current.initialBuilderTemplateId).toBeNull();
   });
 
   it('reads template ID from ?builder= param', () => {
-    setSearch('?page=wpsg-gallery&builder=template-abc');
+    setSearch('?page=mullion-gallery&builder=template-abc');
     const { result } = renderHook(() => useBuilderDeepLink());
     expect(result.current.initialBuilderTemplateId).toBe('template-abc');
   });
@@ -63,7 +63,7 @@ describe('useBuilderDeepLink', () => {
   });
 
   it('pushBuilderUrl calls history.pushState with builder param added', () => {
-    setSearch('?page=wpsg-gallery');
+    setSearch('?page=mullion-gallery');
     const pushSpy = vi.spyOn(history, 'pushState').mockImplementation(() => {});
     const { result } = renderHook(() => useBuilderDeepLink());
 
@@ -72,7 +72,7 @@ describe('useBuilderDeepLink', () => {
     expect(pushSpy).toHaveBeenCalledOnce();
     const url = pushSpy.mock.calls[0]![2] as string;
     expect(url).toContain('builder=tpl-999');
-    expect(url).toContain('page=wpsg-gallery');
+    expect(url).toContain('page=mullion-gallery');
   });
 
   it('pushBuilderUrl replaces an existing builder param', () => {
@@ -88,7 +88,7 @@ describe('useBuilderDeepLink', () => {
   });
 
   it('clearBuilderUrl calls history.replaceState and removes builder param', () => {
-    setSearch('?page=wpsg-gallery&builder=tpl-123');
+    setSearch('?page=mullion-gallery&builder=tpl-123');
     const replaceSpy = vi.spyOn(history, 'replaceState').mockImplementation(() => {});
     const { result } = renderHook(() => useBuilderDeepLink());
 
@@ -97,11 +97,11 @@ describe('useBuilderDeepLink', () => {
     expect(replaceSpy).toHaveBeenCalledOnce();
     const url = replaceSpy.mock.calls[0]![2] as string;
     expect(url).not.toContain('builder=');
-    expect(url).toContain('page=wpsg-gallery');
+    expect(url).toContain('page=mullion-gallery');
   });
 
   it('clearBuilderUrl is a no-op when builder param is absent', () => {
-    setSearch('?page=wpsg-gallery');
+    setSearch('?page=mullion-gallery');
     const replaceSpy = vi.spyOn(history, 'replaceState').mockImplementation(() => {});
     const { result } = renderHook(() => useBuilderDeepLink());
 
