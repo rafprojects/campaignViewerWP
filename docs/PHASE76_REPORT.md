@@ -1,8 +1,8 @@
-# Phase 76 - i18n catalog harvest after the Mullion rebrand
+# Phase 76 - Post-rebrand catalogs: i18n harvest + WordPress.org contributor
 
 **Status:** Planned — no code yet
 **Created:** 2026-08-25
-**Last updated:** 2026-08-25
+**Last updated:** 2026-08-25 (P76-C: WordPress.org `Contributors` handle)
 
 ### Tracks
 
@@ -10,14 +10,15 @@
 |-------|-------------|--------|--------|
 | P76-A | Run a real `wp i18n make-pot` harvest, `msgmerge` into the 5 reference locales, compile `.mo` / `.l10n.php` | Planned | Medium |
 | P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | Planned | Medium |
+| P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
 
 ---
 
 ## Rationale
 
-1. **What triggered it.** Phase 74's P74-C renamed the text domain and the `languages/` filenames, but deliberately did **not** run `wp i18n make-pot`. A real harvest would have pulled in ~150 strings added since the last regen (2026-07-23) and would have changed the translated-string count, which that track's own acceptance criteria forbade. The 2026-08-25 P74 PR Review confirmed the catalogs are now the largest remaining identity leak in shipped plugin files: msgid `WP Super Gallery`, `https://github.com/rafprojects/wp-super-gallery`, stale `#: class-wpsg-*.php` / `#: wp-super-gallery.php` comments, and orphaned translations for strings P74 already rewrote in PHP/JSON source (plugin name, privacy exporter labels, shortcode notice, import copy, settings page title, glow-color placeholder, etc.).
-2. **Why it belongs together, and why not Phase 74 or 75.** Mixing a harvest into the rebrand branch would have buried identifier work in a large i18n diff and broken the locale-coverage gate mid-rename. Phase 75 is Freemius + color-system work; this is a catalog-maintenance phase with its own toolchain (`make-pot` / `msgmerge` / `make-mo` / `make-php`) and a different reviewer surface (translators, not Freemius/theme).
-3. **Success.** `languages/mullion-gallery.pot` describes the current PHP/JSON source (Mullion name, `mullion-gallery` GitHub URI, `class-mullion-*.php` / `mullion-gallery.php` `#:` comments, every string `make-pot` can see). All 5 reference locales compile, and `npm run i18n:check:locales` reports complete coverage — the same 100% bar P74-C preserved by *not* harvesting.
+1. **What triggered it.** Phase 74's P74-C renamed the text domain and the `languages/` filenames, but deliberately did **not** run `wp i18n make-pot`. A real harvest would have pulled in ~150 strings added since the last regen (2026-07-23) and would have changed the translated-string count, which that track's own acceptance criteria forbade. The 2026-08-25 P74 PR Review confirmed the catalogs are now the largest remaining identity leak in shipped plugin files: msgid `WP Super Gallery`, `https://github.com/rafprojects/wp-super-gallery`, stale `#: class-wpsg-*.php` / `#: wp-super-gallery.php` comments, and orphaned translations for strings P74 already rewrote in PHP/JSON source (plugin name, privacy exporter labels, shortcode notice, import copy, settings page title, glow-color placeholder, etc.). The same review left `Contributors: wpsupergallery` as an intentional keep (WordPress.org account slug, not a product identifier). That handle still has to change before the first WP.org upload — Plugin Check / wp.org ingest reject contributor slugs that are not real.org users, and shipping Mullion under `wpsupergallery` is the last listing-identity mismatch.
+2. **Why it belongs together, and why not Phase 74 or 75.** Mixing a harvest into the rebrand branch would have buried identifier work in a large i18n diff and broken the locale-coverage gate mid-rename. Phase 75 is Freemius + color-system work; this phase is listing/catalog identity (gettext catalogs + the.org `Contributors` field) with a human.org-account gate that Phase 74 correctly refused to fake.
+3. **Success.** `languages/mullion-gallery.pot` describes the current PHP/JSON source (Mullion name, `mullion-gallery` GitHub URI, `class-mullion-*.php` / `mullion-gallery.php` `#:` comments, every string `make-pot` can see). All 5 reference locales compile, and `npm run i18n:check:locales` reports complete coverage — the same 100% bar P74-C preserved by *not* harvesting. `readme.txt` `Contributors:` is a live WordPress.org username that belongs to this product, not `wpsupergallery`.
 
 Runtime English is already Mullion: gettext only matches identical msgids, so the stale `WP Super Gallery` entries are dead keys, not live UI. This phase retires those dead keys and fills the real ones.
 
@@ -28,11 +29,14 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 | A | Harvest in Phase 74 vs. a dedicated follow-on | **Follow-on (this phase).** Confirmed in the P74 PR Review interview: do not mix ~150 pre-rename untranslated strings plus msgid/URI/`#:` churn into the rebrand branch. |
 | B | One mechanical harvest track vs. harvest + translation in the same commit | **Two tracks.** P76-A is deterministic toolchain (pot + merge + compile). P76-B is the human translation pass that restores the coverage gate. Splitting them keeps a green compile even if translation lags a commit. |
 | C | What to do with fuzzy/`#| msgid` leftovers after msgmerge | **Resolve in P76-B, do not ship fuzzies.** `i18n:check:locales` already treats fuzzy as untranslated. Identity strings (product name, URIs, "Mullion — …" labels) are mechanical token swaps, same as P74-B's six-string hand pass. The ~150 never-harvested feature strings need real translations. |
+| D | Write a guessed `Contributors` slug vs. wait for a real.org account | **Wait for the account, then write that exact username.** Plugin Check and wp.org SVN ingest validate contributor slugs against live WordPress.org users. Committing `mullion` (or any other invented slug) before the account exists fails the listing. P74-B/Q were right to leave `wpsupergallery` rather than invent; P76-C is when the account is created (or renamed/transferred) and the field is updated. |
+| E | Contributor handle vs. plugin slug | **Not necessarily the same string.** Plugin slug is already `mullion-gallery` (Phase 74 Decision C). The.org *user* can be `mullion`, `mulliongallery`, the existing account renamed, or whatever username we actually register. Confirm the live username at implementation time; do not bake a guess into this plan. |
 
 ## Execution Priority
 
 1. **P76-A** first — without a current `.pot`, P76-B is translating against a stale template.
 2. **P76-B** immediately after — the coverage gate will fail between A and B; do not merge A alone to `main` if CI runs `i18n:check:locales` on every PR (it does, via the existing i18n job). Land A+B as one PR, or land B in the same branch before the PR is reviewable.
+3. **P76-C** is independent of A/B (no i18n coupling) but is a **release gate**: it must land before the first WordPress.org upload (`svn-deploy.yml` / [GO_LIVE_PUNCH_LIST.md](guides/GO_LIVE_PUNCH_LIST.md)). The.org account can be created in parallel with A/B; the `readme.txt` edit waits on that account.
 
 ---
 
@@ -108,6 +112,38 @@ Until this track lands, non-English sites keep falling through to English for (2
 
 ---
 
+## Track P76-C - WordPress.org `Contributors` handle
+
+### Problem
+
+`wp-plugin/mullion-gallery/readme.txt` line 2 is still `Contributors: wpsupergallery`. P74-B, P74-Q, and P74-M all left it on purpose: that field is a WordPress.org *account slug*, not the product name. Rewriting it to a username that does not exist fails Plugin Check and wp.org ingest. The 2026-08-25 PR Review recorded it as an intentional keep.
+
+It still has to change before release. The listing would otherwise credit `wpsupergallery` for a product named Mullion, and the first SVN deploy / WP.org submission is the moment the field becomes load-bearing. This is the last listing-identity leftover from the rebrand that is not i18n catalogs and is not historical changelog.
+
+The handle appears only in `readme.txt` today (plus this phase's FROM-map in PHASE74). Changelog history lines (`wp wpsg`, `@wpsg`) stay historical — they are not this track.
+
+### Fix
+
+1. **Human gate, first.** Create or rename the WordPress.org account that will own the listing (or transfer the existing `wpsupergallery` profile). Confirm the live username at [wordpress.org/plugins](https://wordpress.org/plugins/) profile URL. Do not pick a slug in this plan — see Key Decision E.
+2. **Code.** `Contributors: <that-username>` in `wp-plugin/mullion-gallery/readme.txt`. If the listing will have more than one contributor, list them comma-separated per the [readme standard](https://developer.wordpress.org/plugins/wordpress-org/how-your-readme-txt-works/).
+3. **Do not** rewrite `readme.txt` changelog history, the P74-K license-test negative assertion, or archive docs.
+
+Blocked on step 1. The file edit is a one-liner once the account exists.
+
+### Acceptance criteria
+
+- `Contributors:` in `readme.txt` is a username that loads as a real WordPress.org profile (HTTP 200 on `https://profiles.wordpress.org/<username>/`).
+- Zero `wpsupergallery` in `readme.txt` outside changelog history lines.
+- Plugin Check / the WP.org header validator accept the field (same check [TESTING_QA.md](testing/TESTING_QA.md) already names for headers).
+
+### Validation
+
+- Open the profiles.wordpress.org URL for the new slug before committing.
+- `grep -n wpsupergallery wp-plugin/mullion-gallery/readme.txt` — only historical changelog, if it appears there at all (today it does not; only line 2).
+- This is a release blocker for `svn-deploy.yml` / the Go-Live punch list, not for Phase 74 merge.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -121,4 +157,4 @@ Not started. This document is the plan produced from the Phase 74 PR Review left
 
 ## Outcome
 
-**Planned.** Phase 74 can close without this; catalogs are stale, runtime English is not.
+**Planned.** Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker.

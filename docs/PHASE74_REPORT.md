@@ -766,7 +766,8 @@ Update each fallback literal to its Rig Cyan equivalent, once P74-N's derived va
 | Removing the retired old-blue palette from any design references outside the theme JSON itself (e.g. marketing screenshots already captured under the old theme) | Screenshot recapture is already tracked separately per the design brief's own screenshot-manifest section; not duplicated here. |
 | A distinct "ink-safe"/accent-text schema role, if the designer's corrected submission turns out to need one | Genuinely blocked on knowing what the designer intended; adding schema surface speculatively would be worse than waiting for the real requirement. |
 | Rig Cyan `primaryShade` (the live index on `default-dark.json`) | Moved to P75-F (Decision I). An index set against the HSL generator would be wrong the moment the OKLCH ramp lands; F already re-derives the other 16 themes' indices in that same commit. |
-| `wp i18n make-pot` harvest of `languages/` | Moved to [Phase 76](PHASE76_REPORT.md). P74-C skipped a real harvest so locale coverage stayed 2,379/2,379. |
+| `wp i18n make-pot` harvest of `languages/` | Moved to [Phase 76](PHASE76_REPORT.md) P76-A/B. P74-C skipped a real harvest so locale coverage stayed 2,379/2,379. |
+| `Contributors: wpsupergallery` | Moved to [P76-C](PHASE76_REPORT.md). WordPress.org account slug; blocked on that account existing. Release gate for the first WP.org upload. |
 
 ## Implementation Notes
 
@@ -831,7 +832,7 @@ These still contain the old name on purpose. Rewriting them would either break a
 | **PHASE75 origin sentence** | One historical clause ("rebrand from WP Super Gallery to Mullion") so a later reader knows why Freemius work is numbered 75. The rest of that file is already post-rename identifiers. |
 | **`docs/archive/**`** | Phase reports and reviews of what shipped under the old name. Rewriting them would fabricate a history in which the plugin was always called Mullion. |
 | **`docs/old/PR_REVIEW_NOTES.md` GitHub URLs** | Those PRs were opened on `rafprojects/campaignViewerWP`. The links still resolve via GitHub's rename redirect. Changing the path would be cosmetic; the PR numbers are the record. |
-| **`Contributors: wpsupergallery` in `readme.txt`** | WordPress.org *account slug*, not a product identifier. The listing credits whoever owns that.org user. Renaming it here does not rename the account, and a slug that does not exist will fail Plugin Check / wp.org ingest. Keep until a `mullion` (or similar).org account exists and is the actual contributor. |
+| **`Contributors: wpsupergallery` in `readme.txt`** | WordPress.org *account slug*, not a product identifier. Left in P74 so the listing would not claim a user that does not exist. **Moved to [P76-C](PHASE76_REPORT.md)** — create/rename the.org account, then write that exact username. Release gate for the first WP.org upload, not for Phase 74 merge. |
 | **`readme.txt` changelog history** (`wp wpsg`, `@wpsg`, old ZIP names) | Changelog lines describe what that version *shipped*. v0.x users (even if only us) grepping an installed `readme.txt` should see the CLI command that version actually had. New versions' notes use `wp mullion`. |
 | **P74-K license-test negative assertion** | `Mullion_License_Test` searches plugin PHP for `'slug' => 'wp-super-gallery'` and asserts **zero** matches. That string must remain in the test or the gate goes blind. It is not displayed to users. |
 | **"WP Super Cache"** in PACKAGING_RELEASE.md | Third-party plugin. Not this product. |
