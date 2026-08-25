@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to WP Super Gallery will be documented in this file.
+All notable changes to Mullion will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -26,8 +26,8 @@ theme rather than by phase.
 ### Changed
 
 - **Production hardening** — free-form CSS sanitization, a locked DOMPurify allowlist, a localStorage inventory audit, a front-end accessibility baseline (axe), and LayoutBuilder robustness (error boundaries, drag-bounds clamping). (Phase 54)
-- **Internationalization groundwork** — user-facing front-end strings wrapped for translation under the `wpsg` namespace with WordPress-locale detection. (Phases 49, 54)
-- **Maintainability** — the monolithic REST class was decomposed into domain controllers; shared `@wpsg` packages (utils, UI, theme engine) were extracted; a runtime-shared field-map schema now derives from a single TS/PHP source; broad audit-driven refactors across the codebase. (Phases 42, 44, 45, 51, 55)
+- **Internationalization groundwork** — user-facing front-end strings wrapped for translation under the `mullion` namespace with WordPress-locale detection. (Phases 49, 54)
+- **Maintainability** — the monolithic REST class was decomposed into domain controllers; shared `@mullion` packages (utils, UI, theme engine) were extracted; a runtime-shared field-map schema now derives from a single TS/PHP source; broad audit-driven refactors across the codebase. (Phases 42, 44, 45, 51, 55)
 - **Offline & performance** — service-worker app-shell/metadata caching, lazy-loaded adapters, and thumbnail-cache scalability improvements. (Phases 49, 50, 52)
 
 ## [0.26.0] - 2026-05-19
@@ -110,7 +110,7 @@ theme rather than by phase.
 
 ### Added - Phase 23: Settings Architecture Refactor, Responsive Gallery Config & Campaign Parity
 
-- **P23-A** Backend settings decomposition — split monolithic `class-wpsg-settings.php` into thin facade with registry, conversion, sanitizer, renderer, and field-group modules.
+- **P23-A** Backend settings decomposition — split monolithic `class-mullion-settings.php` into thin facade with registry, conversion, sanitizer, renderer, and field-group modules.
 - **P23-B** Frontend settings decomposition — extracted all tab bodies (General, Layout, Media Display, Typography, Campaign Cards, Campaign Viewer, Advanced) into dedicated section modules; `SettingsPanel` reduced to shell/orchestration.
 - **P23-C** Authoritative adapter schema — centralized adapter metadata (id, label, scope, breakpoint restrictions, capabilities, field groups) in a shared registry; replaced duplicated option lists and hardcoded visibility rules with schema-driven rendering.
 - **P23-D** Nested responsive gallery config model — `galleryConfig` structure organized by mode → breakpoint → scope → common/adapter settings; legacy flat fields serve as compatibility bridge.
@@ -197,9 +197,9 @@ theme rather than by phase.
 - **P20-F** License & legal — GPLv2 `LICENSE` at repo root and plugin dir, complete plugin header with all WordPress.org required fields.
 - **P20-G** GitHub Actions CI/CD pipeline — `ci.yml` (ESLint + tsc → Vitest + build → PHPUnit matrix PHP 8.1/8.2/8.3), `release.yml` (workflow_dispatch with auto SemVer from conventional commits, production ZIP, GitHub Release), `svn-deploy.yml` (WordPress.org SVN deploy of existing release), `e2e.yml` (manual Playwright via wp-env). `scripts/compute-version.sh` for automated version calculation. Legacy CircleCI deleted.
 - **P20-H** (12/12) Security hardening sprint — parseProps prop whitelist, DNS rebinding SSRF fix (TOCTOU-safe `pre_http_request`), nonce bypass hardened (constant-gated), password reset URL removed from response, overlay file deletion on remove, Sentry PII scrubbing (`beforeSend`), CSP headers, ErrorBoundary→Sentry, apiClient 30s timeout + AbortController, status/visibility whitelist, `encodeURIComponent` on URL segments, `console.info` DEV guard.
-- **P20-I** Performance optimizations — layout templates migrated from `wp_options` to `wpsg_layout_tpl` CPT with auto-migration + UUID backward compat; `wpsg_media_refs` reverse-index table (DB v3); cache version counter replaces LIKE-based invalidation; `React.lazy()` for LayoutBuilderModal + PresetGalleryModal (admin chunk 504→327 KB); async email queue + 1-min cron dispatch; shared React root via `createPortal` (feature-flagged).
-- **P20-J** Plugin directory preparation — `readme.txt` in WordPress.org format, composer dev deps separated, `capability_type => wpsg_campaign` with `map_meta_cap` (10 CPT caps), `load_plugin_textdomain()` + `__()` i18n wrapping.
-- **P20-K** JWT nonce-only default — JWT gated behind `WPSG_ENABLE_JWT_AUTH`, `useNonceHeartbeat` hook, `/nonce` endpoint, cookie-based `/auth/login` and `/auth/logout` REST endpoints; 12 Vitest + 6 AuthContext + 11 PHPUnit tests.
+- **P20-I** Performance optimizations — layout templates migrated from `wp_options` to `mullion_layout_tpl` CPT with auto-migration + UUID backward compat; `mullion_media_refs` reverse-index table (DB v3); cache version counter replaces LIKE-based invalidation; `React.lazy()` for LayoutBuilderModal + PresetGalleryModal (admin chunk 504→327 KB); async email queue + 1-min cron dispatch; shared React root via `createPortal` (feature-flagged).
+- **P20-J** Plugin directory preparation — `readme.txt` in WordPress.org format, composer dev deps separated, `capability_type => mullion_campaign` with `map_meta_cap` (10 CPT caps), `load_plugin_textdomain()` + `__()` i18n wrapping.
+- **P20-K** JWT nonce-only default — JWT gated behind `MULLION_ENABLE_JWT_AUTH`, `useNonceHeartbeat` hook, `/nonce` endpoint, cookie-based `/auth/login` and `/auth/logout` REST endpoints; 12 Vitest + 6 AuthContext + 11 PHPUnit tests.
 - **P20-L** SVG dual-layer sanitization — `enshrined/svg-sanitize` with custom CSS validator (`sanitize_svg_css`), URI allowlist (`sanitize_svg_uris`), `.htaccess` CSP headers for overlay dir; 24 PHPUnit tests.
 
 ### Changed
@@ -217,7 +217,7 @@ theme rather than by phase.
 - **P19-D** (`e604ff6`): Pre-commit toolchain — Husky hooks (`pre-commit` → lint-staged, `commit-msg` → commitlint, `pre-push` → vitest run); lint-staged runs ESLint + `tsc --noEmit` on staged TS/TSX; commitlint enforces Conventional Commits (11 allowed types, 120-char header limit); `CONTRIBUTING.md` documents all hooks and bypass instructions.
 - **P19-A** (`5685249`): Builder keyboard shortcuts hardening — `Ctrl+S` save, `?` opens `BuilderKeyboardShortcutsModal` (7 shortcut categories rendered in a Kbd table), `V` select tool, `0` reset zoom, `=`/`+` zoom in, `-` zoom out via `useHotkeys`; 25 new tests.
 - **P19-B** (`12e0155`): Builder undo/redo improvements — `HistoryEntry` interface (`id`, `label`, `timestamp`) added to `useLayoutBuilderState`; `mutate()` accepts a descriptive label (35 labeled call sites); new `BuilderHistoryPanel` dockview tab showing reverse-ordered history with click-to-jump, current-entry highlight, and undo/redo header buttons; 23 new tests.
-- **P19-C** (`a979761`): WP-CLI command surface — `class-wpsg-cli.php` registered under `WP_CLI::add_command('wpsg', 'WPSG_CLI')` gated on `defined('WP_CLI')`. Commands: `wp wpsg campaign list/archive/restore/duplicate/export/import`, `wp wpsg media list/orphans`, `wp wpsg cache clear`, `wp wpsg analytics clear`, `wp wpsg rate-limit reset`; all write audit-log entries and invalidate campaign transient cache; 27 PHPUnit scenarios in `WPSG_CLI_Test.php`.
+- **P19-C** (`a979761`): WP-CLI command surface — `class-mullion-cli.php` registered under `WP_CLI::add_command('mullion', 'Mullion_CLI')` gated on `defined('WP_CLI')`. Commands: `wp mullion campaign list/archive/restore/duplicate/export/import`, `wp mullion media list/orphans`, `wp mullion cache clear`, `wp mullion analytics clear`, `wp mullion rate-limit reset`; all write audit-log entries and invalidate campaign transient cache; 27 PHPUnit scenarios in `Mullion_CLI_Test.php`.
 
 ### Fixed
 
@@ -228,16 +228,16 @@ theme rather than by phase.
 ### Added - Phase 18: Admin Power Features, Coverage & Canvas Polish
 
 - **P18-QA JS** (`e996fb5`): 841 tests; functions threshold 41%→66.5%; all thresholds green (statements 75%, branches 60%, functions 60%, lines 75%).
-- **P18-QA PHP** (`477521f`): 117 tests / 303 assertions; new `WPSG_Rate_Limiter_Test`, `WPSG_Embed_Test`, Campaign REST edge cases.
+- **P18-QA PHP** (`477521f`): 117 tests / 303 assertions; new `Mullion_Rate_Limiter_Test`, `Mullion_Embed_Test`, Campaign REST edge cases.
 - **P18-A Zoomable Canvas** (`1f2bc57`): `react-zoom-pan-pinch`; `CanvasTransformContext`; hand tool; zoom % indicator; Rnd scale fix.
 - **P18-B Bulk Actions** (`e392e8a`): `POST /campaigns/batch`; `BulkActionsBar`; select-mode toggle; `handleBulkArchive`/`handleBulkRestore`.
 - **P18-C Campaign Duplication** (`e392e8a`): `POST /campaigns/{id}/duplicate`; `CampaignDuplicateModal`; Clone button in campaign list.
 - **P18-D Export/Import JSON** (`d5859ff`): `GET /campaigns/{id}/export`; `POST /campaigns/import`; `CampaignImportModal`; `CampaignExportPayload` type.
 - **P18-E Keyboard Shortcuts** (`d5859ff`): `KeyboardShortcutsModal`; `useHotkeys` bindings (`?`, `mod+n`, `mod+i`, `mod+shift+a`).
-- **P18-F Analytics Dashboard** (`588c85e`): `wpsg_analytics_events` DB table; `POST /analytics/event` (rate-limited, IP-hashed); `GET /analytics/campaigns/{id}`; recharts `AnalyticsDashboard` (lazy-loaded).
+- **P18-F Analytics Dashboard** (`588c85e`): `mullion_analytics_events` DB table; `POST /analytics/event` (rate-limited, IP-hashed); `GET /analytics/campaigns/{id}`; recharts `AnalyticsDashboard` (lazy-loaded).
 - **P18-G Media Usage Tracking**: `GET /media/{id}/usage`; `GET /media/usage-summary`; `MediaUsageBadge` popover; orphan filter; delete guard.
-- **P18-H Campaign Categories**: `wpsg_campaign_category` taxonomy; `GET /campaign-categories`; `categories[]` in create/update; `TagsInput` in form; `Chip.Group` filter pills.
-- **P18-I Access Request Workflow** (`4a5712a`): `POST /campaigns/{id}/access-requests` (submit); `GET /campaigns/{id}/access-requests` (admin list); `POST …/approve` + `POST …/deny` action endpoints; per-token WP options storage with `wpsg_access_request_index` (no custom DB table); `RequestAccessForm`; `PendingRequestsPanel`; `QuickAddUserModal`; approval email flow.
+- **P18-H Campaign Categories**: `mullion_campaign_category` taxonomy; `GET /campaign-categories`; `categories[]` in create/update; `TagsInput` in form; `Chip.Group` filter pills.
+- **P18-I Access Request Workflow** (`4a5712a`): `POST /campaigns/{id}/access-requests` (submit); `GET /campaigns/{id}/access-requests` (admin list); `POST …/approve` + `POST …/deny` action endpoints; per-token WP options storage with `mullion_access_request_index` (no custom DB table); `RequestAccessForm`; `PendingRequestsPanel`; `QuickAddUserModal`; approval email flow.
 - **P18-X Code Size Reduction** (`2b093b4`): `App.tsx` 808→346 lines; `AdminPanel.tsx` 1168→390 lines; 8 new hooks extracted.
 
 ## [0.15.0] - 2026-02-26
@@ -295,31 +295,31 @@ theme rather than by phase.
 
 #### Security Hardening (P14-A)
 - **A-1**: Removed dead Odysee code in `can_view_campaign()` guard.
-- **A-2**: Added `WPSG_CPT::POST_TYPE` constant, refactored 10 string-literal references.
+- **A-2**: Added `Mullion_CPT::POST_TYPE` constant, refactored 10 string-literal references.
 - **A-4**: Fixed `campaignsRows` useMemo stale closure in AdminPanel — added missing deps + `useCallback` for `handleEdit`.
 - **B-1**: Removed `attempts` field from public oEmbed fallback response to avoid leaking internal retry info.
 - **B-2**: Added allowlist validation for campaign `status` and `visibility` with 400 rejection; callers check return and rollback on create.
 - **B-4**: Moved CORS `Allow-Methods`/`Allow-Headers` inside origin check so they aren't sent to disallowed origins.
 - **B-5**: Gated `simulateEmailFailure` behind `WP_DEBUG`.
-- **B-6**: Sanitized `$_SERVER['REQUEST_URI']` in `class-wpsg-embed.php`.
-- **B-7**: Added regex validation for DDL identifiers in `class-wpsg-db.php`.
+- **B-6**: Sanitized `$_SERVER['REQUEST_URI']` in `class-mullion-embed.php`.
+- **B-7**: Added regex validation for DDL identifiers in `class-mullion-db.php`.
 
 #### External Thumbnail Cache (P14-C)
-- New `WPSG_Thumbnail_Cache` class: downloads and caches external thumbnails to `wp-content/uploads/wpsg-thumbnails/`.
-- Hooked into `wpsg_oembed_success` for automatic caching; daily cron cleanup of expired entries.
+- New `Mullion_Thumbnail_Cache` class: downloads and caches external thumbnails to `wp-content/uploads/mullion-thumbnails/`.
+- Hooked into `mullion_oembed_success` for automatic caching; daily cron cleanup of expired entries.
 - REST endpoints: `GET /admin/thumbnail-cache` (stats), `DELETE /admin/thumbnail-cache` (clear), `POST /admin/thumbnail-cache/refresh`.
 
 #### oEmbed Monitoring & Rate Limiting (P14-D)
-- New `WPSG_Rate_Limiter` class: per-IP transient-based rate limiting for public oEmbed proxy (30 req/60 s, admins exempt).
-- Extended `WPSG_Monitoring` with per-provider oEmbed failure tracking, `get_health_data()` aggregation.
+- New `Mullion_Rate_Limiter` class: per-IP transient-based rate limiting for public oEmbed proxy (30 req/60 s, admins exempt).
+- Extended `Mullion_Monitoring` with per-provider oEmbed failure tracking, `get_health_data()` aggregation.
 - Rest endpoints: `GET /admin/health`, `GET|DELETE /admin/oembed-failures`.
 
 #### Image Optimization (P14-F)
-- New `WPSG_Image_Optimizer` class: hooks `wp_handle_upload` to auto-resize and compress images; optional WebP conversion.
+- New `Mullion_Image_Optimizer` class: hooks `wp_handle_upload` to auto-resize and compress images; optional WebP conversion.
 - Controlled by `optimize_on_upload`, `optimize_max_width`, `optimize_max_height`, `optimize_quality`, `optimize_webp_enabled` settings.
 
 #### Media & Campaign Tagging (P14-G)
-- Registered `wpsg_campaign_tag` and `wpsg_media_tag` taxonomies in `WPSG_CPT`.
+- Registered `mullion_campaign_tag` and `mullion_media_tag` taxonomies in `Mullion_CPT`.
 - REST endpoints: `GET /tags/campaign`, `GET /tags/media`.
 
 #### Advanced Settings System (P14-B)
@@ -331,7 +331,7 @@ theme rather than by phase.
 ### Changed
 
 #### Settings DRY Refactor (P14-B-8)
-- **PHP**: Added `WPSG_Settings::to_js()` / `from_js()` helpers with auto snake↔camel conversion. Rewrote `get_public_settings()` (12 lines) and `update_settings()` (15 lines). Deleted 586 lines of triplicated manual mapping code.
+- **PHP**: Added `Mullion_Settings::to_js()` / `from_js()` helpers with auto snake↔camel conversion. Rewrote `get_public_settings()` (12 lines) and `update_settings()` (15 lines). Deleted 586 lines of triplicated manual mapping code.
 - **React**: Created `mergeSettingsWithDefaults()` utility, replacing ~240 lines of manual `response.field ?? DEFAULT.field` chains in `App.tsx` and `SettingsPanel.tsx`. `defaultSettings` in SettingsPanel now spreads `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`.
 - **apiClient**: Replaced duplicate `SettingsUpdateRequest` interface with `Partial<SettingsResponse>`.
 - Added ~70 new fields to `GalleryBehaviorSettings`, `DEFAULT_GALLERY_BEHAVIOR_SETTINGS`, and `SettingsResponse`.
@@ -341,7 +341,7 @@ theme rather than by phase.
 - "Enable Advanced Settings" toggle added to General tab under new "Developer" divider.
 
 ### Fixed
-- `REST class-wpsg-rest.php`: Removed 586 lines of orphaned old settings mapping code left after DRY refactor.
+- `REST class-mullion-rest.php`: Removed 586 lines of orphaned old settings mapping code left after DRY refactor.
 - Cleaned up duplicate `campaign_exists` method produced during REST refactor.
 
 ## [0.11.0] - 2026-02-22
@@ -421,16 +421,16 @@ theme rather than by phase.
 - **14 Bundled Themes**: default-dark, default-light, material-dark, material-light, darcula, nord, solarized-dark, solarized-light, high-contrast, catppuccin-mocha, tokyo-night, gruvbox-dark, cyberpunk, synthwave.
 - **Runtime Switching**: Instant theme switching via React context + MantineProvider. <16ms switch time, no page reload.
 - **Shadow DOM Support**: Mantine native `cssVariablesSelector` + `getRootElement` + `forceColorScheme` for full shadow DOM compatibility.
-- **CSS Variable Bridge**: `--wpsg-*` custom properties generated from theme JSON for SCSS module compatibility.
+- **CSS Variable Bridge**: `--mullion-*` custom properties generated from theme JSON for SCSS module compatibility.
 - **ThemeSelector Component**: Admin dropdown with live color-swatch previews per theme.
-- **WordPress Backend**: Grouped theme dropdown in WP admin settings, `allow_user_theme_override` toggle, config injection via `__WPSG_CONFIG__`.
+- **WordPress Backend**: Grouped theme dropdown in WP admin settings, `allow_user_theme_override` toggle, config injection via `__MULLION_CONFIG__`.
 - **71 Unit Tests**: colorGen, validation, adapter, cssVariables, and registry test suites.
 - **Documentation**: Theme Authoring Guide, Theme QA Guide (80+ test cases), Phase 9 Report.
 
 ### Changed
-- Migrated ~45 hardcoded color values across 11 component/SCSS files to use `var(--wpsg-*)` and `color-mix()` expressions.
+- Migrated ~45 hardcoded color values across 11 component/SCSS files to use `var(--mullion-*)` and `color-mix()` expressions.
 - `src/theme.ts` replaced with thin re-export from theme adapter.
-- `src/styles/_tokens.scss` converted to alias bridge for `--wpsg-*` variables.
+- `src/styles/_tokens.scss` converted to alias bridge for `--mullion-*` variables.
 - `src/styles/global.scss` migrated to theme-aware CSS variable references.
 - `src/contexts/ThemeContext.tsx` split into `themeContextDef.ts` + provider + `hooks/useTheme.ts` for Fast Refresh compatibility.
 
@@ -536,7 +536,7 @@ theme rather than by phase.
 
 ### Added - Phase 5: Authentication & Authorization
 - WordPress JWT authentication integration
-- Role-based access control (Administrator, WPSG Admin, Subscriber)
+- Role-based access control (Administrator, Mullion Editor, Subscriber)
 - Login form with email/password authentication
 - Session management with token refresh
 - Protected routes and conditional rendering
@@ -574,14 +574,14 @@ See [PHASE13_REPORT.md](./docs/archive/phases/PHASE13_REPORT.md) for Phase 13 ex
 
 ---
 
-[0.11.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.10.0...v0.11.0
-[0.10.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.9.0...v0.10.0
-[0.5.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.4.0...v0.5.0
-[0.9.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.6.0...v0.7.0
-[0.6.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.5.0...v0.6.0
-[0.4.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/yourorg/wp-super-gallery/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/yourorg/wp-super-gallery/releases/tag/v0.1.0
+[0.11.0]: https://github.com/yourorg/mullion-gallery/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/yourorg/mullion-gallery/compare/v0.9.0...v0.10.0
+[0.5.0]: https://github.com/yourorg/mullion-gallery/compare/v0.4.0...v0.5.0
+[0.9.0]: https://github.com/yourorg/mullion-gallery/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/yourorg/mullion-gallery/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/yourorg/mullion-gallery/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/yourorg/mullion-gallery/compare/v0.5.0...v0.6.0
+[0.4.0]: https://github.com/yourorg/mullion-gallery/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/yourorg/mullion-gallery/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/yourorg/mullion-gallery/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/yourorg/mullion-gallery/releases/tag/v0.1.0

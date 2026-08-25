@@ -6,7 +6,7 @@ This is the shortest reliable path to get the repo's tests running from a fresh 
 
 - Commands below assume you start in the repo root.
 - Use `npx wp-env ...` from the repo root because `.wp-env.json` lives there.
-- Use `composer ...` from `wp-plugin/wp-super-gallery` because that is where `composer.json`, `vendor/`, and `phpunit.xml.dist` live.
+- Use `composer ...` from `wp-plugin/mullion-gallery` because that is where `composer.json`, `vendor/`, and `phpunit.xml.dist` live.
 - Docker must be running before any `wp-env` command.
 - The plugin directory is mounted into the `tests-cli` container from your host checkout. If `vendor/` is missing on the host, PHPUnit will also be missing in the container.
 - In this repo, the most reliable PHPUnit entrypoint is `php ./vendor/bin/phpunit ...`. The Composer shim may be present without the executable bit inside the mounted container, so do not rely on `./vendor/bin/phpunit` being directly runnable.
@@ -24,14 +24,14 @@ npm install
 ### 2. Install the plugin's Composer dependencies
 
 ```bash
-cd wp-plugin/wp-super-gallery
+cd wp-plugin/mullion-gallery
 composer install
 cd ../..
 ```
 
 Heads up:
 
-- Do not run `composer install` from the repo root. The PHPUnit binary and polyfills are only defined in `wp-plugin/wp-super-gallery/composer.json`.
+- Do not run `composer install` from the repo root. The PHPUnit binary and polyfills are only defined in `wp-plugin/mullion-gallery/composer.json`.
 - If Composer is blocked by local platform checks, try `composer install --ignore-platform-reqs`. If the install already exists but autoloading looks stale, run `composer dump-autoload --ignore-platform-reqs` from the same directory.
 
 ### 3. Start wp-env
@@ -42,13 +42,13 @@ npx wp-env start
 
 Heads up:
 
-- Run this from the repo root, not from `wp-plugin/wp-super-gallery`.
+- Run this from the repo root, not from `wp-plugin/mullion-gallery`.
 - If Docker is not running, fix that first. Do not debug PHPUnit before `wp-env` can start cleanly.
 
 ### 4. Sanity-check the mounted plugin files
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ls phpunit.xml.dist tests/bootstrap.php && php ./vendor/bin/phpunit -c phpunit.xml.dist --version"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && ls phpunit.xml.dist tests/bootstrap.php && php ./vendor/bin/phpunit -c phpunit.xml.dist --version"
 ```
 
 This should print the file paths and a PHPUnit version line without errors. If it does not, the problem is still environment setup, not the test suite itself.
@@ -56,7 +56,7 @@ This should print the file paths and a PHPUnit version line without errors. If i
 ### 5. Run the full PHPUnit suite
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 Expected shape of the output:
@@ -76,31 +76,31 @@ The exact counts will change over time. The important signal is that the run end
 ### Full suite
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 ### Focused settings slice
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist tests/WPSG_Settings_Test.php tests/WPSG_Settings_Extended_Test.php tests/WPSG_Settings_Rest_Test.php"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist tests/Mullion_Settings_Test.php tests/Mullion_Settings_Extended_Test.php tests/Mullion_Settings_Rest_Test.php"
 ```
 
 ### Single file
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist tests/WPSG_Settings_Rest_Test.php"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist tests/Mullion_Settings_Rest_Test.php"
 ```
 
 ### Filter one test method
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist --filter test_settings_rest_response"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist --filter test_settings_rest_response"
 ```
 
 ### Verbose output
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist -v"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist -v"
 ```
 
 ## PHP Troubleshooting
@@ -134,7 +134,7 @@ That usually means Composer dependencies were never installed on the host checko
 Fix:
 
 ```bash
-cd wp-plugin/wp-super-gallery
+cd wp-plugin/mullion-gallery
 composer install
 cd ../..
 ```
@@ -148,16 +148,16 @@ The mounted Composer shim may not have the executable bit inside `wp-env` even w
 Fix:
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 If you want to repair the local file mode as well, run:
 
 ```bash
-chmod +x wp-plugin/wp-super-gallery/vendor/bin/phpunit
+chmod +x wp-plugin/mullion-gallery/vendor/bin/phpunit
 ```
 
-### `No such file or directory` for `/var/www/html/wp-content/plugins/wp-super-gallery`
+### `No such file or directory` for `/var/www/html/wp-content/plugins/mullion-gallery`
 
 That usually means `wp-env` was started from the wrong directory or not started at all.
 
@@ -173,7 +173,7 @@ The repo is already configured for PHPUnit 9 plus Yoast polyfills, so this is us
 
 Check all of the following:
 
-1. `vendor/` exists under `wp-plugin/wp-super-gallery`.
+1. `vendor/` exists under `wp-plugin/mullion-gallery`.
 2. The test file ends in `Test.php`.
 3. `phpunit.xml.dist` and `tests/bootstrap.php` are present.
 4. You are running the command inside `tests-cli`, not directly on the host.
@@ -181,7 +181,7 @@ Check all of the following:
 If autoloading looks stale:
 
 ```bash
-cd wp-plugin/wp-super-gallery
+cd wp-plugin/mullion-gallery
 composer dump-autoload
 cd ../..
 ```
@@ -253,7 +253,7 @@ Heads up:
 ### 5. Full PHPUnit run
 
 ```bash
-npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
+npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 ## Current Stable Baseline

@@ -1,6 +1,6 @@
 # WP JWT Plugin Setup
 
-This guide explains how to configure the "JWT Authentication for WP REST API" plugin for WP Super Gallery.
+This guide explains how to configure the "JWT Authentication for WP REST API" plugin for Mullion.
 
 ---
 
@@ -82,7 +82,7 @@ Expected response includes:
 
 ---
 
-## 5) Use Token with WP Super Gallery
+## 5) Use Token with Mullion
 
 Pass the JWT in the `Authorization` header:
 
@@ -92,7 +92,7 @@ Authorization: Bearer <token>
 
 The app will use this to call:
 
-- `/wp-json/wp-super-gallery/v1/permissions`
+- `/wp-json/mullion-gallery/v1/permissions`
 - other admin endpoints
 
 ---

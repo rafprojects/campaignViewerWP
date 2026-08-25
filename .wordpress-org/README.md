@@ -37,7 +37,7 @@ extreme edges (avatar/badge overlap on the listing page).
 ## Screenshot manifest — MUST stay in sync with `readme.txt`
 
 The `== Screenshots ==` section of
-[`wp-plugin/wp-super-gallery/readme.txt`](../wp-plugin/wp-super-gallery/readme.txt) lists
+[`wp-plugin/mullion-gallery/readme.txt`](../wp-plugin/mullion-gallery/readme.txt) lists
 captions in numbered order; each number maps to `screenshot-N.png` here. **If you add,
 remove, or reorder a screenshot, update both places.**
 
@@ -57,7 +57,7 @@ driving the app; that pass is out of scope for the content track that created th
 
 ## Content brief
 
-- **Banner:** product name "WP Super Gallery" + a one-line value prop (e.g. *"Embeddable
+- **Banner:** product name "Mullion" + a one-line value prop (e.g. *"Embeddable
   campaign galleries with a visual layout builder"*). Show a hint of a gallery/grid. Keep
   it legible at the small (772×250) size — design at 1544×500 and downscale.
 - **Icon:** a simple, high-contrast mark that reads at 128px (and as a 16px favicon in the

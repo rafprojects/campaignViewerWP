@@ -1,6 +1,6 @@
 # Theme System QA Guide
 
-Manual QA checklist for the WP Super Gallery theme system. Work through each section with every theme to confirm full coverage.
+Manual QA checklist for the Mullion theme system. Work through each section with every theme to confirm full coverage.
 
 ---
 
@@ -74,7 +74,7 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 
 | # | Test | Expected | ✅ |
 |---|------|----------|----|
-| 2.3.1 | Thumbnail strip | Selected thumbnail border uses `--wpsg-color-primary` | |
+| 2.3.1 | Thumbnail strip | Selected thumbnail border uses `--mullion-color-primary` | |
 | 2.3.2 | Open lightbox | Dark overlay (`rgba(0,0,0,0.95)`) is intentionally fixed — should always be very dark | |
 | 2.3.3 | Lightbox navigation arrows | Visible and functional | |
 | 2.3.4 | Close lightbox | Returns to themed view cleanly | |
@@ -161,11 +161,11 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 | # | Test | Expected | ✅ |
 |---|------|----------|----|
 | 5.1 | Select `nord` theme | Theme applied | |
-| 5.2 | Check `localStorage` | Key `wpsg-theme-id` exists with value `nord` | |
+| 5.2 | Check `localStorage` | Key `mullion-theme-id` exists with value `nord` | |
 | 5.3 | Hard refresh (Ctrl+Shift+R) | Nord theme loads immediately — no flash of default theme | |
 | 5.4 | Open a new tab to same URL | Nord theme loads | |
 | 5.5 | Clear localStorage and refresh | Falls back to `default-dark` | |
-| 5.6 | Delete only the `wpsg-theme-id` key and refresh | Falls back to `default-dark` | |
+| 5.6 | Delete only the `mullion-theme-id` key and refresh | Falls back to `default-dark` | |
 
 ---
 
@@ -177,9 +177,9 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 |---|------|----------|----|
 | 6.1 | WP Admin → Settings → Theme dropdown | Shows all 23 themes in 9 grouped categories | |
 | 6.2 | Select `material-dark` and save | Settings saved successfully | |
-| 6.3 | Visit front-end with `[super-gallery]` shortcode | Gallery loads with `material-dark` theme | |
-| 6.4 | View page source | `window.__wpsgThemeId = "material-dark"` present in config script | |
-| 6.5 | View page source | `window.__WPSG_CONFIG__` contains `"theme":"material-dark"` and `"allowUserThemeOverride":true` | |
+| 6.3 | Visit front-end with `[mullion-gallery]` shortcode | Gallery loads with `material-dark` theme | |
+| 6.4 | View page source | `window.__mullionThemeId = "material-dark"` present in config script | |
+| 6.5 | View page source | `window.__MULLION_CONFIG__` contains `"theme":"material-dark"` and `"allowUserThemeOverride":true` | |
 | 6.6 | Check "Allow User Theme Override" checkbox | Default: checked | |
 | 6.7 | User changes theme via UI | Theme persists in localStorage, overriding WP default | |
 | 6.8 | **Uncheck** "Allow User Theme Override" and save | Setting saved | |
@@ -194,7 +194,7 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 |---|------|----------|----|
 | 7.1 | Load app with `?shadow=1` (or default) | App renders inside Shadow DOM | |
 | 7.2 | Inspect DOM | `<div>` host has `shadowRoot` attached | |
-| 7.3 | Check shadow root styles | `<style id="wpsg-theme-vars">` present inside shadow root with `:host { --wpsg-* }` variables | |
+| 7.3 | Check shadow root styles | `<style id="mullion-theme-vars">` present inside shadow root with `:host { --mullion-* }` variables | |
 | 7.4 | Switch themes inside Shadow DOM | CSS variables in shadow root update | |
 | 7.5 | Check Mantine variables | `--mantine-color-*` variables scoped to shadow root, not `:root` | |
 | 7.6 | Host page styles | Confirm host page CSS does **not** leak into the gallery | |
@@ -210,7 +210,7 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 |---|------|----------|----|
 | 8.1 | Open DevTools → Performance tab | Ready to record | |
 | 8.2 | Record while switching themes 5 times rapidly | Each switch completes in <16ms (no dropped frames) | |
-| 8.3 | Check console at startup | `[WPSG Theme] Registry initialized: 23/23 themes in Xms` — should be <100ms | |
+| 8.3 | Check console at startup | `[Mullion Theme] Registry initialized: 23/23 themes in Xms` — should be <100ms | |
 | 8.4 | Memory tab: take heap snapshot | No leaked DOM nodes after 10 theme switches | |
 | 8.5 | Network tab while switching | **Zero** network requests — all themes pre-computed at startup | |
 | 8.6 | Lighthouse performance score | No regression from theme system (bundle ~13KB chroma.js addition) | |
@@ -221,9 +221,9 @@ For each theme, navigate through **every view** and confirm colors are themed (n
 
 | # | Test | Expected | ✅ |
 |---|------|----------|----|
-| 9.1 | Set `localStorage` `wpsg-theme-id` to `"bogus-theme"` | Falls back to `default-dark` gracefully | |
-| 9.2 | Set `localStorage` `wpsg-theme-id` to empty string | Falls back to `default-dark` | |
-| 9.3 | In dev mode, check console for fallback warning | `[WPSG Theme] Theme "bogus-theme" not found, falling back to "default-dark"` | |
+| 9.1 | Set `localStorage` `mullion-theme-id` to `"bogus-theme"` | Falls back to `default-dark` gracefully | |
+| 9.2 | Set `localStorage` `mullion-theme-id` to empty string | Falls back to `default-dark` | |
+| 9.3 | In dev mode, check console for fallback warning | `[Mullion Theme] Theme "bogus-theme" not found, falling back to "default-dark"` | |
 | 9.4 | Corrupt a theme JSON and rebuild | Build succeeds; invalid theme skipped with console warning; all other themes work | |
 
 ---
@@ -234,14 +234,14 @@ Use DevTools to verify CSS variables are present and correct.
 
 | # | Test | Expected | ✅ |
 |---|------|----------|----|
-| 10.1 | Inspect `:root` (or `:host` in Shadow DOM) | `--wpsg-color-background` matches theme | |
-| 10.2 | Check `--wpsg-color-primary` | Matches the primary accent of the active theme | |
-| 10.3 | Check `--wpsg-color-text` | Matches the primary text color | |
-| 10.4 | Check `--wpsg-spacing-*` variables | All 5 present (xs through xl) | |
-| 10.5 | Check `--wpsg-radius-*` variables | All 5 present | |
-| 10.6 | Check `--wpsg-shadow-*` variables | All 5 present | |
-| 10.7 | Check `--wpsg-font-family` | Matches the theme's font stack | |
-| 10.8 | Check `--wpsg-color-primary-0` through `--wpsg-color-primary-9` | All 10 shade variants present | |
+| 10.1 | Inspect `:root` (or `:host` in Shadow DOM) | `--mullion-color-background` matches theme | |
+| 10.2 | Check `--mullion-color-primary` | Matches the primary accent of the active theme | |
+| 10.3 | Check `--mullion-color-text` | Matches the primary text color | |
+| 10.4 | Check `--mullion-spacing-*` variables | All 5 present (xs through xl) | |
+| 10.5 | Check `--mullion-radius-*` variables | All 5 present | |
+| 10.6 | Check `--mullion-shadow-*` variables | All 5 present | |
+| 10.7 | Check `--mullion-font-family` | Matches the theme's font stack | |
+| 10.8 | Check `--mullion-color-primary-0` through `--mullion-color-primary-9` | All 10 shade variants present | |
 | 10.9 | Switch theme, re-inspect | All variables update to new theme values | |
 
 ---

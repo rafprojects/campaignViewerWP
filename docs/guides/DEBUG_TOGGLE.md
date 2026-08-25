@@ -10,13 +10,13 @@ The layout builder debug logging is gated behind a localStorage flag for develop
 2. Go to the **Console** tab
 3. Run this command:
    ```javascript
-   localStorage.setItem('wpsg_debug', '1')
+   localStorage.setItem('mullion_debug', '1')
    ```
 
 ### How to Disable
 
 ```javascript
-localStorage.setItem('wpsg_debug', '0')
+localStorage.setItem('mullion_debug', '0')
 ```
 
 ## What Gets Logged
@@ -29,13 +29,13 @@ When debug mode is enabled, the layout builder will output grouped console messa
 
 Example output:
 ```
-[WPSG] Layout Save — pre-flight
+[Mullion] Layout Save — pre-flight
   Slots being sent: 1:slot-abc→mediaId=m123, 2:slot-def→mediaId=m456, ...
 
-[WPSG] Layout Save — response
+[Mullion] Layout Save — response
   Slots returned: 1:slot-abc→mediaId=m123, 2:slot-def→mediaId=m456, ...
 
-[WPSG] Assign Media to Slots
+[Mullion] Assign Media to Slots
   Input media: [m123, m456, ...]
   Assignments: slot-abc→m123, slot-def→m456, ...
 ```

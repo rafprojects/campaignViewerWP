@@ -1,6 +1,6 @@
-# WP Super Gallery — Install & Troubleshooting Guide
+# Mullion — Install & Troubleshooting Guide
 
-A buyer-facing guide to installing, configuring, and troubleshooting WP Super Gallery.
+A buyer-facing guide to installing, configuring, and troubleshooting Mullion.
 For data-handling details see [PRIVACY.md](../PRIVACY.md). For translating the plugin see
 [TRANSLATING.md](TRANSLATING.md).
 
@@ -25,18 +25,18 @@ Composer, or a build step to run it. (Those are only needed if you build from so
 ### From a ZIP (marketplace / direct download)
 
 1. In WordPress admin go to **Plugins → Add New → Upload Plugin**.
-2. Choose the `wp-super-gallery.zip` file and click **Install Now**.
+2. Choose the `mullion-gallery.zip` file and click **Install Now**.
 3. Click **Activate**.
-4. A new **WP Super Gallery** menu appears in the admin sidebar.
+4. A new **Mullion** menu appears in the admin sidebar.
 
 ### Manual install
 
-1. Unzip and upload the `wp-super-gallery` folder to `/wp-content/plugins/`.
+1. Unzip and upload the `mullion-gallery` folder to `/wp-content/plugins/`.
 2. Activate it from **Plugins**.
 
 ### First run
 
-1. Open **WP Super Gallery** in the admin menu.
+1. Open **Mullion** in the admin menu.
 2. Create your first **campaign** and add media (upload, or embed external media via URL).
 3. Publish the campaign.
 4. Embed it on any page/post using the shortcode below.
@@ -45,14 +45,14 @@ Composer, or a build step to run it. (Those are only needed if you build from so
 
 ## Embedding a gallery
 
-Use the **`[super-gallery]`** shortcode (block-editor: add a *Shortcode* block).
+Use the **`[mullion-gallery]`** shortcode (block-editor: add a *Shortcode* block).
 
-> ⚠️ The tag is `super-gallery`, and campaigns are addressed by **slug or ID via the
+> ⚠️ The tag is `mullion-gallery`, and campaigns are addressed by **slug or ID via the
 > `campaign` attribute** — there is no `id=` attribute.
 
 ```text
-[super-gallery campaign="my-campaign-slug"]
-[super-gallery campaign="123"]
+[mullion-gallery campaign="my-campaign-slug"]
+[mullion-gallery campaign="123"]
 ```
 
 **Supported attributes**
@@ -84,7 +84,7 @@ from the admin panel for placing a gallery on a non-WordPress site.
   pseudonymized view counts. If you enable it, also set a **retention window** (default is
   "never purge"). See [PRIVACY.md](../PRIVACY.md).
 - **Authentication:** the default is WordPress's own cookie + REST nonce (nothing to
-  configure). JWT auth is an advanced opt-in behind the `WPSG_ENABLE_JWT_AUTH` constant —
+  configure). JWT auth is an advanced opt-in behind the `MULLION_ENABLE_JWT_AUTH` constant —
   see [WP_JWT_SETUP.md](WP_JWT_SETUP.md).
 
 ---
@@ -94,7 +94,7 @@ from the admin panel for placing a gallery on a non-WordPress site.
 ### The gallery shows nothing / "No media available"
 - Confirm the **campaign is published** and has media assigned.
 - Confirm the shortcode uses the **correct tag and attribute**:
-  `[super-gallery campaign="…"]` — **not** `[wp_super_gallery id="…"]`.
+  `[mullion-gallery campaign="…"]` — **not** `[mullion_gallery id="…"]`.
 - Check the `campaign` value matches an existing campaign **slug or ID**.
 - If the campaign has **access controls**, an unauthorized visitor sees the access-gated
   state rather than the media — verify grants or view while logged in.
@@ -146,7 +146,7 @@ from the admin panel for placing a gallery on a non-WordPress site.
   guide is [PRO_FEATURES.md](PRO_FEATURES.md).
 
 ### Enabling debug logging
-- Set the `wpsg_debug` flag (see [DEBUG_TOGGLE.md](DEBUG_TOGGLE.md)) to surface verbose
+- Set the `mullion_debug` flag (see [DEBUG_TOGGLE.md](DEBUG_TOGGLE.md)) to surface verbose
   front-end diagnostics in the console when reporting an issue.
 
 ---
@@ -157,10 +157,10 @@ Deleting the plugin runs a full cleanup (custom tables, campaigns, options, role
 uploaded overlay/thumbnail/font dirs) **unless** you enable **"Preserve data on uninstall"** in
 Settings first. See [PRIVACY.md §6](../PRIVACY.md) for the exact list of what is removed.
 
-> **Export archives are always removed.** The `uploads/wpsg-exports/` directory holds
+> **Export archives are always removed.** The `uploads/mullion-exports/` directory holds
 > generated export ZIPs behind a 24-hour job TTL, so it is deleted on uninstall **even when
 > "Preserve data on uninstall" is enabled.** If you need any of those archives, download or
-> move them out of `uploads/wpsg-exports/` before uninstalling.
+> move them out of `uploads/mullion-exports/` before uninstalling.
 
 ---
 

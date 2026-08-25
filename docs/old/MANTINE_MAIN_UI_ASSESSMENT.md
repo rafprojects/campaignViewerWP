@@ -590,10 +590,10 @@ import { Carousel } from '@mantine/carousel';
 
 **Current Implementation:**
 ```tsx
-<div className="wp-super-gallery">
-  <div className="wp-super-gallery__authbar">...</div>
-  <div className="wp-super-gallery__banner wp-super-gallery__banner--error">...</div>
-  <div className="wp-super-gallery__container">...</div>
+<div className="mullion-gallery">
+  <div className="mullion-gallery__authbar">...</div>
+  <div className="mullion-gallery__banner mullion-gallery__banner--error">...</div>
+  <div className="mullion-gallery__container">...</div>
 </div>
 ```
 
@@ -601,7 +601,7 @@ import { Carousel } from '@mantine/carousel';
 ```tsx
 import { Container, Group, Button, Alert, Text, Box } from '@mantine/core';
 
-<Box className="wp-super-gallery"> {/* Keep for Shadow DOM scoping */}
+<Box className="mullion-gallery"> {/* Keep for Shadow DOM scoping */}
   {isAuthenticated && (
     <Container size="xl" py="sm">
       <Group justify="space-between" p="sm" bg="dark.7" style={{ borderRadius: 'var(--mantine-radius-md)' }}>
@@ -636,7 +636,7 @@ import { Container, Group, Button, Alert, Text, Box } from '@mantine/core';
 1. Replace auth bar with `<Group>` + `<Button>` components
 2. Replace banner messages with `<Alert>` components
 3. Replace container class with `<Container size="xl">`
-4. Keep root `.wp-super-gallery` class for Shadow DOM scoping
+4. Keep root `.mullion-gallery` class for Shadow DOM scoping
 
 **Breaking Changes:** None significant
 **Risk Level:** Low

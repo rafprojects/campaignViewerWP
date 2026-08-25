@@ -32,7 +32,7 @@ However, the critique misses a key reason we specified `ResizeObserver` on the c
 
 **Template count scalability:** ACCEPT the concern but the threshold is reasonable. WordPress `get_option()` with autoload=yes is fast up to ~1MB of serialized data. A template with 20 slots is ~2KB of JSON. Even 200 templates would be ~400KB — well within safe range. The plan's risk register already flags this and names the migration path (dedicated table). Adding a concrete threshold (200 templates) and a soft warning in the PHP class is sensible.
 
-**Multi-user access controls:** REJECT. Our admin REST endpoints already gate behind `require_admin()` which checks `current_user_can('manage_wpsg')` — a custom capability. This is the standard WordPress RBAC pattern. Multiple admins can all manage templates; non-admins cannot. The critique implies per-template ownership, which would be over-engineering for a plugin where all admins share the same gallery infrastructure.
+**Multi-user access controls:** REJECT. Our admin REST endpoints already gate behind `require_admin()` which checks `current_user_can('manage_mullion')` — a custom capability. This is the standard WordPress RBAC pattern. Multiple admins can all manage templates; non-admins cannot. The critique implies per-template ownership, which would be over-engineering for a plugin where all admins share the same gallery infrastructure.
 
 **Public endpoint security:** ACCEPT WITH MODIFICATION. The critic is right that the public GET endpoint for templates (needed so the frontend can render layouts) shouldn't expose ALL templates — only the specific one referenced by a campaign. The plan already specifies `/layout-templates/{id}` (single template by ID) as the public route, not a list endpoint. But we should add a note: the public endpoint should **only return templates that are referenced by at least one published campaign** (or accept the read-only ID lookup as sufficient, since template IDs are UUIDs and not guessable). The ID-based lookup is the practical approach — if you know the UUID, you can read the template. This matches how WP serves attachment URLs.
 
@@ -179,7 +179,7 @@ Playwright device presets for E2E tests are trivially easy to add (`playwright.c
 |---|----------|-------------|-----------------|
 | 1 | Breakpoint detection — Mantine alignment | ACCEPT WITH MOD | Source thresholds from Mantine theme; keep ResizeObserver |
 | 2a | WP option scalability | ACCEPT | Add 200-template soft limit |
-| 2b | Multi-user access controls | REJECT | Already gated by `manage_wpsg` capability |
+| 2b | Multi-user access controls | REJECT | Already gated by `manage_mullion` capability |
 | 2c | Public endpoint security | ACCEPT (clarify) | Note ID-based lookup only, UUIDs unguessable |
 | 2d | Transient cache | REJECT | `autoload=yes` already optimal |
 | 3a | Immer.js for undo/redo | **WANT INPUT** | Immer (3KB) vs. structuredClone + vanilla |

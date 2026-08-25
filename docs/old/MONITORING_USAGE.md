@@ -33,14 +33,14 @@ Startup hook: [src/main.tsx](../../src/main.tsx) calls `startWebVitalsMonitoring
 ### What it does
 - Observes PerformanceObserver entries for LCP/CLS/INP/FID
 - Buffers metrics in memory
-- Exposes captured metrics on `window.__WPSG_VITALS__`
+- Exposes captured metrics on `window.__MULLION_VITALS__`
 - Logs to console for quick validation
 
 ### How to verify locally
 1. Open the app in the browser.
 2. Interact and navigate normally.
-3. Check console logs tagged with `[WPSG][Vitals]`.
-4. Inspect `window.__WPSG_VITALS__` in DevTools.
+3. Check console logs tagged with `[Mullion][Vitals]`.
+4. Inspect `window.__MULLION_VITALS__` in DevTools.
 
 ### Sampling
 Default sampling rate is 100%. If sampling is needed later, update `startWebVitalsMonitoring({ sampleRate: 0.1 })`.
@@ -57,7 +57,7 @@ Startup hook: [src/main.tsx](../../src/main.tsx) calls `initSentry({ dsn })`.
 - DSN can be injected from WordPress with the filter below:
 
 ```php
-add_filter('wpsg_sentry_dsn', function () {
+add_filter('mullion_sentry_dsn', function () {
   return 'https://examplePublicKey@o0.ingest.sentry.io/0';
 });
 ```
@@ -67,12 +67,12 @@ add_filter('wpsg_sentry_dsn', function () {
 - Sentry is **enabled** in production builds when DSN is set.
 
 ### How to verify
-1. Set the `wpsg_sentry_dsn` filter in WP.
+1. Set the `mullion_sentry_dsn` filter in WP.
 2. Trigger a deliberate error in production build.
 3. Confirm the event arrives in your Sentry project.
 
 ### Server-side alerts
-WPSG will also send critical alert events (fatal errors and REST error spikes) to Sentry when the PHP SDK is installed.
+Mullion will also send critical alert events (fatal errors and REST error spikes) to Sentry when the PHP SDK is installed.
 
 ### DSN exposure note
 Sentry DSNs are public and typically exposed in frontend apps. To mitigate abuse, configure Sentry **Allowed Domains** and consider lowering sample rates. If you need stronger control, route events through a backend proxy.
@@ -82,7 +82,7 @@ Sentry DSNs are public and typically exposed in frontend apps. To mitigate abuse
 ## Alerts (Admin Email)
 
 ### What it does
-- Sends email on fatal PHP errors for WPSG REST requests.
+- Sends email on fatal PHP errors for Mullion REST requests.
 - Sends email when REST errors (>=500) exceed a threshold in a time window.
 
 ### Defaults
@@ -92,11 +92,11 @@ Sentry DSNs are public and typically exposed in frontend apps. To mitigate abuse
 
 ### Configuration (WP Filters)
 ```php
-add_filter('wpsg_alert_email_enabled', fn() => true);
-add_filter('wpsg_alert_email_recipient', fn() => 'ops@example.com');
-add_filter('wpsg_alert_error_threshold', fn() => 5);
-add_filter('wpsg_alert_rate_window_minutes', fn() => 10);
-add_filter('wpsg_alert_throttle_minutes', fn() => 10);
+add_filter('mullion_alert_email_enabled', fn() => true);
+add_filter('mullion_alert_email_recipient', fn() => 'ops@example.com');
+add_filter('mullion_alert_error_threshold', fn() => 5);
+add_filter('mullion_alert_rate_window_minutes', fn() => 10);
+add_filter('mullion_alert_throttle_minutes', fn() => 10);
 ```
 
 ---
@@ -106,7 +106,7 @@ add_filter('wpsg_alert_throttle_minutes', fn() => 10);
 - Web Vitals implementation: [src/services/monitoring/webVitals.ts](../../src/services/monitoring/webVitals.ts)
 - Sentry initialization: [src/services/monitoring/sentry.ts](../../src/services/monitoring/sentry.ts)
 - Bootstrap wiring: [src/main.tsx](../../src/main.tsx)
-- WP config injection: [wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php](../../wp-plugin/wp-super-gallery/includes/class-wpsg-embed.php)
+- WP config injection: [wp-plugin/mullion-gallery/includes/class-mullion-embed.php](../../wp-plugin/mullion-gallery/includes/class-mullion-embed.php)
 
 ---
 

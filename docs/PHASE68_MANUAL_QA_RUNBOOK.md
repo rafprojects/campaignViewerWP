@@ -2,7 +2,7 @@
 
 **Companion to:** [PHASE68_REPORT.md](PHASE68_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, steps, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md).
 
-**Scope:** tracks P68-A … P68-E. Unlike Phase 67 (a PHP-only code-quality phase), Phase 68 is **mostly front-end correctness** — the public campaign-fetch-and-render path (`src/App.tsx`, `src/services/*`, `public/sw.js`) plus one cross-side PHP change (P68-B gates a nonce in `class-wpsg-embed.php`). Verification therefore leans on the browser (devtools Network/Application panels) and the vitest suite rather than WP-CLI/PHPUnit, with WP-CLI used only to seed fixtures (e.g. >10 campaigns) and to observe the PHP side of P68-B.
+**Scope:** tracks P68-A … P68-E. Unlike Phase 67 (a PHP-only code-quality phase), Phase 68 is **mostly front-end correctness** — the public campaign-fetch-and-render path (`src/App.tsx`, `src/services/*`, `public/sw.js`) plus one cross-side PHP change (P68-B gates a nonce in `class-mullion-embed.php`). Verification therefore leans on the browser (devtools Network/Application panels) and the vitest suite rather than WP-CLI/PHPUnit, with WP-CLI used only to seed fixtures (e.g. >10 campaigns) and to observe the PHP side of P68-B.
 
 **Golden rule (unchanged from P63–P67):** a fix's test is only meaningful if you have also seen it **fail without the fix**, or you understand precisely why the pre-fix code was wrong. Each section states the pre-fix behavior so a green result actually proves something. The cleanest way to watch these fail is to check out the commit **before** the track and re-run the same steps:
 
@@ -65,17 +65,17 @@ export AUTH='-u sysadmin:APP_PASSWORD'     # an Application Password for a Syste
 ```bash
 # Seed 15 public campaigns in one space (space id 1 assumed; adjust as needed).
 for i in $(seq 1 15); do
-  npx wp-env run cli wp post create --post_type=wpsg_campaign \
+  npx wp-env run cli wp post create --post_type=mullion_campaign \
     --post_title="P68A Campaign $i" --post_status=publish --porcelain \
-    --meta_input="$(printf '{"visibility":"public","_wpsg_space_id":1}')" >/dev/null
+    --meta_input="$(printf '{"visibility":"public","_mullion_space_id":1}')" >/dev/null
 done
 
 # Confirm the REST endpoint reports >1 page at the default per_page=10…
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/campaigns" | jq '{total, totalPages, returned: (.items|length)}'
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/campaigns" | jq '{total, totalPages, returned: (.items|length)}'
 # → total ≥ 15, totalPages ≥ 2, returned 10   (this is the server default the old FE stopped at)
 
 # …and that per_page=50 returns them all in one page:
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/campaigns?per_page=50" | jq '{total, totalPages, returned: (.items|length)}'
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/campaigns?per_page=50" | jq '{total, totalPages, returned: (.items|length)}'
 # → total ≥ 15, totalPages 1, returned ≥ 15
 ```
 
@@ -103,7 +103,7 @@ npm run test -- src/services/pagination.test.ts src/App.test.tsx
 
 ### P68-B — Anonymous SW stale-while-revalidate becomes reachable (both-sides)
 
-**What & why.** `public/sw.js` routes public metadata GETs into its stale-while-revalidate cache (`META_CACHE` + TTL stamping + FIFO eviction via `handleMetaRequest`) **only when** the request carries neither `X-WP-Nonce` nor `Authorization` (`isAuthenticated` gate, `sw.js:104-109`). But `class-wpsg-embed.php`'s `page_config_js()` emitted `restNonce => wp_create_nonce('wp_rest')` **unconditionally** — including for anonymous visitors — and `HttpTransportImpl.buildAuthHeaders()` attaches the nonce whenever `getNonce()` is truthy. So every request from the app carried `X-WP-Nonce`, `isAuthenticated` was always true, and the ~100-line anonymous SWR path never ran for real traffic. For a logged-out visitor that nonce authenticates user 0 — it provides nothing. **The fix:** PHP now omits `restNonce` from the page config for anonymous visitors (gate on `is_user_logged_in()`); the FE header drop then falls out naturally (`buildAuthHeaders` already guards `if (nonce)`), and `sw.js` needs no change — its gate simply starts being reached.
+**What & why.** `public/sw.js` routes public metadata GETs into its stale-while-revalidate cache (`META_CACHE` + TTL stamping + FIFO eviction via `handleMetaRequest`) **only when** the request carries neither `X-WP-Nonce` nor `Authorization` (`isAuthenticated` gate, `sw.js:104-109`). But `class-mullion-embed.php`'s `page_config_js()` emitted `restNonce => wp_create_nonce('wp_rest')` **unconditionally** — including for anonymous visitors — and `HttpTransportImpl.buildAuthHeaders()` attaches the nonce whenever `getNonce()` is truthy. So every request from the app carried `X-WP-Nonce`, `isAuthenticated` was always true, and the ~100-line anonymous SWR path never ran for real traffic. For a logged-out visitor that nonce authenticates user 0 — it provides nothing. **The fix:** PHP now omits `restNonce` from the page config for anonymous visitors (gate on `is_user_logged_in()`); the FE header drop then falls out naturally (`buildAuthHeaders` already guards `if (nonce)`), and `sw.js` needs no change — its gate simply starts being reached.
 
 **Pre-fix behavior.** Every GET from the app — even a logged-out visitor's — carried `X-WP-Nonce`; `META_CACHE` never populated for anonymous traffic; the SWR code was dead-by-gating (the same failure shape as PHP A-1/A-2).
 
@@ -112,7 +112,7 @@ npm run test -- src/services/pagination.test.ts src/App.test.tsx
 **Primary proof — no `X-WP-Nonce` on a logged-out visitor's requests, and the SW cache populates.**
 
 1. Open the public gallery in an **incognito/logged-out** browser window. Open devtools → **Network**.
-2. Filter to the `wp-super-gallery/v1/` XHRs. Inspect the request headers of a `campaigns`/metadata GET.
+2. Filter to the `mullion-gallery/v1/` XHRs. Inspect the request headers of a `campaigns`/metadata GET.
 
 **Expected (pass).** **No `X-WP-Nonce` request header** on any of the logged-out app's GETs. **Why it proves the fix:** on the pre-fix build the same requests all carry `X-WP-Nonce` (the guest nonce). Then confirm the SWR cache is now reachable:
 
@@ -130,7 +130,7 @@ npm run test -- src/services/pagination.test.ts src/App.test.tsx
 
 5. From a fully logged-out session (no nonce in the page config now), open the sign-in form and log in with valid credentials.
 
-**Expected (pass).** Login succeeds. **Why it can't regress:** the login POST doesn't need a nonce — WP's `rest_cookie_check_errors` only enforces `X-WP-Nonce` once the request already carries a logged-in session cookie, which an anonymous login POST does not; and `WPSG_Auth_Controller::handle_cookie_login()` mints a **fresh** nonce server-side (`class-wpsg-auth-controller.php:261`) which `WpNonceProvider.login()` stores via `setWpNonce()`. So the guest nonce was never actually load-bearing for login. Confirm subsequent authenticated actions (e.g. opening the admin panel) work, proving the freshly-minted post-login nonce is in effect.
+**Expected (pass).** Login succeeds. **Why it can't regress:** the login POST doesn't need a nonce — WP's `rest_cookie_check_errors` only enforces `X-WP-Nonce` once the request already carries a logged-in session cookie, which an anonymous login POST does not; and `Mullion_Auth_Controller::handle_cookie_login()` mints a **fresh** nonce server-side (`class-mullion-auth-controller.php:261`) which `WpNonceProvider.login()` stores via `setWpNonce()`. So the guest nonce was never actually load-bearing for login. Confirm subsequent authenticated actions (e.g. opening the admin panel) work, proving the freshly-minted post-login nonce is in effect.
 
 **PHP-side spot check (optional, scriptable).**
 
@@ -138,10 +138,10 @@ npm run test -- src/services/pagination.test.ts src/App.test.tsx
 # Anonymous render omits restNonce; a logged-in render includes it.
 npx wp-env run cli wp eval '
   wp_set_current_user(0);
-  echo (strpos(WPSG_Embed::page_config_js(), "\"restNonce\"") === false ? "anon: omitted" : "anon: PRESENT") . "\n";
+  echo (strpos(Mullion_Embed::page_config_js(), "\"restNonce\"") === false ? "anon: omitted" : "anon: PRESENT") . "\n";
   $u = get_users(["role" => "administrator", "number" => 1]);
   wp_set_current_user($u[0]->ID);
-  echo (strpos(WPSG_Embed::page_config_js(), "\"restNonce\"") !== false ? "logged-in: present" : "logged-in: MISSING") . "\n";
+  echo (strpos(Mullion_Embed::page_config_js(), "\"restNonce\"") !== false ? "logged-in: present" : "logged-in: MISSING") . "\n";
 '
 # → anon: omitted   /   logged-in: present
 ```
@@ -150,15 +150,15 @@ npx wp-env run cli wp eval '
 
 ```bash
 npx vitest run src/services/http/HttpTransportImpl.test.ts     # FE: header omitted when getNonce()→undefined
-# PHP (via the /php-testing skill, wp-env): WPSG_Embed_Test
+# PHP (via the /php-testing skill, wp-env): Mullion_Embed_Test
 #   test_render_shortcode_omits_rest_nonce_for_anonymous_visitor   (anonymous → no "restNonce")
 #   test_render_shortcode_includes_rest_nonce_for_logged_in_user   (admin     → "restNonce" present)
 ```
 
 - FE: `HttpTransportImpl.test.ts` gains *"omits X-WP-Nonce when the getNonce callback returns undefined (anonymous)"* — the exact runtime shape post-fix (the callback is wired but returns `undefined`). 22 tests green.
-- PHP: `WPSG_Embed_Test` gains the two conditional-nonce tests above and relaxes `test_render_shortcode_includes_config_script` (which formerly asserted `restNonce` always present — now only asserts the config script emits, since the nonce is conditional). 18 tests / 30 assertions green.
+- PHP: `Mullion_Embed_Test` gains the two conditional-nonce tests above and relaxes `test_render_shortcode_includes_config_script` (which formerly asserted `restNonce` always present — now only asserts the config script emits, since the nonce is conditional). 18 tests / 30 assertions green.
 
-**Regression checks.** No `sw.js` change (verify none crept in — its gate was already correct). No `HttpTransportImpl.ts`/`WpNonceProvider.ts` code change — only a test was added. The wp-admin Spaces/Assets renderers (`class-wpsg-asset-admin-renderer.php`, `class-wpsg-space-admin-renderer.php`) also call `page_config_js()`, but those pages are always logged-in, so the gate is a no-op there (nonce still emitted) — confirm the admin apps on those screens still authenticate.
+**Regression checks.** No `sw.js` change (verify none crept in — its gate was already correct). No `HttpTransportImpl.ts`/`WpNonceProvider.ts` code change — only a test was added. The wp-admin Spaces/Assets renderers (`class-mullion-asset-admin-renderer.php`, `class-mullion-space-admin-renderer.php`) also call `page_config_js()`, but those pages are always logged-in, so the gate is a no-op there (nonce still emitted) — confirm the admin apps on those screens still authenticate.
 
 **Pitfalls.**
 - **Don't test P68-B with a warm pre-fix service worker** (see the Update-on-reload note above) — the single most common false result.
@@ -229,11 +229,11 @@ npx vitest run src/services/http/HttpTransportImpl.test.ts
 |---|---|---|---|
 | P68-A | A space with >10 campaigns renders all of them (public gallery) | `pagination.test.ts` + `App.test.tsx` multi-page case green; admin selector suites unmodified | ☐ |
 | P68-D | Loading copy shows genuine `(page X of Y)` on multi-page loads; spinner-only on single-page | `pagination.test.ts` `onPage` progress asserts | ☐ |
-| P68-B | Logged-out GETs carry no `X-WP-Nonce`; `META_CACHE` populates; login still works | `WPSG_Embed_Test` (anon omits / logged-in includes) + `HttpTransportImpl.test.ts` green; no `sw.js`/transport code change | ☐ |
+| P68-B | Logged-out GETs carry no `X-WP-Nonce`; `META_CACHE` populates; login still works | `Mullion_Embed_Test` (anon omits / logged-in includes) + `HttpTransportImpl.test.ts` green; no `sw.js`/transport code change | ☐ |
 | P68-C | A grant approved elsewhere appears on tab refocus, no reload; no refetch when unchanged | `AuthContext.test.tsx` focus-refresh + `AuthProvider.test.ts` digest green; full FE suite green | ☐ |
 | P68-E | Simulated 204/empty 2xx resolves `undefined` without a parse error | `HttpTransportImpl.test.ts` 204 cases green; existing JSON endpoints unaffected | ☐ |
 
-**Automated baseline (must be green alongside manual QA):** full FE vitest suite (**243 files / 3707 tests** at Batch 3), `npx tsc -b` clean, `npx eslint .` clean; PHP `WPSG_Embed_Test` (18 tests / 30 assertions) green via the `/php-testing` wp-env path. See [PHASE68_REPORT.md](PHASE68_REPORT.md) → each track's *Implementation* block for the per-track rationale and the line-citation corrections surfaced during execution.
+**Automated baseline (must be green alongside manual QA):** full FE vitest suite (**243 files / 3707 tests** at Batch 3), `npx tsc -b` clean, `npx eslint .` clean; PHP `Mullion_Embed_Test` (18 tests / 30 assertions) green via the `/php-testing` wp-env path. See [PHASE68_REPORT.md](PHASE68_REPORT.md) → each track's *Implementation* block for the per-track rationale and the line-citation corrections surfaced during execution.
 
 ---
 
@@ -256,13 +256,13 @@ npx vitest run src/services/pagination.test.ts src/App.test.tsx \
 
 # PHP (wp-env /php-testing path):
 npx @wordpress/env run tests-cli \
-  --env-cwd=wp-content/plugins/wp-super-gallery \
-  php vendor/bin/phpunit --filter WPSG_Embed_Test             # → OK (18 tests, 30 assertions)
+  --env-cwd=wp-content/plugins/mullion-gallery \
+  php vendor/bin/phpunit --filter Mullion_Embed_Test             # → OK (18 tests, 30 assertions)
 ```
 
 > **wp-env gotcha (surfaced this pass):** invoking `vendor/bin/phpunit` directly on the `tests-cli` container fails with `exec: "vendor/bin/phpunit": permission denied` (exit 126). Prefix it with `php` (`php vendor/bin/phpunit …`) — the wrapper script's exec bit isn't honored through `wp-env run`.
 
-**Key source assumption confirmed during review** (worth re-checking if P68-A ever appears to under-fetch): the public `include_media` listing really does return `totalPages`, at [class-wpsg-campaign-controller.php:471](../wp-plugin/wp-super-gallery/includes/rest/class-wpsg-campaign-controller.php#L471) (`'totalPages' => (int) $query->max_num_pages`). If that field is ever dropped from the response, `fetchAllPages` silently collapses to a single page and the A-1 truncation returns — this is the single load-bearing server contract behind the fix.
+**Key source assumption confirmed during review** (worth re-checking if P68-A ever appears to under-fetch): the public `include_media` listing really does return `totalPages`, at [class-mullion-campaign-controller.php:471](../wp-plugin/mullion-gallery/includes/rest/class-mullion-campaign-controller.php#L471) (`'totalPages' => (int) $query->max_num_pages`). If that field is ever dropped from the response, `fetchAllPages` silently collapses to a single page and the A-1 truncation returns — this is the single load-bearing server contract behind the fix.
 
 **Accepted observations (logged, deliberately not "fixed"):**
 
@@ -271,4 +271,4 @@ npx @wordpress/env run tests-cli \
 | 1 | `fetchAllPages` truncates at `DEFAULT_MAX_PAGES × 50 = 1,000` campaigns/space with no user-facing signal | Documented Follow-On (server-driven host pagination); 100× the original 10-cap, out of scope for this phase |
 | 2 | The P68-C focus refresh fires a `/permissions` round-trip on every tab refocus for logged-in users | Intended detection signal; the digest bail-out guarantees it never triggers a `/campaigns` refetch unless grants actually changed |
 
-**Sign-off:** ☐ Review-pass automated re-validation green (tsc / eslint / affected vitest / `WPSG_Embed_Test`) · ☐ No source diff introduced by the review · ☐ Observations 1–2 acknowledged
+**Sign-off:** ☐ Review-pass automated re-validation green (tsc / eslint / affected vitest / `Mullion_Embed_Test`) · ☐ No source diff introduced by the review · ☐ Observations 1–2 acknowledged

@@ -1,4 +1,4 @@
-# Contributing to WP Super Gallery
+# Contributing to Mullion
 
 ## Development Setup
 

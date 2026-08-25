@@ -1,4 +1,4 @@
-# WP Super Gallery — License Activation & Pro Features
+# Mullion — License Activation & Pro Features
 
 A buyer-facing guide to activating your Pro license, understanding what it unlocks,
 and troubleshooting activation. For installation and general troubleshooting see
@@ -33,7 +33,7 @@ rest of the builder works normally.
 1. Purchase a plan (see the pricing page linked from the plugin or the store listing).
    You'll receive a **license key** by email.
 2. In WordPress admin, open the plugin's **licensing screen** (added by the Freemius SDK,
-   typically under the WP Super Gallery menu or the Plugins page **Account / License** link).
+   typically under the Mullion menu or the Plugins page **Account / License** link).
 3. Paste your **license key** and click **Activate**.
 4. The Pro features unlock immediately — no page rebuild required. Reload any open
    LayoutBuilder tab if it was open during activation.

@@ -115,7 +115,7 @@ components:
 
     Campaign:
       type: object
-      description: A WP Super Gallery campaign (gallery instance).
+      description: A Mullion campaign (gallery instance).
       required: [id, title]
       properties:
         id:
@@ -906,7 +906,7 @@ components:
           type: string
           format: uri
           description: Public URL of the overlay image
-          example: https://example.com/wp-content/uploads/wpsg/overlays/frame.png
+          example: https://example.com/wp-content/uploads/mullion-overlays/frame.png
         name:
           type: string
           description: Original filename
@@ -934,7 +934,7 @@ components:
           type: string
           format: uri
           description: Public URL of the font file
-          example: https://example.com/wp-content/uploads/wpsg/fonts/custom.woff2
+          example: https://example.com/wp-content/uploads/mullion-fonts/custom.woff2
         family:
           type: string
           description: CSS font-family name
@@ -1213,32 +1213,40 @@ paths:
       operationId: getPermissions
       tags: [Auth]
       summary: Get current user permissions
-      description: Returns a flat capability map for the currently authenticated user.
+      description: |
+        Returns the authenticated user's accessible campaign IDs plus two
+        tier signals used by the SPA (`isAdmin` = `manage_mullion`,
+        editor-or-above; `isSystemAdmin` = `manage_options`).
       security:
         - cookieNonce: []
         - bearerAuth: []
       responses:
         '200':
-          description: Capability map
+          description: Campaign access list and role-tier flags
           content:
             application/json:
               schema:
                 type: object
-                required: [can_manage_wpsg, can_upload_files, can_manage_options, user_id, roles]
+                required: [campaignIds, isAdmin, isSystemAdmin, userId, userEmail]
                 properties:
-                  can_manage_wpsg:
-                    type: boolean
-                  can_upload_files:
-                    type: boolean
-                  can_manage_options:
-                    type: boolean
-                  user_id:
-                    type: integer
-                    example: 1
-                  roles:
+                  campaignIds:
                     type: array
                     items:
-                      type: string
+                      type: integer
+                    description: Campaign post IDs the current user can access
+                  isAdmin:
+                    type: boolean
+                    description: Editor-or-above (`manage_mullion`)
+                  isSystemAdmin:
+                    type: boolean
+                    description: WordPress system admin (`manage_options`)
+                  userId:
+                    type: integer
+                    example: 1
+                  userEmail:
+                    type: string
+                    format: email
+                    example: admin@example.com
         '401':
           description: Not authenticated
           content:
@@ -1366,12 +1374,12 @@ paths:
           name: category
           schema:
             type: string
-          description: "P28-E: Filter by wpsg_campaign_category term slug"
+          description: "P28-E: Filter by mullion_campaign_category term slug"
         - in: query
           name: tag
           schema:
             type: string
-          description: "P28-E: Filter by wpsg_campaign_tag term slug"
+          description: "P28-E: Filter by mullion_campaign_tag term slug"
         - in: query
           name: sort
           schema:
@@ -2922,7 +2930,7 @@ paths:
         - Rate-limited at 10 requests per minute per IP.
 
         On success or failure the browser is redirected to the configured landing page
-        (Settings → System & Admin → Magic-link landing page) with `?wpsg_result=approved|expired|used|invalid`.
+        (Settings → System & Admin → Magic-link landing page) with `?mullion_result=approved|expired|used|invalid`.
         If no page is configured, a minimal inline HTML response is returned instead.
       security:
         - {}
@@ -2954,7 +2962,7 @@ paths:
               schema:
                 type: string
         '302':
-          description: Redirect to the configured landing page with ?wpsg_result=approved|expired|used|invalid
+          description: Redirect to the configured landing page with ?mullion_result=approved|expired|used|invalid
         '429':
           description: Rate limited
           content:

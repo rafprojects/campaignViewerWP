@@ -39,7 +39,7 @@ export AUTH='-u sysadmin:APP_PASSWORD'     # an Application Password for a Syste
 **Running an async export job.** The binary exports (`…/export/binary`, `admin/media/export/binary`, `admin/audit-log/export/binary`) return `202 {jobId}` and process on WP-Cron. In manual QA, force the job to run rather than waiting:
 
 ```bash
-npx wp-env run cli wp cron event run wpsg_export_process_job
+npx wp-env run cli wp cron event run mullion_export_process_job
 ```
 
 Then poll `GET /export-jobs/{jobId}` until `status:"complete"` and download it.
@@ -48,14 +48,14 @@ Then poll `GET /export-jobs/{jobId}` until `status:"complete"` and download it.
 
 ## 2. Mental model — what actually changed
 
-**The four campaign transports (plus a fifth media path).** The campaign import/export pipeline existed as four near-identical copies; P65-A replaced them with one service (`WPSG_Campaign_IO`) that all four now call:
+**The four campaign transports (plus a fifth media path).** The campaign import/export pipeline existed as four near-identical copies; P65-A replaced them with one service (`Mullion_Campaign_IO`) that all four now call:
 
 | Transport | Export | Import |
 |---|---|---|
 | REST JSON | `GET /campaigns/{id}/export` | `POST /campaigns/import` (body = the export payload) |
 | REST ZIP | `POST /campaigns/{id}/export/binary` → job | `POST /campaigns/import/binary` (multipart file) |
-| CLI JSON | `wp wpsg campaign export {id}` | `wp wpsg campaign import file.json` |
-| CLI ZIP | `wp wpsg campaign export {id} --format=binary` | `wp wpsg campaign import file.zip` |
+| CLI JSON | `wp mullion campaign export {id}` | `wp mullion campaign import file.json` |
+| CLI ZIP | `wp mullion campaign export {id} --format=binary` | `wp mullion campaign import file.zip` |
 
 The **fifth** path — `POST /admin/media/export/binary` / `POST /media/import/binary` — is the standalone *media-library* export/import (not a campaign), fixed in P65-B.
 
@@ -79,7 +79,7 @@ Keep `id` vs `attachmentId` straight — conflating them is the root of A-5 and 
 
 ```bash
 npx wp-env run cli wp post meta get <CID> media_items --format=json | jq .
-npx wp-env run cli wp post meta get <CID> _wpsg_layout_binding_template_id
+npx wp-env run cli wp post meta get <CID> _mullion_layout_binding_template_id
 npx wp-env run cli wp post meta get <CID> publish_at
 ```
 
@@ -89,17 +89,17 @@ npx wp-env run cli wp post meta get <CID> publish_at
 
 ```bash
 # A campaign to export from:
-CID=$(npx wp-env run cli wp post create --post_type=wpsg_campaign \
+CID=$(npx wp-env run cli wp post create --post_type=mullion_campaign \
   --post_title='P65 Source' --post_status=publish --porcelain)
 npx wp-env run cli wp post meta update $CID status active
 npx wp-env run cli wp post meta update $CID publish_at '2026-08-01 09:00:00'
 
 # A layout template, bound to the campaign (needed for the A-4 tests):
-TPL=$(curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/admin/layout-templates" \
+TPL=$(curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/admin/layout-templates" \
   -H 'Content-Type: application/json' \
   -d '{"name":"P65 Template","canvasAspectRatio":1.0,"slots":[{"id":"s1","x":0,"y":0,"width":50,"height":50}]}' \
   | jq -r '.id')
-npx wp-env run cli wp post meta update $CID _wpsg_layout_binding_template_id "$TPL"
+npx wp-env run cli wp post meta update $CID _mullion_layout_binding_template_id "$TPL"
 
 # Add media to the campaign the realistic way — through the admin SPA Media tab
 # (uploads create attachments and write media_items with a real attachmentId).
@@ -117,36 +117,36 @@ npx wp-env run cli wp eval '
 
 ---
 
-### P65-A — `WPSG_Campaign_IO` service (consolidation + A-4, dedup, datetime, G-4, attachmentId, E-4)
+### P65-A — `Mullion_Campaign_IO` service (consolidation + A-4, dedup, datetime, G-4, attachmentId, E-4)
 
 **What & why.** The four transports above were four copies that had drifted into real bugs. P65-A makes them thin wrappers over one service, so each concern has exactly one implementation. Verify the concerns individually (Parts 1–5), then prove they're now uniform across transports (Part 6). Part 7 is the streaming (E-4) note.
 
 #### Part 1 — A-4: the layout template survives a JSON round-trip
 
-Pre-fix, the REST-JSON path exported the template via `get_post(intval($uuid))` — `intval` of a UUID is 0, so the export always carried `layout_template: null`; import then created a post of the **unregistered** `wpsg_layout_template` type and bound a numeric ID the template library never sees.
+Pre-fix, the REST-JSON path exported the template via `get_post(intval($uuid))` — `intval` of a UUID is 0, so the export always carried `layout_template: null`; import then created a post of the **unregistered** `mullion_layout_template` type and bound a numeric ID the template library never sees.
 
 ```bash
 # Export the source campaign (which has $TPL bound) as JSON and re-import it:
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/campaigns/$CID/export" -o /tmp/camp.json
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/campaigns/$CID/export" -o /tmp/camp.json
 jq '.layout_template' /tmp/camp.json           # ← must NOT be null; a template object with id+name
 
-NEWID=$(curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/import" \
+NEWID=$(curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/campaigns/import" \
   -H 'Content-Type: application/json' --data @/tmp/camp.json | jq -r '.id')
 
 # The imported campaign is bound to a template resolvable through the CRUD class:
-BOUND=$(npx wp-env run cli wp post meta get $NEWID _wpsg_layout_binding_template_id)
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/admin/layout-templates/$BOUND" | jq '{id,name}'
-# → the template (name "P65 Template"), i.e. it lives under the real CPT wpsg_layout_tpl
+BOUND=$(npx wp-env run cli wp post meta get $NEWID _mullion_layout_binding_template_id)
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/admin/layout-templates/$BOUND" | jq '{id,name}'
+# → the template (name "P65 Template"), i.e. it lives under the real CPT mullion_layout_tpl
 
 # And no orphan of the wrong post type was ever created. (Query by SQL — the type
-# is unregistered, so `wp post list --post_type=wpsg_layout_template` would error
+# is unregistered, so `wp post list --post_type=mullion_layout_template` would error
 # rather than return 0.)
-npx wp-env run cli wp db query "SELECT COUNT(*) FROM wp_posts WHERE post_type='wpsg_layout_template'"   # → 0
+npx wp-env run cli wp db query "SELECT COUNT(*) FROM wp_posts WHERE post_type='mullion_layout_template'"   # → 0
 ```
 
-**Expected (pass).** `layout_template` in the export is a real object (not `null`); the re-imported campaign's binding resolves via `GET /admin/layout-templates/{uuid}`; zero `wpsg_layout_template` posts exist.
+**Expected (pass).** `layout_template` in the export is a real object (not `null`); the re-imported campaign's binding resolves via `GET /admin/layout-templates/{uuid}`; zero `mullion_layout_template` posts exist.
 
-**Why it proves the fix.** Pre-fix, `jq '.layout_template'` prints `null` and the `wpsg_layout_template` count is ≥1 (orphans). A resolvable binding + zero orphans is only possible once export uses `WPSG_Layout_Templates::get()` and import uses `::create()`.
+**Why it proves the fix.** Pre-fix, `jq '.layout_template'` prints `null` and the `mullion_layout_template` count is ≥1 (orphans). A resolvable binding + zero orphans is only possible once export uses `Mullion_Layout_Templates::get()` and import uses `::create()`.
 
 #### Part 2 — G-4: URL-only media import is `source:"external"` (not `"url"`)
 
@@ -166,9 +166,9 @@ Pre-fix, both **REST** paths normalized `publishAt`/`unpublishAt` via `strtotime
 ```bash
 # Craft a JSON export whose publishAt is ISO-8601 with a timezone, then CLI-import it:
 npx wp-env run cli sh -c '
-  cd /var/www/html/wp-content/plugins/wp-super-gallery &&
+  cd /var/www/html/wp-content/plugins/mullion-gallery &&
   echo "{\"version\":1,\"campaign\":{\"title\":\"DT Test\",\"publishAt\":\"2026-08-01T12:30:00+00:00\"},\"media_references\":[]}" > /tmp/dt.json &&
-  wp wpsg campaign import /tmp/dt.json'
+  wp mullion campaign import /tmp/dt.json'
 # Grab the new ID from the success line, then:
 npx wp-env run cli wp post meta get <NEW_DT_ID> publish_at
 # → 2026-08-01 12:30:00   (normalized Y-m-d H:i:s, NOT the raw ISO string)
@@ -182,7 +182,7 @@ Pre-fix, REST-ZIP import deduped identical media by MD5; **CLI-ZIP import did no
 
 ```bash
 npx wp-env run cli sh -c '
-  cd /var/www/html/wp-content/plugins/wp-super-gallery &&
+  cd /var/www/html/wp-content/plugins/mullion-gallery &&
   php -r "
     \$z=new ZipArchive; \$z->open(\"/tmp/dedup.zip\",ZipArchive::CREATE|ZipArchive::OVERWRITE);
     \$m=[\"version\"=>2,\"campaign\"=>[\"title\"=>\"Dedup\"],\"layout_template\"=>null,
@@ -194,7 +194,7 @@ npx wp-env run cli sh -c '
     \$z->addFromString(\"media/media-d1.jpg\",\$bytes);
     \$z->addFromString(\"media/media-d2.jpg\",\$bytes);
     \$z->close();" &&
-  wp wpsg campaign import /tmp/dedup.zip'
+  wp mullion campaign import /tmp/dedup.zip'
 # Inspect the two media items — both must point at the SAME attachment:
 npx wp-env run cli wp post meta get <NEW_DEDUP_ID> media_items --format=json \
   | jq '[.[].attachmentId]'
@@ -205,7 +205,7 @@ npx wp-env run cli wp post meta get <NEW_DEDUP_ID> media_items --format=json \
 
 #### Part 5 — sideloaded media carry `attachmentId` (orphan detection + enrichment)
 
-Pre-fix, ZIP import put the attachment ID into the `id` field and never set `attachmentId`. Because `wp wpsg media orphans` and metadata enrichment both key off `attachmentId`, every imported attachment looked *orphaned* and was skipped for dimensions/tags.
+Pre-fix, ZIP import put the attachment ID into the `id` field and never set `attachmentId`. Because `wp mullion media orphans` and metadata enrichment both key off `attachmentId`, every imported attachment looked *orphaned* and was skipped for dimensions/tags.
 
 ```bash
 # Using the campaign imported in Part 4 (its media were sideloaded):
@@ -214,7 +214,7 @@ npx wp-env run cli wp post meta get <NEW_DEDUP_ID> media_items --format=json \
 # → id is a uniqid string, attachmentId is a positive int, source "upload"
 
 # The imported attachment is NOT reported as an orphan:
-npx wp-env run cli wp wpsg media orphans --format=ids
+npx wp-env run cli wp mullion media orphans --format=ids
 # → the sideloaded attachment ID does NOT appear
 ```
 
@@ -227,14 +227,14 @@ Export the **same** source campaign through all four transports and confirm iden
 ```bash
 # JSON (REST) — already done in Part 1.
 # JSON (CLI):
-npx wp-env run cli sh -c 'cd /var/www/html/wp-content/plugins/wp-super-gallery && wp wpsg campaign export '"$CID"' > /tmp/cli.json && wp wpsg campaign import /tmp/cli.json'
+npx wp-env run cli sh -c 'cd /var/www/html/wp-content/plugins/mullion-gallery && wp mullion campaign export '"$CID"' > /tmp/cli.json && wp mullion campaign import /tmp/cli.json'
 # Binary (CLI):
-npx wp-env run cli sh -c 'cd /var/www/html/wp-content/plugins/wp-super-gallery && wp wpsg campaign export '"$CID"' --format=binary --output=/tmp/cli.zip && wp wpsg campaign import /tmp/cli.zip'
+npx wp-env run cli sh -c 'cd /var/www/html/wp-content/plugins/mullion-gallery && wp mullion campaign export '"$CID"' --format=binary --output=/tmp/cli.zip && wp mullion campaign import /tmp/cli.zip'
 # Binary (REST): POST the ZIP built above to /campaigns/import/binary:
-curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/import/binary" -F 'file=@/tmp/cli.zip' | jq '{id,title}'
+curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/campaigns/import/binary" -F 'file=@/tmp/cli.zip' | jq '{id,title}'
 ```
 
-For each resulting campaign, `wp post meta get <id> _wpsg_layout_binding_template_id` must resolve via the CRUD class, and its media `source` values must be the correct `external`/`upload` (never `url`/`wp`-from-`url`).
+For each resulting campaign, `wp post meta get <id> _mullion_layout_binding_template_id` must resolve via the CRUD class, and its media `source` values must be the correct `external`/`upload` (never `url`/`wp`-from-`url`).
 
 **Expected (pass).** All four imports produce a resolvable layout binding and correctly-typed media sources. **Why it proves the fix:** pre-fix, the REST-JSON path lost the template while the others kept it, and CLI vs REST diverged on dedup/datetime — parity across all four is the observable signature of "one service backs them all."
 
@@ -245,17 +245,17 @@ For each resulting campaign, `wp post meta get <id> _wpsg_layout_binding_templat
 ```bash
 # Build a ZIP with a ~200 MB dummy media file and import it, printing peak memory:
 npx wp-env run cli sh -c '
-  cd /var/www/html/wp-content/plugins/wp-super-gallery &&
+  cd /var/www/html/wp-content/plugins/mullion-gallery &&
   php -r "\$z=new ZipArchive;\$z->open(\"/tmp/big.zip\",ZipArchive::CREATE|ZipArchive::OVERWRITE);
     \$z->addFromString(\"manifest.json\",json_encode([\"version\"=>2,\"campaign\"=>[\"title\"=>\"Big\"],\"media_references\"=>[[\"id\"=>\"b1\",\"filename\"=>\"media-b1.bin\"]]]));
     \$z->addFromString(\"media/media-b1.bin\",str_repeat(\"x\",200*1024*1024));\$z->close();" &&
-  wp wpsg campaign import /tmp/big.zip &&
+  wp mullion campaign import /tmp/big.zip &&
   echo "peak: $(php -r "echo round(memory_get_peak_usage(true)/1048576).\"MB\";")"'
 ```
 
 **Expected (pass, post-fix).** The import completes without a memory spike proportional to the file size. Pre-fix, `getFromName()` read the whole 200 MB entry into a PHP string first, so peak memory jumped by ~200 MB (and could OOM under a tight `memory_limit`). This is **informational** — the functional pass criterion is that Parts 4–6 round-trip correctly.
 
-**Regression checks (whole track).** Full PHPUnit suite green — `WPSG_P65A_Campaign_IO_Test` (11 tests) plus the tightened `WPSG_P39CM1`, `WPSG_CLI_Test`, `WPSG_Import_Sanitization_Test`. `grep -rn "import_single_campaign_from_zip" includes/` returns **zero** hits (dead copy removed). `grep -rn "=> 'url'," includes/rest/class-wpsg-export-controller.php includes/class-wpsg-cli.php` returns **zero** (no more `'url'` source literal).
+**Regression checks (whole track).** Full PHPUnit suite green — `Mullion_P65A_Campaign_IO_Test` (11 tests) plus the tightened `Mullion_P39CM1`, `Mullion_CLI_Test`, `Mullion_Import_Sanitization_Test`. `grep -rn "import_single_campaign_from_zip" includes/` returns **zero** hits (dead copy removed). `grep -rn "=> 'url'," includes/rest/class-mullion-export-controller.php includes/class-mullion-cli.php` returns **zero** (no more `'url'` source literal).
 
 **Pitfalls.**
 - The `media_items` sanitizer runs on `update_post_meta` once the CPT is registered, so it *adds* `attachmentId: 0` to URL-only items and would coerce a stray `source` to `"wp"`. That's why Part 2 asserts `external` (a legal value that survives) — asserting "no attachmentId key" would wrongly fail.
@@ -274,11 +274,11 @@ npx wp-env run cli sh -c '
 
 ```bash
 # Export the media library, filtered to the campaign:
-JOB=$(curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/admin/media/export/binary" \
+JOB=$(curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/admin/media/export/binary" \
   -H 'Content-Type: application/json' -d "{\"campaign_id\":$CID}" | jq -r '.jobId')
-npx wp-env run cli wp cron event run wpsg_export_process_job
+npx wp-env run cli wp cron event run mullion_export_process_job
 # Poll to completion, then download and inspect the manifest:
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB/download" -o /tmp/mlib.zip
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB/download" -o /tmp/mlib.zip
 unzip -p /tmp/mlib.zip manifest.json | jq '{item_count, total_available, truncated}'
 unzip -l /tmp/mlib.zip | grep media/     # the actual files are present
 ```
@@ -291,13 +291,13 @@ Import a media-library ZIP (a real image entry) and confirm it lands:
 
 ```bash
 # Reuse /tmp/mlib.zip from B1 (it is a valid media_library package):
-curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/media/import/binary" \
+curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/media/import/binary" \
   -F 'file=@/tmp/mlib.zip' | jq '{imported: (.imported|length), skipped}'
 ```
 
 **Expected (pass).** `imported ≥ 1`, `skipped` empty — the streamed entries sideload correctly. (Memory behavior mirrors P65-A Part 7; the optional big-file measurement applies here too, against `/media/import/binary`.)
 
-**Regression checks.** `WPSG_P48F_Media_Export_Test` — the realistic campaign-filter export (real attachment, asserts the file is included) and the streamed import round-trip. An **unfiltered** media-library export (`no campaign_id`) still exports the whole library as before.
+**Regression checks.** `Mullion_P48F_Media_Export_Test` — the realistic campaign-filter export (real attachment, asserts the file is included) and the streamed import round-trip. An **unfiltered** media-library export (`no campaign_id`) still exports the whole library as before.
 
 **Pitfalls.** If you build the campaign's media by hand-editing `media_items`, you must set a real `attachmentId` (a real uploaded attachment's post ID) — a made-up integer will "export" a manifest row but the file-collection step finds no attachment and the ZIP is empty, which looks like the bug. Upload through the Media tab to avoid this.
 
@@ -310,9 +310,9 @@ curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/media/import/binary" \
 #### Part 1 — audit-log export manifest reports total + truncation
 
 ```bash
-JOB=$(curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/admin/audit-log/export/binary" | jq -r '.jobId')
-npx wp-env run cli wp cron event run wpsg_export_process_job
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB/download" -o /tmp/audit.zip
+JOB=$(curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/admin/audit-log/export/binary" | jq -r '.jobId')
+npx wp-env run cli wp cron event run mullion_export_process_job
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB/download" -o /tmp/audit.zip
 unzip -p /tmp/audit.zip manifest.json | jq '{entry_count, total_available, truncated}'
 ```
 
@@ -330,7 +330,7 @@ unzip -p /tmp/mlib.zip manifest.json | jq '{item_count, total_available, truncat
 
 **Observing `truncated: true`.** The caps are 5000 (audit) / 500 (media) — deliberately hard to exceed by hand. If you want to see the flag flip, temporarily lower the cap on a scratch checkout (edit `per_page`/`posts_per_page` to e.g. 2), seed 3+ rows, and re-export: `truncated` becomes `true` and `total_available` exceeds `entry_count`/`item_count`. This is the same logic (`total_available > count` for audit, `max_num_pages > 1` for media) the unit tests pin at the boundary.
 
-**Regression checks.** `WPSG_P28G_Audit_Log_Test` (within-cap audit manifest) and `WPSG_P48F_Media_Export_Test` (within-cap media manifest). An export within the cap is otherwise byte-for-byte unchanged apart from the two new manifest keys.
+**Regression checks.** `Mullion_P28G_Audit_Log_Test` (within-cap audit manifest) and `Mullion_P48F_Media_Export_Test` (within-cap media manifest). An export within the cap is otherwise byte-for-byte unchanged apart from the two new manifest keys.
 
 **Pitfalls.** `total_available` for a **campaign-filtered** media export reflects the *filtered* match count (attachments referenced by that campaign), not the whole library — that's correct. Don't compare it against the full library size.
 
@@ -344,13 +344,13 @@ unzip -p /tmp/mlib.zip manifest.json | jq '{item_count, total_available, truncat
 
 ```bash
 # Confirm the export entry now carries type + embed fields:
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/campaigns/$CID/export" \
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/campaigns/$CID/export" \
   | jq '.media_references[] | {id, type, embedUrl, provider}'
 # → the vid-1 row shows type "video", the embedUrl, provider "youtube"
 
 # Re-import and confirm the video item is still a video:
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/campaigns/$CID/export" -o /tmp/d.json
-DID=$(curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/import" \
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/campaigns/$CID/export" -o /tmp/d.json
+DID=$(curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/campaigns/import" \
   -H 'Content-Type: application/json' --data @/tmp/d.json | jq -r '.id')
 npx wp-env run cli wp post meta get $DID media_items --format=json \
   | jq '.[] | select(.title=="A video") | {type, source, embedUrl, provider}'
@@ -361,7 +361,7 @@ npx wp-env run cli wp post meta get $DID media_items --format=json \
 
 **Why it proves the fix.** Pre-fix, the export carried no `type`, and import forced `type:"image"` — the re-imported item was an image, losing the video. `type:"video"` surviving is only possible once both sides carry and honor it.
 
-**Regression checks.** `WPSG_P65A_Campaign_IO_Test::test_media_type_and_embed_fields_survive_round_trip`. Backward compatibility: an old manifest with **no** `type` still imports as `image` (default), and image-only campaigns round-trip identically (no manifest version bump).
+**Regression checks.** `Mullion_P65A_Campaign_IO_Test::test_media_type_and_embed_fields_survive_round_trip`. Backward compatibility: an old manifest with **no** `type` still imports as `image` (default), and image-only campaigns round-trip identically (no manifest version bump).
 
 **Pitfalls.** A `type:"video"` item that is `source:"external"` needs its `embedUrl` to actually render in the gallery — the fix carries it, but if your source item never had an `embedUrl`, the re-imported video still won't play (that's a missing-source-data issue, not a P65-D regression). Verify with an item that has a real `embedUrl`.
 
@@ -373,14 +373,14 @@ npx wp-env run cli wp post meta get $DID media_items --format=json \
 
 ### Fix 1 — binary/ZIP campaign import preserves `embedUrl`/`provider`
 
-**What & why.** P65-D's `build_entry()` (§4, P65-D) added `embedUrl`/`provider` to every export, and the JSON-only import path already carried them into the re-imported item. The ZIP/binary sideload path (`WPSG_Campaign_IO::upload_media_item()`) didn't — a video/embed item's metadata silently vanished if the campaign was ever exported/imported via ZIP instead of JSON.
+**What & why.** P65-D's `build_entry()` (§4, P65-D) added `embedUrl`/`provider` to every export, and the JSON-only import path already carried them into the re-imported item. The ZIP/binary sideload path (`Mullion_Campaign_IO::upload_media_item()`) didn't — a video/embed item's metadata silently vanished if the campaign was ever exported/imported via ZIP instead of JSON.
 
 **Reachability caveat — read before testing.** `source:"external"`/embed items (YouTube, Vimeo, etc.) have no real downloadable bytes at their `url` (it's a webpage, not a media file — see Fix 2's pitfall below and the FUTURE_TASKS entry "Binary Campaign Export Downloads Non-File URLs for Embed/External Media"), so they never get real bytes written into a ZIP export in the first place. This fix's effect on *those* specific items can't be observed via a live end-to-end binary export/import — the sideload fails (file-type validation) before this code ever runs, for reasons this fix doesn't touch. What this fix *does* guarantee: any media item that **does** get real bytes sideloaded via ZIP (an uploaded video that also happens to carry a `provider` value, or an MD5-dedup match against an existing attachment that carries embed metadata) keeps that metadata instead of losing it. Verify with a locally-built ZIP fixture — same technique as §4 Part 4's MD5-dedup test — not a live network round-trip.
 
 ```bash
 # Build a ZIP whose manifest carries embedUrl/provider on a real-bytes entry:
 npx wp-env run cli sh -c '
-  cd /var/www/html/wp-content/plugins/wp-super-gallery &&
+  cd /var/www/html/wp-content/plugins/mullion-gallery &&
   php -r "
     \$z=new ZipArchive; \$z->open(\"/tmp/embed.zip\",ZipArchive::CREATE|ZipArchive::OVERWRITE);
     \$m=[\"version\"=>2,\"campaign\"=>[\"title\"=>\"Embed Fields\"],\"layout_template\"=>null,
@@ -391,7 +391,7 @@ npx wp-env run cli sh -c '
     \$z->addFromString(\"manifest.json\",json_encode(\$m));
     \$z->addFromString(\"media/media-vid-1.jpg\", file_get_contents(\"tests/stubs/1x1.jpg\"));
     \$z->close();" &&
-  wp wpsg campaign import /tmp/embed.zip'
+  wp mullion campaign import /tmp/embed.zip'
 # Grab the new campaign ID from the success line, then:
 npx wp-env run cli wp post meta get <NEW_ID> media_items --format=json \
   | jq '.[0] | {type, source, embedUrl, provider}'
@@ -400,7 +400,7 @@ npx wp-env run cli wp post meta get <NEW_ID> media_items --format=json \
 
 **Expected (pass).** `embedUrl` and `provider` are present and correct. **Pre-fix**, this same ZIP would import with `type:"video"` correct (P65-D's original fix already covered `type`) but `embedUrl`/`provider` **absent** from the re-imported item — `jq` prints `null` for both.
 
-**Regression checks.** `WPSG_P65A_Campaign_IO_Test::test_zip_import_preserves_embed_fields`.
+**Regression checks.** `Mullion_P65A_Campaign_IO_Test::test_zip_import_preserves_embed_fields`.
 
 ### Fix 2 — multi-campaign batch ZIP export references the file actually in the archive
 
@@ -413,15 +413,15 @@ npx wp-env run cli wp post meta get <NEW_ID> media_items --format=json \
 ATT_URL=$(npx wp-env run cli wp eval 'echo wp_get_attachment_url(get_posts(["post_type"=>"attachment","posts_per_page"=>1])[0]->ID ?? 0);')
 # If empty, upload any image through the admin SPA once first, then re-run.
 
-CID_A=$(npx wp-env run cli wp post create --post_type=wpsg_campaign --post_title='Batch A' --post_status=publish --porcelain)
-CID_B=$(npx wp-env run cli wp post create --post_type=wpsg_campaign --post_title='Batch B' --post_status=publish --porcelain)
+CID_A=$(npx wp-env run cli wp post create --post_type=mullion_campaign --post_title='Batch A' --post_status=publish --porcelain)
+CID_B=$(npx wp-env run cli wp post create --post_type=mullion_campaign --post_title='Batch B' --post_status=publish --porcelain)
 npx wp-env run cli wp eval "update_post_meta($CID_A, 'media_items', [['id'=>'a-item','url'=>'$ATT_URL','title'=>'Shared']]);"
 npx wp-env run cli wp eval "update_post_meta($CID_B, 'media_items', [['id'=>'b-item','url'=>'$ATT_URL','title'=>'Shared']]);"
 
-JOB=$(curl -s $AUTH -X POST "$BASE/wp-json/wp-super-gallery/v1/campaigns/batch/export/binary" \
+JOB=$(curl -s $AUTH -X POST "$BASE/wp-json/mullion-gallery/v1/campaigns/batch/export/binary" \
   -H 'Content-Type: application/json' -d "{\"ids\":[$CID_A,$CID_B]}" | jq -r '.jobId')
-npx wp-env run cli wp cron event run wpsg_export_process_job
-curl -s $AUTH "$BASE/wp-json/wp-super-gallery/v1/export-jobs/$JOB/download" -o /tmp/batch.zip
+npx wp-env run cli wp cron event run mullion_export_process_job
+curl -s $AUTH "$BASE/wp-json/mullion-gallery/v1/export-jobs/$JOB/download" -o /tmp/batch.zip
 
 unzip -p /tmp/batch.zip manifest.json \
   | jq '[.campaigns[].media_references[0].filename]'
@@ -432,7 +432,7 @@ unzip -l /tmp/batch.zip | grep media/
 
 **Expected (pass).** Both campaigns' `media_references[0].filename` are identical, and that filename is present in the archive. **Pre-fix**, campaign B's filename would be derived from `b-item` (e.g. `media-b-item.jpg`) while the archive only contains the file written under campaign A's id (`media-a-item.jpg`) — re-importing campaign B's manifest entry alone would report it in `media_skipped` with reason "Entry not found in archive."
 
-**Regression checks.** `WPSG_P39CM1_Export_Test::test_batch_export_manifest_filenames_match_zip_for_shared_media`.
+**Regression checks.** `Mullion_P39CM1_Export_Test::test_batch_export_manifest_filenames_match_zip_for_shared_media`.
 
 **Pitfalls.** Don't use two different placeholder URLs for this test — the dedup only collapses entries sharing the *exact same* `url` string; different URLs are supposed to each get their own file. Also don't substitute an external `source:"external"` embed item as the "shared URL" here — as noted in Fix 1's caveat, those never get real bytes into a ZIP in the first place (a separate, deferred issue), which would make this test's HTTP fetch fail for unrelated reasons.
 
@@ -444,7 +444,7 @@ unzip -l /tmp/batch.zip | grep media/
 
 | Track | Primary assertion | Regression assertion | Done |
 |---|---|---|---|
-| P65-A (A-4) | JSON export carries the template; re-import binds a CRUD-resolvable template; zero `wpsg_layout_template` orphans | Binary/CLI paths unchanged; `import_single_campaign_from_zip` removed | ☐ |
+| P65-A (A-4) | JSON export carries the template; re-import binds a CRUD-resolvable template; zero `mullion_layout_template` orphans | Binary/CLI paths unchanged; `import_single_campaign_from_zip` removed | ☐ |
 | P65-A (G-4) | URL-only import → `source:"external"` | `create_media` enum aligned to the sanitizer allowlist | ☐ |
 | P65-A (datetime) | CLI import normalizes a non-canonical datetime to `Y-m-d H:i:s` | REST paths unchanged | ☐ |
 | P65-A (dedup) | CLI ZIP import dedupes identical bytes to one attachment | REST-ZIP dedup unchanged | ☐ |

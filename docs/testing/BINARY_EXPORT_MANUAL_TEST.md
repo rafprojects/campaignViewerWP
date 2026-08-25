@@ -1,6 +1,6 @@
 # Binary Export Manual Testing Guide (P39-CM1)
 
-Manual end-to-end test procedure for the WPSG binary campaign export system.
+Manual end-to-end test procedure for the Mullion binary campaign export system.
 Covers REST route verification, background job lifecycle, ZIP inspection,
 binary import round-trip, and CLI usage.
 
@@ -42,11 +42,11 @@ Save the printed token. Use it as `<APP_PASS>` throughout this guide.
 ### 4. Plugin activation
 
 After a fresh `wp-env start`, run the plugin activation sequence to ensure the
-`manage_wpsg` capability is assigned:
+`manage_mullion` capability is assigned:
 
 ```bash
-npx wp-env run cli wp plugin deactivate wp-super-gallery
-npx wp-env run cli wp plugin activate wp-super-gallery
+npx wp-env run cli wp plugin deactivate mullion-gallery
+npx wp-env run cli wp plugin activate mullion-gallery
 ```
 
 > **Note:** Application Passwords authenticate at the HTTP transport layer, so
@@ -84,14 +84,14 @@ No nonce needed — Application Passwords authenticate at the HTTP level.
 
 ```bash
 curl -s "${AUTH[@]}" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1 \
+  http://localhost:8888/wp-json/mullion-gallery/v1 \
   | python3 -m json.tool | grep -E "export|import/binary"
 ```
 
 Expected: lines containing:
-- `/wp-super-gallery/v1/campaigns/(?P<id>\d+)/export/binary`
-- `/wp-super-gallery/v1/campaigns/import/binary`
-- `/wp-super-gallery/v1/export-jobs/...`
+- `/mullion-gallery/v1/campaigns/(?P<id>\d+)/export/binary`
+- `/mullion-gallery/v1/campaigns/import/binary`
+- `/mullion-gallery/v1/export-jobs/...`
 
 ---
 
@@ -104,7 +104,7 @@ networking constraint described in the prerequisites.
 ```bash
 # Create campaign post
 CID=$(npx wp-env run cli wp post create \
-  --post_type=wpsg_campaign \
+  --post_type=mullion_campaign \
   --post_title="Binary Export Test" \
   --post_status=publish \
   --porcelain)
@@ -117,8 +117,8 @@ npx wp-env run cli wp post meta update $CID visibility public
 # Set media items using wp eval (avoids PHP serialization pitfalls)
 npx wp-env run cli wp eval "
   update_post_meta($CID, 'media_items', [
-    ['id'=>'m1','url'=>'https://picsum.photos/seed/wpsg1/400/300','title'=>'Photo 1','type'=>'image','source'=>'url','order'=>0],
-    ['id'=>'m2','url'=>'https://picsum.photos/seed/wpsg2/400/300','title'=>'Photo 2','type'=>'image','source'=>'url','order'=>0],
+    ['id'=>'m1','url'=>'https://picsum.photos/seed/mullion1/400/300','title'=>'Photo 1','type'=>'image','source'=>'url','order'=>0],
+    ['id'=>'m2','url'=>'https://picsum.photos/seed/mullion2/400/300','title'=>'Photo 2','type'=>'image','source'=>'url','order'=>0],
   ]);
   echo 'Media items set.';
 "
@@ -128,7 +128,7 @@ Verify the campaign exists:
 
 ```bash
 curl -s "${AUTH[@]}" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/$CID
 ```
 
 Expected: JSON object with `"title": "Binary Export Test"` and `"status": "active"`.
@@ -140,7 +140,7 @@ Expected: JSON object with `"title": "Binary Export Test"` and `"status": "activ
 ```bash
 curl -s "${AUTH[@]}" \
   -X POST \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID/export/binary
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/$CID/export/binary
 ```
 
 Expected: `HTTP 202`
@@ -168,7 +168,7 @@ via `wp eval` — `process_job` is a no-op if the job is already complete, so
 this is always safe:
 
 ```bash
-npx wp-env run cli wp eval 'WPSG_Export_Engine::process_job("'"$JOB_ID"'");'
+npx wp-env run cli wp eval 'Mullion_Export_Engine::process_job("'"$JOB_ID"'");'
 ```
 
 > **Why not `wp cron event run`?** That command fails with "Invalid cron event"
@@ -181,7 +181,7 @@ npx wp-env run cli wp eval 'WPSG_Export_Engine::process_job("'"$JOB_ID"'");'
 
 ```bash
 curl -s "${AUTH[@]}" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID \
+  http://localhost:8888/wp-json/mullion-gallery/v1/export-jobs/$JOB_ID \
   | python3 -m json.tool
 ```
 
@@ -194,7 +194,7 @@ Expected when complete:
   "status": "complete",
   "createdAt": "<ISO8601>",
   "error": null,
-  "downloadUrl": "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/<JOB_ID>/download"
+  "downloadUrl": "http://localhost:8888/wp-json/mullion-gallery/v1/export-jobs/<JOB_ID>/download"
 }
 ```
 
@@ -209,7 +209,7 @@ cause.
 ```bash
 curl -s "${AUTH[@]}" \
   -o campaign-$CID.zip \
-  "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID/download"
+  "http://localhost:8888/wp-json/mullion-gallery/v1/export-jobs/$JOB_ID/download"
 
 ls -lh campaign-$CID.zip
 ```
@@ -263,7 +263,7 @@ Upload the ZIP and import it as a new campaign:
 IMPORT_RESP=$(curl -s "${AUTH[@]}" \
   -X POST \
   -F "file=@campaign-$CID.zip" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/import/binary)
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/import/binary)
 
 echo "$IMPORT_RESP" | python3 -m json.tool
 
@@ -318,7 +318,7 @@ After a successful download, delete the server-side job and its ZIP file:
 ```bash
 curl -s "${AUTH[@]}" \
   -X DELETE \
-  "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID"
+  "http://localhost:8888/wp-json/mullion-gallery/v1/export-jobs/$JOB_ID"
 ```
 
 Expected: `{"deleted": true}`
@@ -327,7 +327,7 @@ Polling the job ID again should now return `404`:
 
 ```bash
 curl -s "${AUTH[@]}" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_ID \
+  http://localhost:8888/wp-json/mullion-gallery/v1/export-jobs/$JOB_ID \
   | python3 -m json.tool
 ```
 
@@ -341,28 +341,28 @@ The CLI export path is synchronous: it creates the job and processes it
 immediately without relying on WP-Cron.
 
 The plugin directory is bind-mounted into the CLI container at
-`/var/www/html/wp-content/plugins/wp-super-gallery`, so writing the output
-there makes it immediately visible on the host at `wp-plugin/wp-super-gallery/`.
+`/var/www/html/wp-content/plugins/mullion-gallery`, so writing the output
+there makes it immediately visible on the host at `wp-plugin/mullion-gallery/`.
 
 ```bash
 # Export from within the container, writing to the mounted plugin dir
-npx wp-env run cli wp wpsg campaign export $CID \
+npx wp-env run cli wp mullion campaign export $CID \
   --format=binary \
-  --output=/var/www/html/wp-content/plugins/wp-super-gallery/campaign-$CID-cli.zip
+  --output=/var/www/html/wp-content/plugins/mullion-gallery/campaign-$CID-cli.zip
 ```
 
 Expected:
 
 ```
 Building ZIP for campaign <CID>…
-Success: Binary export written to: /var/www/html/wp-content/plugins/wp-super-gallery/campaign-<CID>-cli.zip
+Success: Binary export written to: /var/www/html/wp-content/plugins/mullion-gallery/campaign-<CID>-cli.zip
 ```
 
 The file is now accessible on the host:
 
 ```bash
-ls -lh wp-plugin/wp-super-gallery/campaign-$CID-cli.zip
-unzip -l wp-plugin/wp-super-gallery/campaign-$CID-cli.zip
+ls -lh wp-plugin/mullion-gallery/campaign-$CID-cli.zip
+unzip -l wp-plugin/mullion-gallery/campaign-$CID-cli.zip
 ```
 
 The structure should be identical to the REST-generated ZIP.
@@ -373,11 +373,11 @@ Copy the ZIP into the mounted directory, then import it:
 
 ```bash
 # Make a copy for import (so the original is preserved)
-cp wp-plugin/wp-super-gallery/campaign-$CID-cli.zip \
-   wp-plugin/wp-super-gallery/campaign-import-test.zip
+cp wp-plugin/mullion-gallery/campaign-$CID-cli.zip \
+   wp-plugin/mullion-gallery/campaign-import-test.zip
 
-npx wp-env run cli wp wpsg campaign import \
-  /var/www/html/wp-content/plugins/wp-super-gallery/campaign-import-test.zip
+npx wp-env run cli wp mullion campaign import \
+  /var/www/html/wp-content/plugins/mullion-gallery/campaign-import-test.zip
 ```
 
 Expected:
@@ -389,8 +389,8 @@ Success: Campaign imported (binary). New ID: <n>. Media: 2 imported, 0 skipped.
 Clean up the test ZIPs from the plugin directory:
 
 ```bash
-rm -f wp-plugin/wp-super-gallery/campaign-$CID-cli.zip \
-       wp-plugin/wp-super-gallery/campaign-import-test.zip
+rm -f wp-plugin/mullion-gallery/campaign-$CID-cli.zip \
+       wp-plugin/mullion-gallery/campaign-import-test.zip
 ```
 
 > **Media counts:** The CLI import calls `media_handle_sideload()` via the WP
@@ -416,12 +416,12 @@ try to download — the job should still be pending.
 ```bash
 JOB_PENDING=$(curl -s "${AUTH[@]}" \
   -X POST \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID/export/binary \
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/$CID/export/binary \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['jobId'])")
 
 # Attempt download immediately (before triggering cron)
 curl -s "${AUTH[@]}" \
-  "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_PENDING/download"
+  "http://localhost:8888/wp-json/mullion-gallery/v1/export-jobs/$JOB_PENDING/download"
 ```
 
 Expected (if cron has not yet fired): `HTTP 409` — `"Export is not complete (status: pending)"`
@@ -431,7 +431,7 @@ Clean up:
 ```bash
 curl -s "${AUTH[@]}" \
   -X DELETE \
-  "http://localhost:8888/wp-json/wp-super-gallery/v1/export-jobs/$JOB_PENDING"
+  "http://localhost:8888/wp-json/mullion-gallery/v1/export-jobs/$JOB_PENDING"
 ```
 
 ### 10b — Import with a wrong manifest version
@@ -441,7 +441,7 @@ Create a ZIP with a version-1 manifest (the original JSON export format):
 ```bash
 # Get a JSON export, zip it up as if it were a binary export
 curl -s "${AUTH[@]}" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/$CID/export \
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/$CID/export \
   > manifest_v1.json
 
 # Create a ZIP with this as the manifest
@@ -454,7 +454,7 @@ with zipfile.ZipFile('/tmp/bad-version.zip', 'w') as z:
 curl -s "${AUTH[@]}" \
   -X POST \
   -F "file=@/tmp/bad-version.zip" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/import/binary
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/import/binary
 ```
 
 Expected: `HTTP 400` — `"Binary import requires manifest version 2"`
@@ -471,7 +471,7 @@ with zipfile.ZipFile('/tmp/no-manifest.zip', 'w') as z:
 curl -s "${AUTH[@]}" \
   -X POST \
   -F "file=@/tmp/no-manifest.zip" \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/import/binary
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/import/binary
 ```
 
 Expected: `HTTP 400` — `"manifest.json not found in archive"`
@@ -481,7 +481,7 @@ Expected: `HTTP 400` — `"manifest.json not found in archive"`
 ```bash
 curl -s "${AUTH[@]}" \
   -X POST \
-  http://localhost:8888/wp-json/wp-super-gallery/v1/campaigns/999999/export/binary
+  http://localhost:8888/wp-json/mullion-gallery/v1/campaigns/999999/export/binary
 ```
 
 Expected: `HTTP 404` — `"Campaign not found"`
@@ -493,8 +493,8 @@ Expected: `HTTP 404` — `"Campaign not found"`
 | Symptom | Cause | Fix |
 |---|---|---|
 | `rest_forbidden` 401 | Plain password used, or `AUTH` array not set | Use an Application Password; define `AUTH=(-u "admin:$APP_PASS")` |
-| `rest_forbidden` 403 | `manage_wpsg` cap missing | Re-run plugin deactivate/activate |
-| Job stuck at `pending` after step 4 | `process_job` may not have loaded the engine | Verify plugin is active; re-run the `wp eval WPSG_Export_Engine::process_job(...)` command |
+| `rest_forbidden` 403 | `manage_mullion` cap missing | Re-run plugin deactivate/activate |
+| Job stuck at `pending` after step 4 | `process_job` may not have loaded the engine | Verify plugin is active; re-run the `wp eval Mullion_Export_Engine::process_job(...)` command |
 | `status: failed`, `error: "ext-zip is required"` | `ZipArchive` not available in the container | Verify with `npx wp-env run cli php -r "echo class_exists('ZipArchive');"` |
 | `status: failed`, `error: "Export would exceed … MB size limit"` | Total media size exceeds 100 MB | Use a campaign with fewer or smaller media items for testing |
 | ZIP downloaded but is 0 bytes | Download route fired before job completed | Check job status first (`GET /export-jobs/{id}`); wait for `complete` |

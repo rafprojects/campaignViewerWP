@@ -1,4 +1,4 @@
-# WP Super Gallery - Implementation Plan
+# Mullion - Implementation Plan
 
 This plan builds on the original architecture reference in [docs/ARCHITECTURE_INIT.md](ARCHITECTURE_INIT.md). It defines the decisions, TODOs, and the concrete work needed to ship a production-ready SPA and WordPress‑embedded widget.
 
@@ -168,7 +168,7 @@ We will finalize once you choose a system of record (WordPress vs external DB).
 
 All endpoints are served from the WordPress REST namespace:
 
-`/wp-json/wp-super-gallery/v1`
+`/wp-json/mullion-gallery/v1`
 
 ### Campaigns
 
@@ -329,10 +329,10 @@ Track functional UX improvements that are not pure styling.
 - **App/media performance:** optimize initial app load and media loading (preload/lazy-load strategies).
 - **External thumbnail cache:** cache external media thumbnails (server-side fetch + storage) to improve reliability and performance.
 
-- **oEmbed failure monitoring:** track repeated oEmbed failures, expose `wpsg_oembed_failure_count` as a WP option, and provide a lightweight admin dashboard widget to surface recent failure trends (Phase 6).
-- **WP-CLI:** add a `wpsg` WP-CLI command to view/reset `wpsg_oembed_failure_count` and inspect cached oEmbed keys (Phase 6).
+- **oEmbed failure monitoring:** track repeated oEmbed failures, expose `mullion_oembed_failure_count` as a WP option, and provide a lightweight admin dashboard widget to surface recent failure trends (Phase 6).
+- **WP-CLI:** add a `mullion` WP-CLI command to view/reset `mullion_oembed_failure_count` and inspect cached oEmbed keys (Phase 6).
 - **Plugin PHP tests:** add and maintain PHPUnit tests for `includes/` logic (proxy_oembed, normalizers, cache behavior) and run these in CI (Phase 6).
-- **Admin metric & alerting:** provide a simple admin metric panel and `do_action('wpsg_oembed_failure', $url, $attempts)` integration hook for external monitoring systems (Phase 6).
+- **Admin metric & alerting:** provide a simple admin metric panel and `do_action('mullion_oembed_failure', $url, $attempts)` integration hook for external monitoring systems (Phase 6).
 - **Logging / metrics:** ensure oEmbed failures log via `error_log()` and provide an opt-in integration point for external metrics (e.g., StatsD/Prometheus) (Phase 6).
 - **oEmbed rate limiting:** implement rate limiting for the public oEmbed proxy endpoint to prevent abuse while maintaining preview functionality (Phase 6).
 
@@ -346,7 +346,7 @@ Track functional UX improvements that are not pure styling.
 - **Consolidate media API usage:** replace ad-hoc `src/api/media.ts` helper usage with `ApiClient` (or pass `authHeaders`) and remove unused legacy helpers (Phase 6).
 - **Deprecate/remove standalone media helpers:** review exported helpers in `src/api/media.ts` and either remove or mark deprecated if all call-sites now use `ApiClient` (Phase 6).
 
-- **Improved IPv6 parsing and validation:** enhance the `is_private_ip()` method in `wp-plugin/wp-super-gallery/includes/class-wpsg-rest.php` to properly handle IPv6 address formats, including compressed notation (::), full IPv6 ranges (link-local fe80::/10, unique local fc00::/7), and additional private/reserved ranges for comprehensive SSRF protection (Phase 6).
+- **Improved IPv6 parsing and validation:** enhance the `is_private_ip()` method in `wp-plugin/mullion-gallery/includes/class-mullion-rest.php` to properly handle IPv6 address formats, including compressed notation (::), full IPv6 ranges (link-local fe80::/10, unique local fc00::/7), and additional private/reserved ranges for comprehensive SSRF protection (Phase 6).
 
 ### Phase 7: Polish + Production Readiness
 

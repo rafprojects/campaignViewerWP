@@ -1,8 +1,8 @@
 # Phase 74 - Mullion Rebrand: Full Technical Rename + New Default Theme
 
-**Status:** In progress — P74-A through P74-L, P74-P, and P74-Q landed, remaining tracks Planned (M, N, O)
+**Status:** In progress — P74-A through P74-M, P74-P, and P74-Q landed, remaining tracks Planned (N, O)
 **Created:** 2026-08-23
-**Last updated:** 2026-08-25 (P74-Q landed — dropped rebrand migrator / uninstall old-name sweeps / P52 `wpsg_admin` leftover path; patched release.yml `MULLION_VERSION`, auth-test localize object, PHP `[WPSG]` prefixes, readme install copy, php-testing/see-wp/CONTRIBUTING paths.)
+**Last updated:** 2026-08-25 (P74-M landed — documentation sweep of active docs, root README/CHANGELOG/CONTRIBUTING, and `.wordpress-org` listing copy. Remaining: P74-N, P74-O.)
 
 ### Tracks
 
@@ -22,7 +22,7 @@
 | P74-L | Build/CI/tooling string literals (+ npm workspace package scope rename, folded in) | Done | Low |
 | P74-P | REST namespace + script-handle rename (`wp-super-gallery/v1`, `wp-super-gallery-app`) | Done | Medium (atomic PHP+JS+tests; changing one side 404s the app) |
 | P74-Q | Leftover live-identifier punch-list + drop the rebrand migrator | Done | Low-Medium (deletes E/F migration machinery; local wp-env data is not migrated) |
-| P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Planned | Low (volume) |
+| P74-M | Documentation sweep (~149 files, excluding `docs/archive/`) | Done | Low (volume) |
 | P74-N | New default theme: Mullion / Rig Cyan | Planned — palette finalized, `primaryShade` blocked on Phase 75 P75-F | Low-Medium |
 | P74-O | CSS fallback-color reconciliation (depends on P74-N) | Planned | Low |
 
@@ -631,12 +631,22 @@ Roughly 149 files under `docs/` mention "WP Super Gallery" or `wpsg` in prose. T
 
 ### Acceptance criteria
 
-- `grep -rli "wp super gallery\|wpsg"` across `docs/` excluding `docs/archive/` returns zero results.
+- `grep -rli "wp super gallery\|wpsg"` across `docs/` excluding `docs/archive/` returns zero results **except** this phase report (the rebrand FROM-map) and the one historical origin sentence in [PHASE75_REPORT.md](PHASE75_REPORT.md).
 - Every hook/option/class name referenced in a guide (P74-H's cross-check) matches its renamed identifier.
 
 ### Validation
 
 - Manual read-through of `docs/guides/` cross-links to confirm nothing points at a renamed-away anchor.
+
+### Implementation Notes (2026-08-25)
+
+- **Mechanical identifier sweep, then a shortcode/product-name pass.** Ordered replacements (`WPSG_` → `Mullion_`, `wp-super-gallery` → `mullion-gallery`, `WP Super Gallery` → `Mullion`, `wpsg_*`/`wpsg-*` → `mullion_*`/`mullion-*`, `[super-gallery]` → `[mullion-gallery]`, `@wpsg` → `@mullion`, window globals, CLI `wp mullion`, upload-dir examples) across active `docs/` (guides, testing, setup, models, api, legal, FUTURE_TASKS, VERSION_HISTORY, PHASE63–72 runbooks, `docs/old/`), root `README.md` / `CHANGELOG.md` / `CONTRIBUTING.md`, `.wordpress-org/README.md`, and `.wordpress-org/design-brief.html`. A second pass caught shortcode examples the exact `[super-gallery]` token missed (`[super-gallery campaign="…"]`, `` `super-gallery` ``, `[wp_super_gallery]`), line-broken "WP Super / Gallery" in PRIVACY.md, `WP&nbsp;Super Gallery` in the HTML brief, and leftover "Super Gallery" admin-menu copy.
+- **Excluded on purpose, revising the written acceptance grep.** This file is the rebrand's FROM-map — rewriting it would turn "rename `wpsg_*` to `mullion_*`" into nonsense. PHASE75's origin sentence ("rebrand from WP Super Gallery to Mullion") is the other keep. `docs/archive/` stays historical. GitHub PR URLs in `docs/old/PR_REVIEW_NOTES.md` still point at the real remote `rafprojects/campaignViewerWP`. "WP Super Cache" in PACKAGING_RELEASE.md is a third-party plugin, not this product.
+- **`.wordpress-org/DESIGN_BRIEF.md` not staged.** Already named Mullion in HEAD; the working-tree dirty diff is P74-N/designer-collab status that links untracked `COLOR-SPEC.md` / response files. Rename pass for listing copy is `.wordpress-org/README.md` + `design-brief.html`.
+- **OpenAPI `/permissions` was not a rename.** Live `Mullion_Auth_Controller::list_permissions()` returns `{ campaignIds, isAdmin, isSystemAdmin, userId, userEmail }`, not the pre-P53 `{ can_manage_wpsg, can_upload_files, can_manage_options, user_id, roles }` shape. Documented the live schema rather than inventing `can_manage_mullion`.
+- **Folded spaced-name leftovers Q's slug grep missed:** Vite `index.html` title, `fallback.ts` SVG placeholder, `[Mullion]` console prefixes in `loadGoogleFont.ts` / `TypographyEditor.tsx`, API-client file banners, and the wp-admin settings page title `__('Mullion Settings')` (locale catalogs still carry the old msgid until the P74-C `make-pot` backlog; English falls through).
+- **Guides cross-links.** 72 relative links in `docs/guides/` resolve except pre-existing `../PHASE62_REPORT.md` (that report lives under `docs/archive/phases/` since before this track). P74-H hook names in PRO_FEATURES.md match live `apply_filters('mullion_license_*')`. TRANSLATING.md paths/domain/`__MULLION_I18N__` match the current i18n tree.
+- **Not touched:** `docs/archive/**`; license-test negative `'slug' => 'wp-super-gallery'`; `languages/` GitHub-URI msgids / stale `#:` comments (P74-C); `readme.txt` changelog history; `Contributors: wpsupergallery`; untracked `.wordpress-org/COLOR-SPEC.md` and designer-response files.
 
 ---
 
@@ -742,8 +752,8 @@ Update each fallback literal to its Rig Cyan equivalent, once P74-N's derived va
 
 ## Implementation Notes
 
-Per-track notes live under each track section above. P74-A through P74-L, P74-P, and P74-Q have landed.
+Per-track notes live under each track section above. P74-A through P74-M, P74-P, and P74-Q have landed.
 
 ## Outcome
 
-**In progress.** P74-A through P74-L, P74-P, and P74-Q landed. Remaining: **P74-M** (docs), **P74-N** (Rig Cyan; `primaryShade` still blocked on P75-F), **P74-O** (hex fallbacks, blocked on N). P74-K unblocks Phase 75's P75-A — the Freemius slug is already `mullion-gallery` when `mullion_freemius_init_args()` is extracted.
+**In progress.** P74-A through P74-M, P74-P, and P74-Q landed. Remaining: **P74-N** (Rig Cyan; `primaryShade` still blocked on P75-F), **P74-O** (hex fallbacks, blocked on N). P74-K unblocks Phase 75's P75-A — the Freemius slug is already `mullion-gallery` when `mullion_freemius_init_args()` is extracted.

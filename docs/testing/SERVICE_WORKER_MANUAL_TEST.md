@@ -1,6 +1,6 @@
 # Service Worker Manual Testing Guide (P52-D)
 
-End-to-end verification procedure for the WPSG service worker: registration,
+End-to-end verification procedure for the Mullion service worker: registration,
 shell caching, offline fallback, deploy-time cache busting, and admin
 pass-through. All tests use Chrome or Edge DevTools (the Application tab).
 
@@ -21,10 +21,10 @@ After a successful build, confirm the hash placeholder was replaced:
 
 ```bash
 grep 'BUILD_HASH' dist/sw.js
-# Expected: BUILD_HASH = '<8-char hex>', NOT __WPSG_BUILD_HASH__
+# Expected: BUILD_HASH = '<8-char hex>', NOT __MULLION_BUILD_HASH__
 ```
 
-If you see `__WPSG_BUILD_HASH__` the Vite plugin didn't run — re-run the
+If you see `__MULLION_BUILD_HASH__` the Vite plugin didn't run — re-run the
 full build.
 
 ### 2. WordPress environment
@@ -35,7 +35,7 @@ The built assets must be served by WordPress. Either:
   `http://localhost:8888`.
 - **Staging/production:** deploy `wp-plugin/` as usual.
 
-Verify the plugin is active and a page with the `[super-gallery]` shortcode
+Verify the plugin is active and a page with the `[mullion-gallery]` shortcode
 is reachable.
 
 ### 3. Browser
@@ -63,7 +63,7 @@ Open DevTools: `F12` or right-click → **Inspect**.
 4. Click the `sw.js` link next to **Source** — the script source opens in a
    new DevTools tab.
 5. Search for `BUILD_HASH`. The value should be an 8-char hex string
-   (`'3e613417'` or similar) — **not** the placeholder `__WPSG_BUILD_HASH__`.
+   (`'3e613417'` or similar) — **not** the placeholder `__MULLION_BUILD_HASH__`.
 
 **Expected:** green dot, correct scope, hex hash in source.
 
@@ -71,20 +71,20 @@ Open DevTools: `F12` or right-click → **Inspect**.
 
 ## Test 2 — Shell cache populated on visit
 
-**Goal:** confirm a visited gallery page is stored in `wpsg-shell-*`.
+**Goal:** confirm a visited gallery page is stored in `mullion-shell-*`.
 
 1. DevTools → **Application** → **Cache Storage**.
 2. Expand the list. You should see:
-   - `wpsg-runtime-wpsg-v3`
-   - `wpsg-meta-v1`
-   - `wpsg-shell-<hash>` ← new in P52-D
-3. Click `wpsg-shell-<hash>`. The right panel lists cached entries. After
+   - `mullion-runtime-mullion-v3`
+   - `mullion-meta-v1`
+   - `mullion-shell-<hash>` ← new in P52-D
+3. Click `mullion-shell-<hash>`. The right panel lists cached entries. After
    visiting a gallery page you should see at least one row with the page
    URL (e.g. `http://localhost:8888/`).
 4. Click that row. The **Preview** tab shows the full HTML response that
    was cached.
 
-**Expected:** `wpsg-shell-<hash>` cache exists; the gallery page URL is
+**Expected:** `mullion-shell-<hash>` cache exists; the gallery page URL is
 listed inside it.
 
 ---
@@ -120,7 +120,7 @@ while online.
 1. Think of a gallery page URL the browser has **not** visited in this
    session, or clear the shell cache manually:
    - DevTools → **Application** → **Cache Storage** → right-click
-     `wpsg-shell-<hash>` → **Delete**.
+     `mullion-shell-<hash>` → **Delete**.
 2. Re-enable **Offline** mode.
 3. Navigate to that gallery page URL.
 
@@ -147,7 +147,7 @@ while online.
 
 Also verify wp-admin is absent from Cache Storage:
 
-5. Check **Application → Cache Storage → `wpsg-shell-<hash>`**. No
+5. Check **Application → Cache Storage → `mullion-shell-<hash>`**. No
    `/wp-admin/` URL should appear in the entries list.
 
 ---
@@ -159,7 +159,7 @@ Also verify wp-admin is absent from Cache Storage:
 ### 6a. Record the current hash
 
 1. In DevTools → **Application** → **Cache Storage**, note the full name
-   of the current shell cache (e.g. `wpsg-shell-3e613417`).
+   of the current shell cache (e.g. `mullion-shell-3e613417`).
 
 ### 6b. Produce a new build
 
@@ -193,9 +193,9 @@ grep 'BUILD_HASH' dist/sw.js
 6. DevTools → **Application** → **Cache Storage**. Expand the list.
 
 **Expected:**
-- The old `wpsg-shell-3e613417` (previous hash) is **gone**.
-- A new `wpsg-shell-<new-hash>` is present.
-- `wpsg-runtime-wpsg-v3` and `wpsg-meta-v1` are still present (they are
+- The old `mullion-shell-3e613417` (previous hash) is **gone**.
+- A new `mullion-shell-<new-hash>` is present.
+- `mullion-runtime-mullion-v3` and `mullion-meta-v1` are still present (they are
   not tied to the build hash).
 
 ---
@@ -209,8 +209,8 @@ after the P52-D restructure.
 2. DevTools → **Network** → filter by `campaigns`. You should see a
    `campaigns` request.
 3. Reload. The second request should show **`(ServiceWorker)`** as the
-   initiator (served from `wpsg-meta-v1` SWR cache).
-4. DevTools → **Application** → **Cache Storage** → `wpsg-meta-v1`.
+   initiator (served from `mullion-meta-v1` SWR cache).
+4. DevTools → **Application** → **Cache Storage** → `mullion-meta-v1`.
    The campaigns URL should appear as a cached entry.
 
 **Expected:** metadata SWR behaves identically to before P52-D; the cache
@@ -224,9 +224,9 @@ loads within the TTL window.
 | # | Test | Pass |
 |---|------|------|
 | 1 | SW registers, status = activated, scope = `/`, hex hash in source | ☐ |
-| 2 | `wpsg-shell-<hash>` appears in Cache Storage after visiting gallery | ☐ |
+| 2 | `mullion-shell-<hash>` appears in Cache Storage after visiting gallery | ☐ |
 | 3 | Offline reload of visited page → shell loads, no browser error, type = `ServiceWorker` | ☐ |
 | 4 | Offline visit to unvisited page → branded "You're offline" fallback | ☐ |
 | 5 | wp-admin offline → browser error (not gallery fallback); absent from shell cache | ☐ |
-| 6 | New build → old `wpsg-shell-*` cache gone; new hash present | ☐ |
-| 7 | Metadata SWR cache (`wpsg-meta-v1`) still populated and served by SW | ☐ |
+| 6 | New build → old `mullion-shell-*` cache gone; new hash present | ☐ |
+| 7 | Metadata SWR cache (`mullion-meta-v1`) still populated and served by SW | ☐ |

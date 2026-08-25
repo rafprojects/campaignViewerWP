@@ -1,6 +1,6 @@
 # Theme Authoring Guide
 
-Create custom themes for WP Super Gallery by writing a JSON file that specifies colors, and optionally typography, spacing, and component overrides. The theme engine handles everything else — shade generation, Mantine integration, CSS variable injection, and Shadow DOM support.
+Create custom themes for Mullion by writing a JSON file that specifies colors, and optionally typography, spacing, and component overrides. The theme engine handles everything else — shade generation, Mantine integration, CSS variable injection, and Shadow DOM support.
 
 ---
 
@@ -26,7 +26,7 @@ Create custom themes for WP Super Gallery by writing a JSON file that specifies 
    ];
    ```
 
-4. **Whitelist** the theme in `includes/settings/class-wpsg-settings-registry.php`;
+4. **Whitelist** the theme in `includes/settings/class-mullion-settings-registry.php`;
   
   Add entries around line 411, before the "gallery_layout" section
 
@@ -267,15 +267,15 @@ const success = registerCustomTheme(customTheme);
 
 When deployed as a WordPress plugin, the active theme is controlled by:
 
-1. **WP Admin Settings** → Super Gallery → Settings → Theme dropdown
+1. **WP Admin Settings** → Mullion → Settings → Theme dropdown
 2. **Allow User Theme Override** checkbox — when enabled, visitors can switch themes via the gallery UI and their preference is saved to localStorage
-3. **Shortcode** — the `[super-gallery]` shortcode injects the selected theme ID into `window.__wpsgThemeId`
+3. **Shortcode** — the `[mullion-gallery]` shortcode injects the selected theme ID into `window.__mullionThemeId`
 
 ### Theme Resolution Priority
 
-1. `window.__wpsgThemeId` (set by WP embed shortcode)
-2. `window.__WPSG_CONFIG__.theme` (same embed, alternative path)
-3. `[data-wpsg-theme]` HTML attribute
+1. `window.__mullionThemeId` (set by WP embed shortcode)
+2. `window.__MULLION_CONFIG__.theme` (same embed, alternative path)
+3. `[data-mullion-theme]` HTML attribute
 4. `localStorage` (if user override is allowed)
 5. `default-dark` fallback
 
@@ -325,7 +325,7 @@ All processing happens **once at startup**. Theme switching at runtime is a simp
 | `src/themes/validation.ts` | Schema validation |
 | `src/themes/colorGen.ts` | chroma.js shade generation |
 | `src/themes/adapter.ts` | JSON → MantineThemeOverride |
-| `src/themes/cssVariables.ts` | `--wpsg-*` CSS variable generation |
+| `src/themes/cssVariables.ts` | `--mullion-*` CSS variable generation |
 | `src/themes/index.ts` | Registry, public API |
 | `src/themes/definitions/_base.json` | Shared defaults |
 | `src/themes/definitions/*.json` | Individual theme definitions |

@@ -1,4 +1,4 @@
-# WP Super Gallery - Architecture Plan (Init Reference)
+# Mullion - Architecture Plan (Init Reference)
 
 ## Overview
 
@@ -35,7 +35,7 @@ A React-based card gallery component that can be embedded in WordPress via a plu
 ## 📁 Project Structure
 
 ```
-wp-super-gallery/
+mullion-gallery/
 ├── src/
 │   ├── components/
 │   │   ├── Gallery/
@@ -200,7 +200,7 @@ interface User {
 ### Phase 4: WordPress Integration
 - [ ] Build as embeddable widget
 - [ ] WordPress plugin wrapper
-- [ ] Shortcode support `[super-gallery]`
+- [ ] Shortcode support `[mullion-gallery]`
 - [ ] WP REST API integration (if using WP auth)
 
 ### Phase 5: Polish

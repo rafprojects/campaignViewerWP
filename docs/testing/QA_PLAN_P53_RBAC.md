@@ -10,12 +10,12 @@
 
 Phase 53 delivers two major changes:
 
-1. **Role model** (P53-B/C/D) — public campaigns are visible to everyone; per-grant editor/owner levels are removed (viewer-only grants); the `wpsg_editor` role (`manage_wpsg`) is now the canonical editing credential, not a grant level.
-2. **Frontend tier surfacing** (P53-A) — the React app now distinguishes `wpsg_editor` from `administrator`. Editors get a scoped Admin Panel; system-admin-only controls are hidden. The app also prevents firing 403-bound queries for editors, and layout-template deletes escalate through a force-confirm when the template is in use.
+1. **Role model** (P53-B/C/D) — public campaigns are visible to everyone; per-grant editor/owner levels are removed (viewer-only grants); the `mullion_editor` role (`manage_mullion`) is now the canonical editing credential, not a grant level.
+2. **Frontend tier surfacing** (P53-A) — the React app now distinguishes `mullion_editor` from `administrator`. Editors get a scoped Admin Panel; system-admin-only controls are hidden. The app also prevents firing 403-bound queries for editors, and layout-template deletes escalate through a force-confirm when the template is in use.
 
 ### Access model at a glance
 
-| | System Admin (`administrator`) | Editor (`wpsg_editor`) | Viewer |
+| | System Admin (`administrator`) | Editor (`mullion_editor`) | Viewer |
 |---|---|---|---|
 | `/wp-admin` | ✅ | ✗ — redirected to homepage | ✗ |
 | Admin Panel + Settings | ✅ full | ✅ scoped to explicitly granted spaces | ✗ |
@@ -36,24 +36,24 @@ This plan is organized around two test **personas** tested in parallel browser s
 | Persona | WP Role | Space access |
 |---|---|---|
 | **System Admin** | `administrator` | All spaces (no grant needed) |
-| **Editor** | `Gallery Editor` (`wpsg_editor`) | Granted to **Space A only** |
+| **Editor** | `Gallery Editor` (`mullion_editor`) | Granted to **Space A only** |
 
 ### 1.2 Creating the Editor user
 
-The `wpsg_editor` role is registered as **"Gallery Editor"** in WordPress. There is no custom Roles management page in the plugin UI — use the standard WP user screen.
+The `mullion_editor` role is registered as **"Gallery Editor"** in WordPress. There is no custom Roles management page in the plugin UI — use the standard WP user screen.
 
 1. WP Admin → **Users → Add New**
 2. Fill in username/email/password
 3. Set **Role** to **Gallery Editor**
 4. Click **Add New User**
 
-> **Common mistake:** WordPress has a built-in **"Editor"** role (for post editing). That is not the same as **"Gallery Editor"** (`wpsg_editor`). Assigning the wrong role means the user gets no Admin Panel access. Double-check the role dropdown.
+> **Common mistake:** WordPress has a built-in **"Editor"** role (for post editing). That is not the same as **"Gallery Editor"** (`mullion_editor`). Assigning the wrong role means the user gets no Admin Panel access. Double-check the role dropdown.
 
 ### 1.3 Granting space access to the Editor
 
 Space grants are managed inside the app (not in WP Admin).
 
-1. Log in as System Admin, open the **Super Gallery app** (Admin Panel)
+1. Log in as System Admin, open the **Mullion app** (Admin Panel)
 2. Navigate to **Spaces** (or the Spaces tab if in the space management view)
 3. Select **Space A**
 4. Open its **Access** tab
@@ -105,7 +105,7 @@ npx vitest run
 ### 2.2 Backend — PHPUnit
 
 ```bash
-cd wp-plugin/wp-super-gallery
+cd wp-plugin/mullion-gallery
 ./vendor/bin/phpunit
 ```
 
@@ -113,11 +113,11 @@ cd wp-plugin/wp-super-gallery
 
 | File | Covers |
 |---|---|
-| `tests/WPSG_P53A_Tier_Signal_Test.php` | `/permissions` returns correct isAdmin/isSystemAdmin per role |
-| `tests/WPSG_P53A_Scoping_Test.php` | Campaign list and page-spaces scoped correctly per role |
-| `tests/WPSG_P53D_Grant_Model_Test.php` | Viewer-only grants; editor in accessible vs. inaccessible spaces |
-| `tests/WPSG_Public_Visibility_Test.php` | Public campaigns visible to logged-in users (P53-B) |
-| `tests/WPSG_Cookie_Auth_Test.php` | Login response includes isSystemAdmin + correct role string |
+| `tests/Mullion_P53A_Tier_Signal_Test.php` | `/permissions` returns correct isAdmin/isSystemAdmin per role |
+| `tests/Mullion_P53A_Scoping_Test.php` | Campaign list and page-spaces scoped correctly per role |
+| `tests/Mullion_P53D_Grant_Model_Test.php` | Viewer-only grants; editor in accessible vs. inaccessible spaces |
+| `tests/Mullion_Public_Visibility_Test.php` | Public campaigns visible to logged-in users (P53-B) |
+| `tests/Mullion_Cookie_Auth_Test.php` | Login response includes isSystemAdmin + correct role string |
 
 ---
 
@@ -138,7 +138,7 @@ Verify the backend is sending the right tier signal before testing the UI.
 | `isSystemAdmin` | `false` | `true` |
 | `role` | `"editor"` | `"admin"` |
 
-Also check `GET /wp-super-gallery/v1/permissions` (fires on load for nonce-based auth):
+Also check `GET /mullion-gallery/v1/permissions` (fires on load for nonce-based auth):
 
 | Field | Editor | System Admin |
 |---|---|---|
@@ -276,10 +276,10 @@ Quick smoke-tests to confirm P53 didn't break existing behavior.
 
 ## 8. Notes
 
-- **No "Super Gallery > Roles" page exists.** The `wpsg_editor` role is created programmatically by the plugin and appears as **"Gallery Editor"** in the standard WordPress Users screen. There is no plugin-provided UI for role management.
+- **No "Mullion > Roles" page exists.** The `mullion_editor` role is created programmatically by the plugin and appears as **"Gallery Editor"** in the standard WordPress Users screen. There is no plugin-provided UI for role management.
 - **"Gallery Editor" ≠ WordPress "Editor".** WordPress ships a built-in "Editor" role for post management. Assigning the wrong one gives the user no Admin Panel access. Always verify the role in WP Admin → Users if the Admin Panel button is missing.
-- **Open-mode spaces are not a backdoor for editors.** Prior to the post-QA fix (commit `676b72f4`), open-mode spaces implicitly granted access to any `manage_wpsg` user. This has been corrected: editors now need an explicit space grant regardless of isolation mode. Only system admins (`manage_options`) retain implicit access to open-mode spaces.
+- **Open-mode spaces are not a backdoor for editors.** Prior to the post-QA fix (commit `676b72f4`), open-mode spaces implicitly granted access to any `manage_mullion` user. This has been corrected: editors now need an explicit space grant regardless of isolation mode. Only system admins (`manage_options`) retain implicit access to open-mode spaces.
 - **`/wp-admin` redirect.** Editors are actively redirected to the homepage if they attempt to access any `/wp-admin` URL. This is enforced server-side via `admin_init`; it is not merely a lack of menu items.
-- **Editor role self-heals.** The plugin verifies on every WordPress init that the `wpsg_editor` role has the `manage_wpsg` capability, and repairs it if missing. If an editor's Admin Panel button disappears after a DB restore or WP role reset, a plugin deactivate/reactivate cycle or simply loading any page will trigger the repair.
+- **Editor role self-heals.** The plugin verifies on every WordPress init that the `mullion_editor` role has the `manage_mullion` capability, and repairs it if missing. If an editor's Admin Panel button disappears after a DB restore or WP role reset, a plugin deactivate/reactivate cycle or simply loading any page will trigger the repair.
 - **Space grants → viewer-only (P53-D).** The Access tab grant flow now only offers viewer level. Existing editor/owner grants in stored data degrade gracefully to view-only; no migration needed.
 - **Asset-library force-delete not yet wired.** The inline delete inside the Layout Builder modal shares the same 409 contract but the force-confirm UI has not been added there. This is a known future polish item. The `ApiError.data` plumbing is already in place.

@@ -23,7 +23,7 @@ export interface SettingsResponse extends Partial<GalleryBehaviorSettings> {
 export type SettingsUpdateRequest = Partial<SettingsResponse>;
 
 /**
- * Domain module for the WP Super Gallery settings REST endpoints.
+ * Domain module for the Mullion settings REST endpoints.
  *
  * Accepts any {@link HttpTransport} so it can be tested without a live
  * HTTP connection — pass a mock transport in unit tests.

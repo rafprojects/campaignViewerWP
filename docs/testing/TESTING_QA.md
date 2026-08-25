@@ -1,6 +1,6 @@
 git pusnl# Testing + QA Guide (Unified)
 
-This document consolidates the Testing Plan and Manual QA steps for WP Super Gallery. It includes automated test guidance and a release checklist for manual QA in WordPress, plus an updated REST API manual test suite.
+This document consolidates the Testing Plan and Manual QA steps for Mullion. It includes automated test guidance and a release checklist for manual QA in WordPress, plus an updated REST API manual test suite.
 
 ---
 
@@ -35,7 +35,7 @@ This document consolidates the Testing Plan and Manual QA steps for WP Super Gal
 These tests validate server-side behavior in the WordPress plugin (REST endpoints, helpers, caching). They use the WordPress PHPUnit harness and run inside a WP test environment.
 
 - What they are:
-  - Unit/integration tests for `wp-plugin/wp-super-gallery/includes/*` PHP classes and functions.
+  - Unit/integration tests for `wp-plugin/mullion-gallery/includes/*` PHP classes and functions.
   - Validate REST responses, transient caching, and provider logic (oEmbed proxy, normalization).
 
 - How to run:
@@ -45,13 +45,13 @@ These tests validate server-side behavior in the WordPress plugin (REST endpoint
 ```bash
 # from repo root
 wp-env start
-wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
+wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && ./vendor/bin/phpunit -c phpunit.xml.dist"
 ```
 
 Notes:
 - Running `./vendor/bin/phpunit -c phpunit.xml.dist` directly on the host will fail unless `WP_TESTS_DIR` already points at a valid WordPress test library install.
 - These tests require a WordPress test fixture; they cannot be run with `npm run test` (frontend) and are executed separately in CI when PHP/WP tests are configured.
-- We added `wp-plugin/wp-super-gallery/tests/test-proxy-oembed.php` to assert `proxy_oembed()` behaviors (missing URL returns 400; cached payloads returned).
+- We added `wp-plugin/mullion-gallery/tests/test-proxy-oembed.php` to assert `proxy_oembed()` behaviors (missing URL returns 400; cached payloads returned).
 
 **Targets**
 - Project-level average coverage ≥ 80%.
@@ -64,7 +64,7 @@ Notes:
 **Approach (recommended)**
 - Playwright for browser automation.
 - Two modes:
-  1) **Mocked API mode** for reliable CI tests (mock `/wp-json/wp-super-gallery/v1/*`).
+  1) **Mocked API mode** for reliable CI tests (mock `/wp-json/mullion-gallery/v1/*`).
   2) **Live WP mode** for full end-to-end validation against a local WordPress instance.
 
 **Tooling**
@@ -93,17 +93,17 @@ This is the primary checklist for QA on a local WordPress install. Use it for ev
 
 2. Build the SPA and copy assets into the plugin bundle.
    - `npm run build:wp`
-   - Copies `dist/` into `wp-plugin/wp-super-gallery/assets/`.
+   - Copies `dist/` into `wp-plugin/mullion-gallery/assets/`.
 
 3. Sync the plugin into your local WordPress install.
    - Copy plugin folder into `wp-content/plugins/`.
    - Example (adjust path):
-     - `cp -r wp-plugin/wp-super-gallery /path/to/wordpress/wp-content/plugins/wp-super-gallery`
+     - `cp -r wp-plugin/mullion-gallery /path/to/wordpress/wp-content/plugins/mullion-gallery`
    - Remove previous copy first to avoid stale assets:
-     - `rm -rf /path/to/wordpress/wp-content/plugins/wp-super-gallery`
+     - `rm -rf /path/to/wordpress/wp-content/plugins/mullion-gallery`
 
 4. Activate the plugin in WordPress Admin.
-   - **Plugins** → **WP Super Gallery** → **Activate**.
+   - **Plugins** → **Mullion** → **Activate**.
 
 5. Ensure JWT auth is configured.
    - Follow [docs/WP_JWT_SETUP.md](../guides/WP_JWT_SETUP.md) and confirm permalinks are **Post name**.
@@ -116,7 +116,7 @@ This is the primary checklist for QA on a local WordPress install. Use it for ev
 ### Prerequisites
 
 - Local WordPress install (LocalWP/Docker/MAMP).
-- WP Super Gallery plugin installed and activated.
+- Mullion plugin installed and activated.
 - JWT auth plugin installed and configured.
 - Permalinks set to **Post name**.
 - CORS and Apache/htaccess configured for JWT.
@@ -126,7 +126,7 @@ This is the primary checklist for QA on a local WordPress install. Use it for ev
 1. Create at least 3 campaigns:
    - 1 public campaign
    - 2 private campaigns
-2. Assign campaigns to at least 2 companies (`wpsg_company` taxonomy).
+2. Assign campaigns to at least 2 companies (`mullion_company` taxonomy).
 3. Add tags, cover images, and thumbnails.
 4. Add media items:
    - At least one external video (YouTube/Vimeo)
@@ -357,7 +357,7 @@ Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with 
   - Query params:
     - `status`: Optional campaign status filter (`active`, `archived`).
     - `visibility`: Optional visibility filter (`public`, `private`).
-    - `company`: Optional company slug for `wpsg_company` taxonomy.
+    - `company`: Optional company slug for `mullion_company` taxonomy.
     - `search`: Optional keyword search across title/description.
     - `page`: Optional 1-based page index (default `1`).
     - `per_page`: Optional page size (default `10`, max `50`).
@@ -429,16 +429,16 @@ Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with 
 - Validate token:
   - `curl -X POST "$BASE_URL/wp-json/jwt-auth/v1/token/validate" -H "Authorization: Bearer $TOKEN"`
 - Permissions (requires auth):
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/permissions" -H "Authorization: Bearer $TOKEN"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/permissions" -H "Authorization: Bearer $TOKEN"`
 
 ### Campaigns (query + add)
 
 - Query campaigns (public):
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/campaigns"`
 - Query campaigns with filters:
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns?status=active&visibility=public&company=acme&search=summer&page=1&per_page=10"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/campaigns?status=active&visibility=public&company=acme&search=summer&page=1&per_page=10"`
 - Add campaign (admin required):
-  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns" \
+  - `curl -X POST "$BASE_URL/wp-json/mullion-gallery/v1/campaigns" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"title":"Winter Drop","description":"Seasonal campaign","company":"acme","status":"active","visibility":"private"}'`
@@ -446,36 +446,36 @@ Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with 
 ### Campaign Details + Admin Actions
 
 - Get campaign by id:
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123"`
 - Update campaign (admin required):
-  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123" \
+  - `curl -X PUT "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"title":"Updated Title","description":"Updated description"}'`
 - Archive campaign (admin required):
-  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/archive" -H "Authorization: Bearer $TOKEN"`
+  - `curl -X POST "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/archive" -H "Authorization: Bearer $TOKEN"`
 
 - List campaign audit (admin required):
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/audit" -H "Authorization: Bearer $TOKEN"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/audit" -H "Authorization: Bearer $TOKEN"`
 
 ### Media
 
 - List media (requires auth):
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media" -H "Authorization: Bearer $TOKEN"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/media" -H "Authorization: Bearer $TOKEN"`
 - Add media (admin required):
-  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media" \
+  - `curl -X POST "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/media" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"type":"video","source":"external","url":"https://www.youtube.com/watch?v=dQw4w9WgXcQ","caption":"Main Video","order":1}'`
 - Update media (admin required):
-  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/{mediaId}" \
+  - `curl -X PUT "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/media/{mediaId}" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"caption":"Updated caption","order":2}'`
 - Delete media (admin required):
-  - `curl -X DELETE "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/{mediaId}" -H "Authorization: Bearer $TOKEN"`
+  - `curl -X DELETE "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/media/{mediaId}" -H "Authorization: Bearer $TOKEN"`
 - Reorder media (admin required):
-  - `curl -X PUT "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/media/reorder" \
+  - `curl -X PUT "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/media/reorder" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"items":[{"id":"m1","order":1},{"id":"m2","order":2}]}'`
@@ -483,31 +483,31 @@ Use these steps to verify each REST endpoint directly. Replace `$BASE_URL` with 
 ### Access Grants
 
 - List access grants (admin required):
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access" -H "Authorization: Bearer $TOKEN"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/access" -H "Authorization: Bearer $TOKEN"`
 - Grant access (admin required):
-  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access" \
+  - `curl -X POST "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/access" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"userId":42,"source":"campaign","action":"grant"}'`
 - Deny access (admin required):
-  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access" \
+  - `curl -X POST "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/access" \
     -H "Authorization: Bearer $TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"userId":42,"source":"campaign","action":"deny"}'`
 - Revoke access (admin required):
-  - `curl -X DELETE "$BASE_URL/wp-json/wp-super-gallery/v1/campaigns/123/access/42" -H "Authorization: Bearer $TOKEN"`
+  - `curl -X DELETE "$BASE_URL/wp-json/mullion-gallery/v1/campaigns/123/access/42" -H "Authorization: Bearer $TOKEN"`
 
 ### Uploads
 
 - Upload media (admin required):
-  - `curl -X POST "$BASE_URL/wp-json/wp-super-gallery/v1/media/upload" \
+  - `curl -X POST "$BASE_URL/wp-json/mullion-gallery/v1/media/upload" \
     -H "Authorization: Bearer $TOKEN" \
     -F "file=@/path/to/file.jpg"`
 
 ### oEmbed Proxy
 
 - oEmbed preview (public endpoint — no Authorization required):
-  - `curl "$BASE_URL/wp-json/wp-super-gallery/v1/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ"`
+  - `curl "$BASE_URL/wp-json/mullion-gallery/v1/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ"`
   
   - Caching behavior:
     - Successful oEmbed responses are cached for 6 hours.
@@ -523,11 +523,11 @@ These manual tests validate the four ship-blocking tracks implemented in Phase 2
 
 | # | Step | Expected |
 |---|------|----------|
-| 1 | Confirm the `wpsg_rate_limit_public` option is **not** set in `wp_options`. | Option absent (uses code default). |
-| 2 | As a logged-out visitor, hit a public REST endpoint (e.g. `GET /wp-json/wp-super-gallery/v1/campaigns/{id}`) **61 times within 60 seconds** (use a loop: `for i in $(seq 1 61); do curl -s -o /dev/null -w "%{http_code}\n" "$URL"; done`). | Requests 1–60 return `200`. Request 61 returns `429 Too Many Requests`. |
-| 3 | Override the public limit via filter: add `add_filter('wpsg_rate_limit_public', fn() => 10);` in a mu-plugin. Repeat step 2 with 11 requests. | Request 11 returns `429`. |
-| 4 | As an **authenticated admin**, hit an admin endpoint (e.g. `GET /wp-json/wp-super-gallery/v1/campaigns`) **121 times within 60 seconds** using a valid nonce. | Requests 1–120 succeed. Request 121 returns `429`. |
-| 5 | Override the authenticated limit: `add_filter('wpsg_rate_limit_authenticated', fn() => 20);`. Repeat step 4 with 21 requests. | Request 21 returns `429`. |
+| 1 | Confirm the `mullion_rate_limit_public` option is **not** set in `wp_options`. | Option absent (uses code default). |
+| 2 | As a logged-out visitor, hit a public REST endpoint (e.g. `GET /wp-json/mullion-gallery/v1/campaigns/{id}`) **61 times within 60 seconds** (use a loop: `for i in $(seq 1 61); do curl -s -o /dev/null -w "%{http_code}\n" "$URL"; done`). | Requests 1–60 return `200`. Request 61 returns `429 Too Many Requests`. |
+| 3 | Override the public limit via filter: add `add_filter('mullion_rate_limit_public', fn() => 10);` in a mu-plugin. Repeat step 2 with 11 requests. | Request 11 returns `429`. |
+| 4 | As an **authenticated admin**, hit an admin endpoint (e.g. `GET /wp-json/mullion-gallery/v1/campaigns`) **121 times within 60 seconds** using a valid nonce. | Requests 1–120 succeed. Request 121 returns `429`. |
+| 5 | Override the authenticated limit: `add_filter('mullion_rate_limit_authenticated', fn() => 20);`. Repeat step 4 with 21 requests. | Request 21 returns `429`. |
 
 ### P20-C · CSS Value Sanitization
 
@@ -544,7 +544,7 @@ These manual tests validate the four ship-blocking tracks implemented in Phase 2
 
 ### P20-D · Post Meta Sanitize Callbacks
 
-All tests use the WP REST API directly (`wp-json/wp/v2/wpsg_campaign/{id}`).
+All tests use the WP REST API directly (`wp-json/wp/v2/mullion_campaign/{id}`).
 
 | # | Step | Expected |
 |---|------|----------|
@@ -563,20 +563,20 @@ All tests use the WP REST API directly (`wp-json/wp/v2/wpsg_campaign/{id}`).
 
 | # | Step | Expected |
 |---|------|----------|
-| 1 | Ensure `WPSG_ENABLE_JWT_AUTH` is **not** defined in `wp-config.php`. Load a page with the `[wp_super_gallery]` shortcode while logged in as admin. | Gallery renders. Browser console: no JWT token requests, no `localStorage.getItem('wpsg_jwt_*')` calls. |
-| 2 | Open browser DevTools → Application → Local Storage. Search for `wpsg_jwt`. | No JWT keys present. |
-| 3 | In the rendered gallery embed, inspect the `__WPSG_CONFIG__` object (run `JSON.stringify(window.__WPSG_CONFIG__)` in the shadow root's context or from the parent page). | `enableJwt` is `false` (or absent). `restNonce` is a valid nonce string. |
+| 1 | Ensure `MULLION_ENABLE_JWT_AUTH` is **not** defined in `wp-config.php`. Load a page with the `[mullion-gallery]` shortcode while logged in as admin. | Gallery renders. Browser console: no JWT token requests, no `localStorage.getItem('mullion_jwt_*')` calls. |
+| 2 | Open browser DevTools → Application → Local Storage. Search for `mullion_jwt`. | No JWT keys present. |
+| 3 | In the rendered gallery embed, inspect the `__MULLION_CONFIG__` object (run `JSON.stringify(window.__MULLION_CONFIG__)` in the shadow root's context or from the parent page). | `enableJwt` is `false` (or absent). `restNonce` is a valid nonce string. |
 | 4 | Verify admin UI controls are visible (edit, delete, settings). | Admin detected via nonce-authenticated `/permissions` endpoint. |
 | 5 | Open the page as a **logged-out visitor** (incognito). | Gallery renders in guest/public mode. No admin controls visible. A blue "Sign in" banner is shown. Console: no auth errors. |
 | 6 | Click the **"Sign in"** button in the banner. | An in-app modal opens with email + password fields. No redirect to `wp-login.php`. The URL bar does not change. |
-| 7 | Enter valid WordPress credentials and submit. | Modal closes. AuthBar appears showing "Signed in as …". Admin controls appear (if user is admin). Network tab shows `POST /wp-json/wp-super-gallery/v1/auth/login` returning 200 with `user`, `permissions`, `nonce`. |
+| 7 | Enter valid WordPress credentials and submit. | Modal closes. AuthBar appears showing "Signed in as …". Admin controls appear (if user is admin). Network tab shows `POST /wp-json/mullion-gallery/v1/auth/login` returning 200 with `user`, `permissions`, `nonce`. |
 | 8 | Enter **invalid** credentials and submit. | Modal stays open. An error message "Invalid username or password." is displayed. Network tab shows 401 response. |
-| 9 | While signed in, click **"Sign out"** in the AuthBar. | User returns to guest mode. The sign-in banner reappears. Network tab shows `POST /wp-json/wp-super-gallery/v1/auth/logout` returning 200. No redirect to a WordPress page. |
+| 9 | While signed in, click **"Sign out"** in the AuthBar. | User returns to guest mode. The sign-in banner reappears. Network tab shows `POST /wp-json/mullion-gallery/v1/auth/logout` returning 200. No redirect to a WordPress page. |
 | 10 | View page source or inspect Network tab. Verify no reference to `wp-login.php` or `wp-logout` URLs. | WordPress identity is not exposed to the end user. |
-| 11 | Leave a tab open for **25+ minutes** (or temporarily change the heartbeat interval to 10 s for testing). Check the Network tab for periodic `GET /wp-json/wp-super-gallery/v1/nonce` calls. | Nonce refresh requests appear every ~20 min (or 10 s if overridden). Each returns `{ "nonce": "..." }`. |
+| 11 | Leave a tab open for **25+ minutes** (or temporarily change the heartbeat interval to 10 s for testing). Check the Network tab for periodic `GET /wp-json/mullion-gallery/v1/nonce` calls. | Nonce refresh requests appear every ~20 min (or 10 s if overridden). Each returns `{ "nonce": "..." }`. |
 | 12 | After a nonce refresh, perform an admin action (e.g. reorder media). | Action succeeds with the refreshed nonce (no 403). |
-| 13 | **Opt-in JWT test:** Add `define('WPSG_ENABLE_JWT_AUTH', true);` to `wp-config.php`. Reload the gallery page. | `enableJwt` is `true` in config. JWT login flow activates. `localStorage` shows `wpsg_jwt_*` keys. |
-| 14 | Remove the `WPSG_ENABLE_JWT_AUTH` constant. Reload. | Reverts to nonce-only mode (step 1 behavior). |
+| 13 | **Opt-in JWT test:** Add `define('MULLION_ENABLE_JWT_AUTH', true);` to `wp-config.php`. Reload the gallery page. | `enableJwt` is `true` in config. JWT login flow activates. `localStorage` shows `mullion_jwt_*` keys. |
+| 14 | Remove the `MULLION_ENABLE_JWT_AUTH` constant. Reload. | Reverts to nonce-only mode (step 1 behavior). |
 | 15 | In the admin **Settings** panel → General tab, set **"Session Idle Timeout"** to **2 minutes**. Save. | Setting persists. |
 | 16 | Sign in and wait **2+ minutes** without any mouse/keyboard/touch activity. | User is auto-logged out. Sign-in banner reappears. Admin panel closes if it was open. |
 | 17 | Sign in again. Move the mouse or press a key periodically (stay active). | Timer resets on each interaction — no auto-logout while active. |
@@ -595,7 +595,7 @@ The following manual tests cover changes landed in QA Round 5: glow hover fix, p
 | 1 | Open the Layout Builder. Add a slot, set its **Shape** to "Circle" and **Hover** to "Glow". Save the template. | Template saves without error. |
 | 2 | View the campaign on the front-end. Hover over the circular slot. | A coloured glow (drop-shadow) appears around the circular clip-path on hover. The glow follows the clip shape, not a rectangular bounding box. |
 | 3 | Repeat step 2 with shapes: Hexagon, Diamond, Ellipse, Parallelogram. | Glow renders correctly around each non-rectangular clip-path. |
-| 4 | Set a slot to **Rectangle** shape with Hover = Glow. View front-end and hover. | Glow appears via the CSS class path (`wpsg-tile-lb-rect-glow`), using `box-shadow`. |
+| 4 | Set a slot to **Rectangle** shape with Hover = Glow. View front-end and hover. | Glow appears via the CSS class path (`mullion-tile-lb-rect-glow`), using `box-shadow`. |
 | 5 | Set a slot's Hover to "Pop". View front-end and hover. | Scale-up bounce effect; no glow visible. |
 | 6 | Set a slot's Hover to "None". View front-end and hover. | No visual change on hover. |
 
@@ -661,21 +661,21 @@ The following manual tests cover changes landed in QA Round 5: glow hover fix, p
 
 ## Phase 20 — P20-B · Import Payload Sanitization
 
-These tests validate that the layout-template import path deep-sanitizes every slot, overlay, and background field. Automated PHPUnit coverage exists in `WPSG_Import_Sanitization_Test.php` (10 tests). The manual steps below verify end-to-end behaviour through the admin UI.
+These tests validate that the layout-template import path deep-sanitizes every slot, overlay, and background field. Automated PHPUnit coverage exists in `Mullion_Import_Sanitization_Test.php` (10 tests). The manual steps below verify end-to-end behaviour through the admin UI.
 
 | # | Step | Expected |
 |---|------|----------|
 | 1 | Open Admin Panel → Layout Builder. Create a simple template with 2 slots, an overlay, and a background color. **Export** the template as JSON (or copy the raw JSON from browser DevTools → Network tab on save). | Valid JSON file in hand. |
 | 2 | Edit the JSON: change a slot's `name` to `<script>alert(1)</script>Slot`. Re-import via Settings → Import. | Import succeeds. Slot name stored as `alertSlot` (tags stripped). |
 | 3 | Edit the JSON: set a slot's `mediaUrl` to `javascript:alert(1)`. Import. | `mediaUrl` stored as empty string (scheme rejected by `esc_url_raw`). |
-| 4 | Edit the JSON: set a slot's `borderColor` to `red; background-image: url(https://evil.com)`. Import. | `borderColor` stored as empty string (CSS injection blocked by `wpsg_sanitize_css_value`). |
+| 4 | Edit the JSON: set a slot's `borderColor` to `red; background-image: url(https://evil.com)`. Import. | `borderColor` stored as empty string (CSS injection blocked by `mullion_sanitize_css_value`). |
 | 5 | Edit the JSON: set a slot's `clipPath` to `expression(document.cookie)`. Import. | `clipPath` stored as empty string. |
 | 6 | Edit the JSON: set an overlay's `imageUrl` to `javascript:void(0)`. Import. | `imageUrl` stored as empty string. |
 | 7 | Edit the JSON: set an overlay's `imageUrl` to `blob:https://example.com/abc`. Import. | `imageUrl` stored as empty string (`blob:` scheme rejected). |
 | 8 | Edit the JSON: set `backgroundColor` to `red; position: fixed; top:0; left:0; z-index:99999`. Import. | `backgroundColor` stored as empty string (injection blocked). |
 | 9 | Edit the JSON: set `backgroundImageUrl` to `javascript:alert(1)`. Import. | `backgroundImageUrl` stored as empty string. |
 | 10 | Import the **original unmodified** JSON from step 1. | All values round-trip cleanly — slot names, positions, sizes, overlay images, background color all match the original template. |
-| 11 | Run PHPUnit: `vendor/bin/phpunit tests/WPSG_Import_Sanitization_Test.php`. | All 10 tests pass. |
+| 11 | Run PHPUnit: `vendor/bin/phpunit tests/Mullion_Import_Sanitization_Test.php`. | All 10 tests pass. |
 
 ---
 
@@ -683,20 +683,20 @@ These tests validate that the layout-template import path deep-sanitizes every s
 
 These tests verify that deactivation + deletion properly cleans up (or preserves) all plugin data.
 
-**Prerequisites:** Fresh WordPress install with WP Super Gallery activated. Create test data: 2+ campaigns with media, 1+ layout template, 1+ overlay upload, adjust at least one setting.
+**Prerequisites:** Fresh WordPress install with Mullion activated. Create test data: 2+ campaigns with media, 1+ layout template, 1+ overlay upload, adjust at least one setting.
 
 | # | Step | Expected |
 |---|------|----------|
 | 1 | Open Admin Panel → Settings → General tab. Locate the **"Preserve data on uninstall"** switch. | Switch is visible, defaults to OFF. |
 | 2 | Leave the switch OFF. Deactivate the plugin via Plugins → Installed Plugins → Deactivate. | Plugin deactivated. All data still present (deactivation does not delete). |
 | 3 | Click **Delete** on the deactivated plugin. Confirm deletion. | Plugin files removed. |
-| 4 | Check the database: `SELECT * FROM wp_posts WHERE post_type IN ('wpsg_campaign', 'wpsg_layout_template');` | No rows returned — campaigns and templates deleted. |
-| 5 | Check: `SELECT * FROM wp_terms t JOIN wp_term_taxonomy tt ON t.term_id = tt.term_id WHERE tt.taxonomy = 'wpsg_company';` | No rows — taxonomy terms deleted. |
-| 6 | Check: `SELECT * FROM wp_options WHERE option_name LIKE 'wpsg_%';` | No matching rows — all plugin options removed. |
-| 7 | Check: `SELECT * FROM wp_options WHERE option_name LIKE '_transient%wpsg%';` | No matching rows — transients cleaned. |
-| 8 | Check: `SHOW TABLES LIKE '%wpsg%';` | No custom tables remain. |
-| 9 | Check: `SELECT * FROM wp_usermeta WHERE meta_key LIKE 'wpsg_%';` | No rows — roles/caps removed. Verify `wpsg_admin` role no longer exists: `wp role list` or `SELECT * FROM wp_options WHERE option_name = 'wp_user_roles'` and search for `wpsg`. |
-| 10 | Check `wp-content/uploads/wpsg-overlays/` directory. | Directory deleted (or empty). |
+| 4 | Check the database: `SELECT * FROM wp_posts WHERE post_type IN ('mullion_campaign', 'mullion_layout_template');` | No rows returned — campaigns and templates deleted. |
+| 5 | Check: `SELECT * FROM wp_terms t JOIN wp_term_taxonomy tt ON t.term_id = tt.term_id WHERE tt.taxonomy = 'mullion_company';` | No rows — taxonomy terms deleted. |
+| 6 | Check: `SELECT * FROM wp_options WHERE option_name LIKE 'mullion_%';` | No matching rows — all plugin options removed. |
+| 7 | Check: `SELECT * FROM wp_options WHERE option_name LIKE '_transient%mullion%';` | No matching rows — transients cleaned. |
+| 8 | Check: `SHOW TABLES LIKE '%mullion%';` | No custom tables remain. |
+| 9 | Check: `SELECT * FROM wp_usermeta WHERE meta_key LIKE 'mullion_%';` | No rows — roles/caps removed. Verify `mullion_admin` role no longer exists: `wp role list` or `SELECT * FROM wp_options WHERE option_name = 'wp_user_roles'` and search for `mullion`. |
+| 10 | Check `wp-content/uploads/mullion-overlays/` directory. | Directory deleted (or empty). |
 | 11 | **Reinstall** the plugin. Create new test data (campaign, template, overlay, setting). Set **"Preserve data on uninstall"** to **ON**. Save. | Setting saved. |
 | 12 | Deactivate and Delete the plugin again. | Plugin files removed. |
 | 13 | Repeat checks from steps 4–10. | All data **preserved** — campaigns, templates, terms, options, transients, tables, overlay files all still present. |
@@ -709,8 +709,8 @@ These tests verify that deactivation + deletion properly cleans up (or preserves
 | # | Step | Expected |
 |---|------|----------|
 | 1 | Open `LICENSE.md` at the repository root. | File exists and contains the full GPLv2 text ("GNU GENERAL PUBLIC LICENSE, Version 2, June 1991"). |
-| 2 | Open `wp-plugin/wp-super-gallery/LICENSE`. | File exists and matches the repo-root LICENSE.md content. |
-| 3 | Open `wp-plugin/wp-super-gallery/wp-super-gallery.php`. Inspect the plugin file header comment. | Header includes: `License: GPLv2 or later`, `License URI: https://www.gnu.org/licenses/gpl-2.0.html`, `Requires at least: 6.4`, `Tested up to: 7.0`, `Requires PHP: 8.2`, `Text Domain: wp-super-gallery`. |
+| 2 | Open `wp-plugin/mullion-gallery/LICENSE`. | File exists and matches the repo-root LICENSE.md content. |
+| 3 | Open `wp-plugin/mullion-gallery/mullion-gallery.php`. Inspect the plugin file header comment. | Header includes: `License: GPLv2 or later`, `License URI: https://www.gnu.org/licenses/gpl-2.0.html`, `Requires at least: 6.4`, `Tested up to: 7.0`, `Requires PHP: 8.2`, `Text Domain: mullion-gallery`. |
 | 4 | Run the WordPress.org plugin header validator (or manually compare against [the required headers list](https://developer.wordpress.org/plugins/plugin-basics/header-requirements/)). | All required fields present and correctly formatted. |
 
 ---
@@ -768,26 +768,26 @@ These tests verify the security hardening items from the H-track sprint.
 
 | # | Step | Expected |
 |---|------|----------|
-| 1 | Call the oEmbed proxy with an **allowlisted** provider URL: `GET /wp-json/wp-super-gallery/v1/oembed?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ`. | Returns 200 with oEmbed data (allowlisted providers bypass DNS check). |
+| 1 | Call the oEmbed proxy with an **allowlisted** provider URL: `GET /wp-json/mullion-gallery/v1/oembed?url=https://www.youtube.com/watch?v=dQw4w9WgXcQ`. | Returns 200 with oEmbed data (allowlisted providers bypass DNS check). |
 | 2 | Call the oEmbed proxy with a **non-allowlisted** public HTTPS URL (e.g. `https://example.com/page`). | Returns either oEmbed data (if the host resolves to a public IP) or an appropriate error. No request is made to a private IP. |
 | 3 | *(Requires `/etc/hosts` manipulation or DNS rebinding test tool)* Configure a hostname that resolves to `127.0.0.1`. Call the oEmbed proxy with `https://that-hostname/path`. | Returns 400 with "oEmbed host resolves to a private or disallowed IP" **or** "DNS rebinding detected" — the request is never completed. |
-| 4 | Call the oEmbed proxy with a non-HTTPS URL: `GET /wp-json/wp-super-gallery/v1/oembed?url=http://example.com`. | Returns 400: "Only HTTPS oEmbed URLs are allowed". |
+| 4 | Call the oEmbed proxy with a non-HTTPS URL: `GET /wp-json/mullion-gallery/v1/oembed?url=http://example.com`. | Returns 400: "Only HTTPS oEmbed URLs are allowed". |
 
 ### H-3 · Nonce Bypass Hardening
 
 | # | Step | Expected |
 |---|------|----------|
-| 1 | In a test environment **without** `WPSG_ALLOW_NONCE_BYPASS` defined, make a REST API call with an invalid/missing nonce. | Returns 403 — nonce is enforced. |
-| 2 | Define `WP_DEBUG = true` but **not** `WPSG_ALLOW_NONCE_BYPASS`. Make a REST call with invalid nonce. | Still returns 403 — `WP_DEBUG` alone is insufficient. |
-| 3 | Define both `WP_DEBUG = true` and `WPSG_ALLOW_NONCE_BYPASS = true`. Make a REST call with invalid nonce. | Request proceeds (bypass active). |
+| 1 | In a test environment **without** `Mullion_ALLOW_NONCE_BYPASS` defined, make a REST API call with an invalid/missing nonce. | Returns 403 — nonce is enforced. |
+| 2 | Define `WP_DEBUG = true` but **not** `Mullion_ALLOW_NONCE_BYPASS`. Make a REST call with invalid nonce. | Still returns 403 — `WP_DEBUG` alone is insufficient. |
+| 3 | Define both `WP_DEBUG = true` and `Mullion_ALLOW_NONCE_BYPASS = true`. Make a REST call with invalid nonce. | Request proceeds (bypass active). |
 
 ### H-5 · Overlay File Deletion
 
 | # | Step | Expected |
 |---|------|----------|
-| 1 | Upload a Design Asset (overlay) via the Layout Builder. Note the file path in `wp-content/uploads/wpsg-overlays/`. | File exists on disk. |
+| 1 | Upload a Design Asset (overlay) via the Layout Builder. Note the file path in `wp-content/uploads/mullion-overlays/`. | File exists on disk. |
 | 2 | Delete the overlay (click the ✕ on the asset thumbnail, confirm). | API returns success. |
-| 3 | Check `wp-content/uploads/wpsg-overlays/` for the file. | File is **gone** — physically deleted from disk. |
+| 3 | Check `wp-content/uploads/mullion-overlays/` for the file. | File is **gone** — physically deleted from disk. |
 
 ### H-6 · Sentry PII Scrubbing
 

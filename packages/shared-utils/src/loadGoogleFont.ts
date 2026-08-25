@@ -115,7 +115,7 @@ export function loadGoogleFont(family: string): void {
     loaded.delete(family);
     failed.add(family);
     console.warn(
-      `[WP Super Gallery] Google Font "${family}" failed to load. ` +
+      `[Mullion] Google Font "${family}" failed to load. ` +
       'The host may block fonts.googleapis.com. Consider using system fonts or uploading a custom font.',
     );
   });

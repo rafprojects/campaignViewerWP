@@ -7,7 +7,7 @@
 
 ## 🎉 Major Milestone: WCAG 2.1 Level AA Compliance Achieved
 
-WP Super Gallery v0.5.0 marks the completion of Phase 7, delivering enterprise-grade accessibility, mobile optimization, and professional UI polish. The application is now production-ready for deployment.
+Mullion v0.5.0 marks the completion of Phase 7, delivering enterprise-grade accessibility, mobile optimization, and professional UI polish. The application is now production-ready for deployment.
 
 ---
 
@@ -169,6 +169,6 @@ Built with:
 
 ---
 
-**WP Super Gallery v0.5.0 is production-ready! 🚀**
+**Mullion v0.5.0 is production-ready! 🚀**
 
 For questions or issues, please refer to documentation or open a GitHub issue.

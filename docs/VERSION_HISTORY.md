@@ -10,12 +10,12 @@
   - **Gallery configuration** (Phase 56): client-side validation, configurable breakpoint thresholds, capability badges, reset-to-default, schema hints, JSON import/export.
   - **Enterprise & integration** (Phases 39, 41, 48): webhooks, binary campaign/media/audit exports with ZIP import, object-cache guidance.
   - **Auditing & observability** (Phases 32, 40): canonical audit-event contract, campaign/system-scoped coverage, structured logging, audit export.
-  - **Under the hood** (Phases 42, 44, 45, 49, 51, 54, 55): production hardening (CSS/DOMPurify sanitization, a11y baseline), i18n groundwork, REST decomposition into domain controllers, shared `@wpsg` package extraction, single-source TS/PHP field-map schema, and service-worker offline caching.
+  - **Under the hood** (Phases 42, 44, 45, 49, 51, 54, 55): production hardening (CSS/DOMPurify sanitization, a11y baseline), i18n groundwork, REST decomposition into domain controllers, shared `@mullion` package extraction, single-source TS/PHP field-map schema, and service-worker offline caching.
 
 ### v0.27.0 (June 23, 2026)
 - **MINOR**: Phase 54 — Production Hardening
   - **P54-A** (security): PHP sanitizer extended with `is_safe_css_box_shadow()` for defence-in-depth on free-form CSS fields; `MediaAddModal` DOMPurify config locked to explicit `ALLOWED_ATTR` allowlist; localStorage inventory confirmed — no sensitive data outside the `enableJwt` gate.
-  - **P54-B** (feat): User-facing i18n harvest — 68 translation keys across 20 front-end components (`AuthBar*`, `LoginForm`, `Lightbox`, `KeyboardHintOverlay`, `SpaceSwitcher`, `MediaCarouselAdapter`, all 13 gallery adapters) wrapped in `t()` under the `wpsg` namespace. English defaults in `src/i18n-strings.en.json`; `i18next/no-literal-string` rule set to `'error'` for gallery adapters and shared-ui.
+  - **P54-B** (feat): User-facing i18n harvest — 68 translation keys across 20 front-end components (`AuthBar*`, `LoginForm`, `Lightbox`, `KeyboardHintOverlay`, `SpaceSwitcher`, `MediaCarouselAdapter`, all 13 gallery adapters) wrapped in `t()` under the `mullion` namespace. English defaults in `src/i18n-strings.en.json`; `i18next/no-literal-string` rule set to `'error'` for gallery adapters and shared-ui.
   - **P54-C** (fix): Front-end accessibility baseline — 4 violations fixed (`KeyboardHintOverlay` `aria-hidden`, Lightbox counter `aria-live`, `OverlayArrows` keyboard tab order, `CampaignListingCarousel` region landmark); `@axe-core/playwright` axe spec added covering gallery, login modal, carousel, and lightbox.
   - **P54-D** (fix): LayoutBuilder robustness — `ErrorBoundary` wrap on `LayoutBuilderModal`; drag bounds clamped to 0–100% in `moveSlot` state layer; 100-slot perf check documented.
   - **P54-E** (chore): Release-readiness closeout — vitest 3124/3124, PHPUnit 1049/1049, all bundle budgets met, `build:wp` clean, Sentry wiring confirmed.
@@ -134,9 +134,9 @@
   - **P20-F**: License & legal — GPLv2 LICENSE, complete plugin header with all WordPress.org required fields.
   - **P20-G**: GitHub Actions CI/CD — 4 workflows: `ci.yml` (lint → test-frontend → test-php 8.1/8.2/8.3), `release.yml` (auto SemVer + ZIP + GitHub Release), `svn-deploy.yml` (WordPress.org deploy), `e2e.yml` (Playwright). `scripts/compute-version.sh` for conventional commit version calculation. Legacy CircleCI removed.
   - **P20-H** (12/12): Security hardening sprint — parseProps whitelist, DNS rebinding SSRF fix, nonce bypass hardened, Sentry PII scrubbing, CSP headers, ErrorBoundary→Sentry, apiClient timeout+AbortController, status/visibility whitelist, encodeURIComponent, console.info DEV guard, overlay file deletion, password reset URL fix.
-  - **P20-I**: Performance — layout template CPT migration, `wpsg_media_refs` reverse-index table, cache version counter, lazy LayoutBuilderModal (504→327 KB), async email queue, shared React root (feature-flagged).
-  - **P20-J**: Plugin directory preparation — `readme.txt`, composer dev deps separated, custom capability type (`wpsg_campaign`), i18n `load_plugin_textdomain()` + `__()` wrapping.
-  - **P20-K**: JWT nonce-only default — JWT gated behind `WPSG_ENABLE_JWT_AUTH`, `useNonceHeartbeat` hook, cookie-based auth endpoints.
+  - **P20-I**: Performance — layout template CPT migration, `mullion_media_refs` reverse-index table, cache version counter, lazy LayoutBuilderModal (504→327 KB), async email queue, shared React root (feature-flagged).
+  - **P20-J**: Plugin directory preparation — `readme.txt`, composer dev deps separated, custom capability type (`mullion_campaign`), i18n `load_plugin_textdomain()` + `__()` wrapping.
+  - **P20-K**: JWT nonce-only default — JWT gated behind `MULLION_ENABLE_JWT_AUTH`, `useNonceHeartbeat` hook, cookie-based auth endpoints.
   - **P20-L**: SVG dual-layer sanitization — `enshrined/svg-sanitize`, custom CSS/URI validators, `.htaccess` CSP for overlay dir.
   - **PHPUnit coverage**: 461 tests, 1104 assertions, ~92% method coverage (172/186 methods).
   - **Layout Builder QA**: Rounds 3–7 — advanced gradient controls, mask sub-layer system, image effects (5 categories), per-slot glow, background properties panel, design assets drag-and-drop, canvas drop-to-create.
@@ -147,21 +147,21 @@
   - **P19-D**: Pre-commit toolchain — Husky, lint-staged, commitlint; `CONTRIBUTING.md`.
   - **P19-A**: Builder keyboard shortcuts — `Ctrl+S`, `?` help modal, `V`, zoom shortcuts; `BuilderKeyboardShortcutsModal`; 25 tests.
   - **P19-B**: Builder undo/redo improvements — `HistoryEntry` type, 35 labeled `mutate()` call sites, `BuilderHistoryPanel` dockview tab with click-to-jump; 23 tests.
-  - **P19-C**: WP-CLI — `wp wpsg campaign list/archive/restore/duplicate/export/import`, `wp wpsg media list/orphans`, `wp wpsg cache clear`, `wp wpsg analytics clear`, `wp wpsg rate-limit reset`; 27 PHPUnit scenarios.
+  - **P19-C**: WP-CLI — `wp mullion campaign list/archive/restore/duplicate/export/import`, `wp mullion media list/orphans`, `wp mullion cache clear`, `wp mullion analytics clear`, `wp mullion rate-limit reset`; 27 PHPUnit scenarios.
   - **P19-E (fix)**: `SettingsPanel.test.tsx` race condition fixed — `findByRole` load gate, label-targeted switch helpers, `clickTabAndWait` helper.
 
 ### v0.16.0 (March 1, 2026)
 - **MINOR**: Phase 18 — Admin Power Features, Coverage & Canvas Polish
   - **P18-QA JS**: 841 tests; functions threshold lifted 41%→66.5%; all Vitest thresholds green.
-  - **P18-QA PHP**: 117 tests / 303 assertions; `WPSG_Rate_Limiter_Test`, `WPSG_Embed_Test`, Campaign REST edge cases.
+  - **P18-QA PHP**: 117 tests / 303 assertions; `Mullion_Rate_Limiter_Test`, `Mullion_Embed_Test`, Campaign REST edge cases.
   - **P18-A**: Zoomable canvas — `react-zoom-pan-pinch`, `CanvasTransformContext`, hand tool, zoom % indicator, Rnd scale fix.
   - **P18-B**: Bulk actions — `POST /campaigns/batch`, `BulkActionsBar`, select-mode toggle.
   - **P18-C**: Campaign duplication — `POST /campaigns/{id}/duplicate`, `CampaignDuplicateModal`.
   - **P18-D**: Export/Import JSON — `GET /campaigns/{id}/export`, `POST /campaigns/import`, `CampaignImportModal`.
   - **P18-E**: Keyboard shortcuts — `KeyboardShortcutsModal`, `useHotkeys` bindings (`?`, `mod+n`, `mod+i`, `mod+shift+a`).
-  - **P18-F**: Analytics dashboard — `wpsg_analytics_events` table, rate-limited beacon, recharts lazy `AnalyticsDashboard`.
+  - **P18-F**: Analytics dashboard — `mullion_analytics_events` table, rate-limited beacon, recharts lazy `AnalyticsDashboard`.
   - **P18-G**: Media usage tracking — usage badge popover, orphan filter, delete guard.
-  - **P18-H**: Campaign categories — `wpsg_campaign_category` taxonomy, `TagsInput`, `Chip.Group` filter pills.
+  - **P18-H**: Campaign categories — `mullion_campaign_category` taxonomy, `TagsInput`, `Chip.Group` filter pills.
   - **P18-I**: Access request workflow — per-token WP options storage with index (no custom DB table); `POST/GET /campaigns/{id}/access-requests`; approve/deny action endpoints; `RequestAccessForm`, `PendingRequestsPanel`, approval email.
   - **P18-X**: Code size reduction — `App.tsx` 808→346 lines; `AdminPanel.tsx` 1168→390 lines; 8 new hooks.
 
@@ -200,10 +200,10 @@
 - **MINOR**: Phase 14 — Infrastructure Hardening, Advanced Settings & Backend Utilities
   - **P14-A**: Security hardening — 4 Critical + 6 High findings fixed (dead code removal, POST_TYPE constant, stale closure fix, oEmbed response leak, status/visibility allowlist, CORS headers, WP_DEBUG gate, URI sanitization, DDL identifier validation).
   - **P14-B**: Settings DRY refactor — `to_js()`/`from_js()` auto snake↔camel conversion, generic fallback sanitizer, `mergeSettingsWithDefaults()` React utility. Deleted 586 lines PHP + 240 lines React of triplicated mapping. ~70 new advanced settings behind `advancedSettingsEnabled` toggle.
-  - **P14-C**: External thumbnail cache — `WPSG_Thumbnail_Cache` with download/cache/cleanup/refresh, daily cron, REST endpoints.
+  - **P14-C**: External thumbnail cache — `Mullion_Thumbnail_Cache` with download/cache/cleanup/refresh, daily cron, REST endpoints.
   - **P14-D**: oEmbed monitoring & rate limiting — per-IP transient limiter, per-provider failure tracking, `get_health_data()` aggregation, REST health endpoint.
   - **P14-F**: Image optimization — auto-resize/compress on upload with optional WebP conversion via GD library.
-  - **P14-G**: Media & campaign tagging — `wpsg_campaign_tag` and `wpsg_media_tag` taxonomies with REST endpoints.
+  - **P14-G**: Media & campaign tagging — `mullion_campaign_tag` and `mullion_media_tag` taxonomies with REST endpoints.
   - Advanced Settings UI tab in SettingsPanel with 8 Accordion sections (Card, Text, Modal, Upload/Media, Tile/Adapter, Lightbox, Navigation, System).
 
 ### v0.11.0 (February 22, 2026)
@@ -248,7 +248,7 @@
   - Theme infrastructure: JSON definitions → chroma.js color generation → pre-computed MantineThemeOverride objects
   - Hierarchical base/extension theme architecture with strict TypeScript validation
   - Shadow DOM compatible via Mantine's native cssVariablesSelector + getRootElement
-  - CSS variable bridge (`--wpsg-*`) for SCSS module compatibility
+  - CSS variable bridge (`--mullion-*`) for SCSS module compatibility
   - Migrated ~45 hardcoded color values across 11 component/SCSS files to theme system
   - WordPress admin: theme selector dropdown (grouped by category) + user override toggle
   - ThemeSelector component with live color-swatch previews
@@ -286,7 +286,7 @@
     - framer-motion animations with reduce-motion support
     - 68 tests passing with 93.65% coverage
   - **WordPress Integration (Phase 5):**
-    - WordPress Settings API integration (`class-wpsg-settings.php`)
+    - WordPress Settings API integration (`class-mullion-settings.php`)
     - REST endpoints for settings (GET/POST `/settings`)
     - In-app SettingsPanel with display settings
     - Comprehensive QA documentation (`TESTING_QA.md`)

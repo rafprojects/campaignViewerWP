@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the implemented Phase 23 user flow for gallery configuration in WP Super Gallery.
+This document records the implemented Phase 23 user flow for gallery configuration in Mullion.
 
 The gallery configuration UX must satisfy four requirements:
 

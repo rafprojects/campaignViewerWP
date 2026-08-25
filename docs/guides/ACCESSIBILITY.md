@@ -1,4 +1,4 @@
-# WP Super Gallery — Accessibility (WCAG AA)
+# Mullion — Accessibility (WCAG AA)
 
 **Audience:** developers/maintainers. What's automated and gated, what the P62-H pass changed,
 and the remaining **human** assistive-technology (AT) audit that automated tooling can't cover.

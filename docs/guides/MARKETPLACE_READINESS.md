@@ -1,6 +1,6 @@
-# WP Super Gallery — Marketplace Readiness & Go-Live Runbook
+# Mullion — Marketplace Readiness & Go-Live Runbook
 
-**Audience:** the product owner / operator taking WP Super Gallery to market. This is the
+**Audience:** the product owner / operator taking Mullion to market. This is the
 step-by-step runbook for launching the **paid** plugin, plus how to test the Pro
 functionality end-to-end.
 
@@ -23,8 +23,8 @@ Two prior phases got us here:
 - **Phase 60 made the plugin *shippable*** — version single-source-of-truth, Plugin Check /
   PHPCS compliance, accessibility hardening, `docs/PRIVACY.md`, packaging, and 5 shipped
   language packs.
-- **Phase 62 made it *sellable*** — the `WPSG_License` entitlement seam, a credential-ready
-  Freemius SDK bootstrap (`wpsg_fs()`), 3 gated LayoutBuilder Pro features, and buyer docs.
+- **Phase 62 made it *sellable*** — the `Mullion_License` entitlement seam, a credential-ready
+  Freemius SDK bootstrap (`mullion_fs()`), 3 gated LayoutBuilder Pro features, and buyer docs.
 
 Distribution model is **freemium** (expanded 2026-07-10): a paid build sold via **Freemius**
 (the *merchant of record*, so EU-VAT / US sales-tax is handled for you) **plus a free "lite"
@@ -60,8 +60,8 @@ tracks **P62-F–K** — see §10; those do not block the premium launch.
 
 | # | Milestone | What you do | Unblocks |
 |---|---|---|---|
-| **M1** | Freemius **account + product registration** | Create a Freemius account, register "WP Super Gallery" as a plugin product, and obtain the **Plugin ID** + **public key** (keep the secret key private, never in the repo). | Credentials for §3 |
-| **M2** | **Product / bundle configuration** | In the Freemius dashboard configure the product: the premium bundle build, menu placement, and the `is_premium` path. Then **reconcile the `NOTE (M2)`** hardcoded defaults in `wpsg_fs()` (`wp-super-gallery/wp-super-gallery.php`) with the exact `fs_dynamic_init(...)` snippet Freemius generates (menu slug, icon, `is_premium` bundle path). | Correct SDK init |
+| **M1** | Freemius **account + product registration** | Create a Freemius account, register "Mullion" as a plugin product, and obtain the **Plugin ID** + **public key** (keep the secret key private, never in the repo). | Credentials for §3 |
+| **M2** | **Product / bundle configuration** | In the Freemius dashboard configure the product: the premium bundle build, menu placement, and the `is_premium` path. Then **reconcile the `NOTE (M2)`** hardcoded defaults in `mullion_fs()` (`mullion-gallery/mullion-gallery.php`) with the exact `fs_dynamic_init(...)` snippet Freemius generates (menu slug, icon, `is_premium` bundle path). | Correct SDK init |
 | **M3** | **Pricing / licensing config** (track P62-C) | Configure tiers (single / 5-site / agency), renewals, and the trial in the Freemius dashboard. See §6 for proposed defaults. | Checkout + seats |
 | **M4** | **Buyer-facing text** | Decide and write: support channel/email + SLA, and the refund policy; set the real pricing/upgrade URL. Then fill the placeholders in §5. | Public listing |
 
@@ -72,10 +72,10 @@ in a Freemius *sandbox* to run the activation/checkout/update tests against.
 
 ## 3. Injecting real Freemius credentials (technical go-live)
 
-The plugin ships **credential-ready**: `wpsg_fs()` (in `wp-super-gallery/wp-super-gallery.php`)
-reads the `wpsg_freemius_config` filter and, while the Plugin ID / public key are empty,
+The plugin ships **credential-ready**: `mullion_fs()` (in `mullion-gallery/mullion-gallery.php`)
+reads the `mullion_freemius_config` filter and, while the Plugin ID / public key are empty,
 returns `null` and makes **zero** network calls (a safe free-tier no-op). Supplying real
-credentials flips it live — and `WPSG_License::is_sdk_active()` starts returning `true`.
+credentials flips it live — and `Mullion_License::is_sdk_active()` starts returning `true`.
 
 **Credentials live OUTSIDE this repo — never commit them.** Inject them from a site-specific
 must-use plugin (or wp-config constants read into the filter):
@@ -83,10 +83,10 @@ must-use plugin (or wp-config constants read into the filter):
 ```php
 <?php
 /**
- * wp-content/mu-plugins/wpsg-freemius-credentials.php
+ * wp-content/mu-plugins/mullion-freemius-credentials.php
  * Site-specific. NEVER commit this to the plugin repo.
  */
-add_filter('wpsg_freemius_config', function () {
+add_filter('mullion_freemius_config', function () {
     return [
         'id'         => '1234',                   // Freemius Plugin ID (from M1)
         'public_key' => 'pk_xxxxxxxxxxxxxxxxxxxx', // Freemius public key (from M1)
@@ -95,21 +95,21 @@ add_filter('wpsg_freemius_config', function () {
 });
 
 // Recommended: set the real pricing/upgrade URL here (see §5) so you don't edit committed source.
-add_filter('wpsg_license_upgrade_url', fn () => 'https://yourstore.example/pricing');
+add_filter('mullion_license_upgrade_url', fn () => 'https://yourstore.example/pricing');
 ```
 
-Once this is in place: `wpsg_fs()` loads the vendored Freemius SDK, calls `fs_dynamic_init()`
-(your `$config` is merged last, so real values always win), fires `do_action('wpsg_fs_loaded')`,
-and every `WPSG_License` check delegates to Freemius instead of the free-tier stub.
+Once this is in place: `mullion_fs()` loads the vendored Freemius SDK, calls `fs_dynamic_init()`
+(your `$config` is merged last, so real values always win), fires `do_action('mullion_fs_loaded')`,
+and every `Mullion_License` check delegates to Freemius instead of the free-tier stub.
 
 See [PRO_FEATURES.md](PRO_FEATURES.md) §"The 5 filters" for the full filter list
-(`wpsg_freemius_config`, `wpsg_license_upgrade_url`, `wpsg_license_tier`, …).
+(`mullion_freemius_config`, `mullion_license_upgrade_url`, `mullion_license_tier`, …).
 
 ---
 
 ## 4. Reconcile the SDK init defaults (M2)
 
-`wpsg_fs()` contains an explicit `NOTE (M2)` marking hardcoded `fs_dynamic_init` defaults
+`mullion_fs()` contains an explicit `NOTE (M2)` marking hardcoded `fs_dynamic_init` defaults
 (`slug`, `menu.slug`, `menu.first-path`, `has_paid_plans`, `is_premium`) that must be
 reconciled with the exact snippet the Freemius dashboard generates for your product once it
 exists. Because `$config` (from your filter) is merged **last**, the `id`/`public_key`/
@@ -125,14 +125,14 @@ Every marketplace-readiness placeholder still in the tree. Grep to re-verify:
 
 | Location | Placeholder | How to fill |
 |---|---|---|
-| `wp-plugin/wp-super-gallery/readme.txt` | support email + refund policy (2 `[PLACEHOLDER]`) | Edit to final support email + refund text (M4). |
+| `wp-plugin/mullion-gallery/readme.txt` | support email + refund policy (2 `[PLACEHOLDER]`) | Edit to final support email + refund text (M4). |
 | `docs/guides/LICENSE_ACTIVATION.md` | support email + refund policy (2 `[PLACEHOLDER]`) | Same values as readme (M4). |
-| `wp-plugin/wp-super-gallery/includes/class-wpsg-license.php` | `get_upgrade_url()` → `https://your-site.tld/pricing` | **Prefer** the `wpsg_license_upgrade_url` filter (§3) — then this hardcoded default is never used. Optionally update the default too. |
-| `src/hooks/useWpsgLicense.ts` | `DEFAULT_UPGRADE_URL` fallback | Same — the client reads the URL from `get_upgrade_url()` via page config, so the filter covers it; this fallback only shows if config omits a URL. |
+| `wp-plugin/mullion-gallery/includes/class-mullion-license.php` | `get_upgrade_url()` → `https://your-site.tld/pricing` | **Prefer** the `mullion_license_upgrade_url` filter (§3) — then this hardcoded default is never used. Optionally update the default too. |
+| `src/hooks/useMullionLicense.ts` | `DEFAULT_UPGRADE_URL` fallback | Same — the client reads the URL from `get_upgrade_url()` via page config, so the filter covers it; this fallback only shows if config omits a URL. |
 | `.wordpress-org/README.md` | banner / icon / screenshot artwork spec | Commission the store artwork (designer pass, from P60-E); needed for both the Freemius and WP.org listings (P62-I). |
 | Product **EULA** + `docs/PRIVACY.md` | not yet authored (P62-J) | Author a product EULA (link from the Freemius listing + `LICENSE_ACTIVATION.md`) and **extend** `docs/PRIVACY.md` to cover Freemius-checkout data handling + the SDK opt-in analytics. |
 
-> **Tip:** setting `wpsg_license_upgrade_url` in your mu-plugin (§3) fixes the upgrade URL for
+> **Tip:** setting `mullion_license_upgrade_url` in your mu-plugin (§3) fixes the upgrade URL for
 > both PHP and the React client at once, with no source edits — the two hardcoded
 > `your-site.tld/pricing` defaults become dead fallbacks.
 
@@ -157,7 +157,7 @@ into the Freemius dashboard at M3.**
 
 The pro feature set is currently **all-or-nothing** (any active license unlocks all 3 Pro
 features). If you later want to split features across tiers, that's a code-free change via the
-`wpsg_license_feature_enabled` filter — see [PRO_FEATURES.md](PRO_FEATURES.md).
+`mullion_license_feature_enabled` filter — see [PRO_FEATURES.md](PRO_FEATURES.md).
 
 ---
 
@@ -188,14 +188,14 @@ licensed UI/behaviour with a dev-only mu-plugin:
 
 ```php
 <?php
-/** wp-content/mu-plugins/wpsg-fake-pro.php — DEV/QA ONLY. */
-add_filter('wpsg_license_is_pro', '__return_true');
+/** wp-content/mu-plugins/mullion-fake-pro.php — DEV/QA ONLY. */
+add_filter('mullion_license_is_pro', '__return_true');
 ```
 
 To simulate a **single** feature being unlocked (per-tier testing):
 
 ```php
-add_filter('wpsg_license_feature_enabled', function ($enabled, $feature) {
+add_filter('mullion_license_feature_enabled', function ($enabled, $feature) {
     return $feature === 'layout_text_layers' ? true : $enabled; // e.g. only text layers
 }, 10, 2);
 ```
@@ -228,10 +228,10 @@ With the free tier (no filter) vs Pro (filter on):
   and the `php-testing` skill):
   ```bash
   npx wp-env start
-  npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/wp-super-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist tests/WPSG_License_Test.php tests/WPSG_Layout_Templates_Test.php tests/WPSG_Import_Sanitization_Test.php"
+  npx wp-env run tests-cli sh -c "cd /var/www/html/wp-content/plugins/mullion-gallery && php ./vendor/bin/phpunit -c phpunit.xml.dist tests/Mullion_License_Test.php tests/Mullion_Layout_Templates_Test.php tests/Mullion_Import_Sanitization_Test.php"
   ```
   Covers the stub/filter paths, strip-on-create/import, and freeze-on-update.
-- **Vitest** — `npm test` (the `useWpsgLicense` hook + the 3 gate component suites).
+- **Vitest** — `npm test` (the `useMullionLicense` hook + the 3 gate component suites).
 - **i18n locale coverage** — `npm run i18n:check:locales` (fails if any upsell string is not
   translated in all 5 reference locales).
 
@@ -245,13 +245,13 @@ Once M1–M3 are done, run this against the Freemius **sandbox** before flipping
 2. Simulate an update → confirm authenticated delivery via **Plugins → Updates**.
 3. Deactivate the license → confirm Pro re-locks and **existing saved content still renders**.
 4. Confirm the Freemius **opt-in / skip dialog** appears on first activation.
-5. Confirm `WPSG_License::can_use_premium_code()` reflects a **purchased / trial / expired**
+5. Confirm `Mullion_License::can_use_premium_code()` reflects a **purchased / trial / expired**
    license correctly.
 
 ### (e) Follow-on: e2e Pro coverage
 
 Pro-gating is **not** currently exercised in the Playwright e2e suite. It could be added by
-dropping a `wpsg_license_is_pro` mu-plugin into the wp-env instance the `e2e.yml` workflow
+dropping a `mullion_license_is_pro` mu-plugin into the wp-env instance the `e2e.yml` workflow
 starts, then asserting the licensed UI. Tracked as a nice-to-have, not built.
 
 ---
@@ -310,11 +310,11 @@ WCAG work and the 1–10 day WP.org review off the paid-launch critical path.
 ## 11. Pre-launch checklist
 
 - [ ] **M1** — Freemius account created; plugin product registered; Plugin ID + public key obtained.
-- [ ] **M2** — Product/bundle configured; `wpsg_fs()` `NOTE (M2)` defaults reconciled with Freemius's snippet.
+- [ ] **M2** — Product/bundle configured; `mullion_fs()` `NOTE (M2)` defaults reconciled with Freemius's snippet.
 - [ ] **M3** — Tiers / renewals / trial configured in Freemius (pricing confirmed vs competitors — §6).
 - [ ] **M4** — Support email + SLA and refund policy decided.
 - [ ] Placeholders filled (§5): `readme.txt`, `LICENSE_ACTIVATION.md`, upgrade URL (filter or source), `.wordpress-org` artwork.
-- [ ] Credentials injected via `wpsg_freemius_config` mu-plugin (outside the repo); `is_sdk_active()` returns true on the store site.
+- [ ] Credentials injected via `mullion_freemius_config` mu-plugin (outside the repo); `is_sdk_active()` returns true on the store site.
 - [ ] Automated gates green (§8c): Vitest, PHPUnit license/gating suites, `i18n:check:locales`.
 - [ ] Manual Pro matrix passed (§8b), including server-enforcement + "existing content renders."
 - [ ] Freemius **sandbox** validation passed (§8d) → P62-A/B flipped to shipped.
