@@ -13,7 +13,7 @@ is generated. There is no second accent hex, deliberately.
 | surface       | `#102530` | cards, panels          |
 | surfaceRaised | `#1a3542` | menus, popovers        |
 | border        | `#22414f` | decorative dividers    |
-| borderStrong  | `#577577` | input outlines, focusable edges |
+| borderStrong  | `#648284` | input outlines, focusable edges (was `#577577` — 2.58:1 on `surfaceRaised`) |
 | text          | `#eef8fb` | body copy              |
 | textMuted     | `#9db4bf` | secondary copy         |
 | accent        | `#1ad1c4` | brand + interactive    |
@@ -38,7 +38,7 @@ mistake — a second field for a job an existing field already does. There is no
 > the first rung from the dark end that clears 4.5:1 against the theme's
 > lightest surface AND 4.5:1 under white text
 
-For an OKLCH-generated ramp from `#1ad1c4` that is **rung 600** (`#007a70`):
+Against the OKLCH ramp from `#1ad1c4` this resolves to `#007870` (your generated value):
 4.76:1 on `#e8f7fc`, 5.23:1 under white. Specify the criterion, not the value —
 it then survives any change to the generator.
 
@@ -53,11 +53,12 @@ WordPress.org listing, Freemius opt-in, banners, marketing, docs.
 |-----------------|-----------|-----------------------------------------|
 | brand ground    | `#08141b` | banner and icon tile                    |
 | brand accent    | `#1ad1c4` | on dark grounds only                    |
-| accent on light | `#007a70` | the ramp-600 value, fixed for brand use |
+| accent on light | `#007870` | hue 186.7 vs brand 186.8 — hue-truer than the earlier `#007a70` (184.9) and identical to the value the dark theme resolves to for fills |
 | wordmark ink    | `#0d1b23` | wordmark on light grounds               |
 
 The bright accent fails on white (1.92:1). Any accent-coloured text or icon on a
-light ground uses `#007a70`. This is a brand rule, not a theme token.
+light ground uses `#007870`. This is a brand rule, not a theme token — but the light
+theme's `accent` role is the same value, deliberately, so brand and product share one teal.
 
 ## 4. Status rule
 
@@ -82,7 +83,7 @@ success/accent adjacency is not worth over-engineering.
 Text-safety on light grounds was its **entire** purpose. No fill role, no
 background role. Dropping it costs nothing; the generated ramp covers every
 in-product use. The only residual need is in brand assets (white surfaces the
-theme engine never renders) and is already specified in §3 above as `#007a70`.
+theme engine never renders) and is already specified in §3 above as `#007870`.
 
 ## Chrome-locking toggle — name and default
 
@@ -193,7 +194,7 @@ Optional-with-fallback is the right shape, but the fallback target matters. Alia
 
 | | on surface `#102530` | |
 |---|---|---|
-| `borderStrong` `#577577` | 3.17:1 | pass |
+| `borderStrong` `#648284` | 3.81:1 | pass (was `#577577` at 3.17:1 — still passed here, but failed on `surfaceRaised`) |
 | `border` `#22414f` | **1.46:1** | **fail** — what an alias would silently give you |
 
 `surfaceRaised` falling back to `surface` is harmless — the UI just reads flatter. `borderStrong`
@@ -238,3 +239,37 @@ The OKLCH-side figures still in this document — the Cyberpunk gamut-drift tabl
 migration table — fall in the second category. They assume lightness stops for the new generator
 that have not been chosen, so they demonstrate that the hazards are real without predicting the
 values. Re-measure both once P75-F is implemented.
+
+
+---
+
+# Rig Cyan Light
+
+Full derivation, verification and rationale in `LIGHT-THEME-SPEC.md`. Summary:
+
+| Role | Dark | Light |
+|---|---|---|
+| `background` | `#08141b` | `#e9eef1` |
+| `surface` | `#102530` | `#f7fafb` |
+| `surfaceRaised` | `#1a3542` | `#ffffff` |
+| `border` | `#22414f` | `#cddadb` |
+| `borderStrong` | `#648284` | `#78898b` |
+| `text` | `#eef8fb` | `#132025` |
+| `textMuted` | `#9db4bf` | `#5f6c71` |
+| `accent` | `#1ad1c4` | `#007870` |
+| `success` | `#56b93e` | `#227b00` |
+| `warning` | `#f5b12b` | `#8e6200` |
+| `error` | `#ff6b5e` | `#c5342d` |
+
+- `accent` on light is **`#007870`** — the raw brand cyan is 1.71–1.92:1 on light grounds and
+  unusable as text, fill or stroke.
+- Elevation reads lighter in **both** themes: `background` is the darkest of the three in each.
+  Do not invert the dark stack.
+- Labels on accent fills are **white** in both themes (5.36:1 light).
+  The `text` token on an accent fill is 3.11:1 — do not use it.
+- Status colours are hue-locked to their dark siblings (≤0.6° delta) and gamut-mapped.
+- `info` / `accentGreen` / `accentPurple` authored in neither theme. Add to both or neither.
+
+**Correction carried into §1 above:** the dark `borderStrong` was `#577577`, which measures
+2.58:1 on `surfaceRaised` — below the 3:1 affordance bar. Replaced with `#648284` (same hue,
+3.11:1 on `surfaceRaised`).

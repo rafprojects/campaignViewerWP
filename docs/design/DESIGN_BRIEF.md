@@ -1,7 +1,7 @@
 # Mullion — design brief
 
 This is the creative brief for the plugin's visual identity: icon, banner, and supporting marks.
-It is the companion to [`README.md`](README.md) in this directory, which holds the hard
+It is the companion to [`.wordpress-org/README.md`](../../.wordpress-org/README.md), which holds the hard
 **filename and dimension spec**. Read that one for *what files to produce*; read this one for
 *what they should look like and why*.
 
@@ -266,7 +266,8 @@ as evidence of range and as a palette source:
 | Forest Whisper | `#f3f5f4` | `#15803d` |
 | High Contrast | `#000000` | `#6ec1ff` |
 
-Also shipped: Default Light/Dark, GitHub Light, Material Light, Catppuccin Latte, Solarized
+Also shipped: Mullion (`#08141b` / `#1ad1c4`) and Mullion Light (`#e9eef1` / `#007870`) — the
+brand default pair, see `LIGHT-THEME-SPEC.md` — plus GitHub Light, Material Light, Catppuccin Latte, Solarized
 Light, Darcula, Midnight Rose, Crimson Canvas, Halloween, Reverse Halloween.
 
 ### Typography
@@ -371,9 +372,9 @@ Suggested order, reflecting the builder-led positioning:
 | 4 | **Lightbox viewer** | Open over a gallery, navigation controls visible. |
 | 5 | **Theme / adapter variety** | The theme selector, or a composite of one gallery across several adapters. Sells configurability better than a settings panel does. |
 
-> **Note:** this reorders the manifest currently recorded in [`README.md`](README.md), which
+> **Note:** this reorders the manifest currently recorded in [`.wordpress-org/README.md`](../../.wordpress-org/README.md), which
 > leads with the classic grid. The reorder is a recommendation pending sign-off. If it is
-> adopted, the captions in `readme.txt` and the manifest table in `README.md` **must be updated
+> adopted, the captions in `readme.txt` and the manifest table in `.wordpress-org/README.md` **must be updated
 > together** — WordPress.org matches captions to files by number, and they will silently
 > mismatch otherwise.
 
@@ -401,9 +402,9 @@ same mark would make the decision much easier.
 
 ## Practical notes
 
-- Finished WordPress.org assets drop straight into this directory (`.wordpress-org/`) with the
-  exact filenames above. The directory is **not** shipped inside the plugin ZIP; a GitHub Action
-  publishes it to the WordPress.org listing.
+- Finished WordPress.org assets drop straight into the repo's `.wordpress-org/` directory with the
+  exact filenames above. That directory is **not** shipped inside the plugin ZIP; a GitHub Action
+  publishes it to the WordPress.org listing — so it holds listing artwork only, not this brief.
 - The same source graphics serve both the free WordPress.org listing and the Freemius premium
   listing. Design once.
 - Compress the PNGs. Keep total asset weight sensible.

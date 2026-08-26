@@ -57,6 +57,18 @@ export function intendedUiContrastChecks(
       bg: rc.surface,
       minRatio,
     },
+    {
+      label: 'borderStrong on surface2 (controls on elevated form chrome)',
+      fg: rc.borderStrong,
+      bg: rc.surface2,
+      minRatio,
+    },
+    {
+      label: 'borderStrong on surfaceRaised (inputs inside menus / popovers)',
+      fg: rc.borderStrong,
+      bg: rc.surfaceRaised,
+      minRatio,
+    },
   ];
 }
 

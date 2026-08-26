@@ -155,16 +155,21 @@ export function deriveDarkTuple(
 }
 
 /**
- * Derive a 3:1-against-surface border color (P74-N).
+ * Derive a 3:1 affordance-border color (P74-N / P75-G).
  *
  * Holds hue, eases chroma slightly, and steps lightness toward mid-grey
- * until WCAG 1.4.11's 3:1 bar clears. Must not alias to `border` — that
- * token is often a decorative divider below 3:1.
+ * until WCAG 1.4.11's 3:1 bar clears against `surface` *and* every extra
+ * ground (typically surfaceRaised — menus/popovers). Must not alias to
+ * `border`, which is often a decorative divider below 3:1.
  */
-export function deriveBorderStrong(surface: string): string {
+export function deriveBorderStrong(
+  surface: string,
+  alsoAgainst: readonly string[] = [],
+): string {
   const base = chroma(surface);
   const [l, c, h] = base.lch();
   const towardMid = l < 50 ? 1 : -1;
+  const grounds = [surface, ...alsoAgainst];
   let best = surface;
   for (let i = 1; i <= 100; i++) {
     const t = i / 100;
@@ -172,7 +177,7 @@ export function deriveBorderStrong(surface: string): string {
     const C = c * (1 - 0.2 * t);
     const hex = chroma.lch(L, Math.max(0, C), h).hex();
     best = hex;
-    if (chroma.contrast(hex, surface) >= UI_CONTRAST_MIN) {
+    if (grounds.every((g) => chroma.contrast(hex, g) >= UI_CONTRAST_MIN)) {
       return hex;
     }
   }
@@ -371,7 +376,8 @@ export function resolveColors(
   const textMuted2 = colors.textMuted2
     ?? chroma.mix(colors.text, colors.textMuted, 0.65, 'lab').hex();
 
-  const borderStrong = colors.borderStrong ?? deriveBorderStrong(colors.surface);
+  const borderStrong = colors.borderStrong
+    ?? deriveBorderStrong(colors.surface, [surfaceRaised]);
 
   const primaryShade = colors.primaryShade ?? derivePrimaryShade(colors);
   const fillIndex = Math.min(

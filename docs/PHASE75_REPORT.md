@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** In progress — P75-A through P75-F and P75-H landed
+**Status:** Complete — all 8 tracks landed
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-E 1.4.11 fill/stroke + authored `primaryShade`. Remaining: G.)
+**Last updated:** 2026-08-25 (P75-G: Rig Cyan light companion shipped; dark `borderStrong` corrected to `#648284`)
 
 ### Tracks
 
@@ -14,7 +14,7 @@
 | P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Done | Medium |
 | P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Done | Medium-Large |
 | P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Done | Small-Medium |
-| P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Planned — blocked on designer light values | Medium |
+| P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Done | Medium |
 | P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Done | Small |
 
 ---
@@ -226,7 +226,7 @@ Documented A/B as they shipped, not the pre-B sketch:
 
 ### Problem
 
-Originated from a designer review of the new default theme's color system (`.wordpress-org/color-response-from-designer.md.md`, response drafted in `.wordpress-org/response-to-designer.md`). The designer's core point: the Settings Panel and Layout Builder are surfaces the same admin/agency user sees every day across every site they run, unlike the front-end gallery embed, which is themed per-site specifically to match that site's own visitors and brand. Today, the admin-side chrome unintentionally inherits whatever gallery display theme is currently selected, rather than staying fixed to the Mullion brand:
+Originated from a designer review of the new default theme's color system (`docs/design/correspondences/color-response-from-designer.md`, response drafted in `docs/design/correspondences/response-to-designer.md`). The designer's core point: the Settings Panel and Layout Builder are surfaces the same admin/agency user sees every day across every site they run, unlike the front-end gallery embed, which is themed per-site specifically to match that site's own visitors and brand. Today, the admin-side chrome unintentionally inherits whatever gallery display theme is currently selected, rather than staying fixed to the Mullion brand:
 
 - `src/main.tsx:93` — `ThemedApp` calls `useTheme()`, which resolves the *currently selected gallery theme*, and feeds it into the `MantineProvider` (`src/main.tsx:109`) wrapping the whole app tree, including the lazy-loaded Settings Panel / Admin Panel.
 - `src/hooks/useBuilderShellColors.ts:27-29` — the Layout Builder shell independently calls `getTheme(themeId)` and derives its own accent (`colors.primary[5] ?? colors.accent`) from it.
@@ -241,7 +241,7 @@ Not all-or-nothing: default to a fixed Mullion brand palette for the Settings Pa
 
 ### Fix (sketch — not yet detailed)
 
-- New setting, canonical name pinned to remove the ambiguity an earlier informal description of this track had (see `.wordpress-org/response-to-designer.md` history): **`applyThemeEverywhere: false`** by default. `false` means chrome is locked to the fixed Mullion brand palette; `true` restores today's behavior (chrome follows the selected gallery theme). `ThemedApp` (`src/main.tsx`) and `useBuilderShellColors.ts` resolve their palette from a fixed Mullion brand theme object instead of `useTheme()`/`getTheme(themeId)` whenever the flag is `false`.
+- New setting, canonical name pinned to remove the ambiguity an earlier informal description of this track had (see `docs/design/correspondences/response-to-designer.md` history): **`applyThemeEverywhere: false`** by default. `false` means chrome is locked to the fixed Mullion brand palette; `true` restores today's behavior (chrome follows the selected gallery theme). `ThemedApp` (`src/main.tsx`) and `useBuilderShellColors.ts` resolve their palette from a fixed Mullion brand theme object instead of `useTheme()`/`getTheme(themeId)` whenever the flag is `false`.
 - Where the setting lives (a dedicated "advanced" toggle vs. folded into the existing theme-selection settings area) and its exact plumbing through `useTheme()`/`useBuilderShellColors()` needs design during implementation — not resolved by this planning pass.
 
 ### Acceptance criteria
@@ -276,7 +276,7 @@ Verified against the live tree, not only this plan's sketch.
 
 ### Problem
 
-A second round of designer review on P75-D (`.wordpress-org/color-response-from-designer.md.md`) flagged that the Layout Builder's panel-docking chrome (active-panel outline, drag-over border/background) draws in the raw theme accent with no contrast guarantee against its own panel surface, and that a custom theme can make this arbitrarily worse. Investigating that claim against the actual code (rather than the designer's own approximation of it) surfaced a bigger and more specific problem than either side had scoped:
+A second round of designer review on P75-D (`docs/design/correspondences/color-response-from-designer.md`) flagged that the Layout Builder's panel-docking chrome (active-panel outline, drag-over border/background) draws in the raw theme accent with no contrast guarantee against its own panel surface, and that a custom theme can make this arbitrarily worse. Investigating that claim against the actual code (rather than the designer's own approximation of it) surfaced a bigger and more specific problem than either side had scoped:
 
 1. **The code never uses the raw accent hex.** `useBuilderShellColors.ts:29` derives the Builder's accent as `colors.primary[5] ?? colors.accent` — one rung of the theme's auto-generated 10-step ramp, not the raw base color the designer's table tested. `[5]` is **hardcoded**, ignoring each theme's own authored `colors.primaryShade[colorScheme]` — the field every theme JSON already carries specifically to name which rung its UI fills should use. Checked against all 23 shipped theme definitions: **16 of 23 have a `primaryShade` that differs from index 5**, meaning the Builder's panel chrome has been silently ignoring most themes' own authored intent since before this rebrand — a pre-existing, independent defect, not something either this phase or the designer conversation created.
 2. **Once the correct authored shade is used instead of the hardcoded one, the contrast picture changes.** The designer's single flagged example (Sunset Boulevard, reported ~2.26–2.68:1 depending on surface approximation) **passes at 3.73:1** once bug #1 is fixed — their fix target didn't need a WCAG-specific repair at all, just the existing-field bug fixed. But a *different* set of themes still fails 3:1 even using their own correctly-authored shade: **catppuccin-mocha, crimson-canvas, darcula, default-dark (pre-Rig Cyan), forest-whisper, material-dark, solarized-dark, tokyo-night — 8 of 23.**
@@ -294,7 +294,7 @@ The designer's proposed repair mechanism — "derive it, don't pin it: keep the 
 
 **Step 2 — spike: full audit, all 23 themes × every non-text indicator site, admin and front-end.** With step 1's correct-by-authored-intent baseline established, measure real contrast for every (theme, indicator-site, surface) combination and confirm the true failure set — expected to be close to the 8 themes found in this investigation for the Builder specifically, but not yet confirmed for the front-end gallery or the other 21 admin sites. This spike's job is to produce that confirmed list before any repair-layer code is written, given how much the designer's own 8-theme sample diverged from what the real code does.
 
-The spike carries two methodology requirements from a second designer review round (`.wordpress-org/color-response-from-designer.md.md`, round 4), both to be settled empirically rather than assumed:
+The spike carries two methodology requirements from a second designer review round (`docs/design/correspondences/color-response-from-designer.md`, round 4), both to be settled empirically rather than assumed:
 
 - **Classify before measuring pass/fail.** WCAG 1.4.11's 3:1 bar applies only to a non-text indicator that is the *sole* means of identifying a UI component or state. A hover border that merely reinforces a state already signaled another way (cursor change, tooltip, an already-distinct icon) is decorative and exempt — the same distinction the designer's finished palette formalizes as `border` (1.46:1, decorative dividers, exempt) vs. `borderStrong` (3:1, input outlines and focusable edges — the affordance itself). Focus rings are always the non-exempt case: run every one of the ≥21+ admin sites and the front-end sites through this classification *before* computing pass/fail, not after — repairing an exempt decorative site the same as a sole-indicator one is how the fix makes the admin UI look heavier without actually improving accessibility.
 - **Test the fill-vs-stroke-shade hypothesis, don't assume it.** `primaryShade` is authored to answer "what shade of the accent does a white button label sit on" (a 4.5:1-under-white-text criterion — see round 4's `COLOR-SPEC.md` §2) — a different question from "what shade of the accent is visible as a thin border against this panel surface" (3:1 against the *surface*, no text-legibility component). The designer's own modeling of the confirmed Builder failures suggests these two needs may require different ramp rungs — tokyo-night and catppuccin-mocha ~3 rungs apart, material-dark and solarized-dark ~2 apart — which, if it holds generally, means the repair layer needs two roles (a fill rung and a separate stroke rung), not one. Flagged explicitly as unconfirmed: their own model doesn't explain forest-whisper (predicts 0 rungs of separation, i.e. no problem, but forest-whisper fails today), and it was built on the same surface approximation already shown wrong twice in this investigation. The spike should test this directly — for every theme in the confirmed failure set, does a single `primaryShade`-derived rung satisfy both the fill criterion and 3:1-against-surface, or genuinely not — before deciding whether a second shade role is needed at all.
@@ -349,9 +349,9 @@ Verified against the live adapter, CSS vars, Builder shell, and gallery focus/se
 
 ### Problem
 
-`packages/theme-engine/src/colorGen.ts`'s `generateColorScale` steps lightness linearly in HSL space; a stale code comment elsewhere in the module claims LAB, which was never true of this function (it describes an unrelated dark-tuple helper, `deriveDarkTuple`). Confirmed independently by the designer during color-system review (`.wordpress-org/color-response-from-designer.md.md`, round 3) — flagged as worth fixing on its own terms (an accurate ramp is foundational to every theme's generated 10-step scale, not just Rig Cyan's), and it turns out to gate two other pieces of work already in this phase:
+`packages/theme-engine/src/colorGen.ts`'s `generateColorScale` steps lightness linearly in HSL space; a stale code comment elsewhere in the module claims LAB, which was never true of this function (it describes an unrelated dark-tuple helper, `deriveDarkTuple`). Confirmed independently by the designer during color-system review (`docs/design/correspondences/color-response-from-designer.md`, round 3) — flagged as worth fixing on its own terms (an accurate ramp is foundational to every theme's generated 10-step scale, not just Rig Cyan's), and it turns out to gate two other pieces of work already in this phase:
 
-- **Rig Cyan's `primaryShade` (moved from P74-N, Phase 74 Decision I).** The designer's spec (`.wordpress-org/COLOR-SPEC.md` §2) defines `primaryShade` by criterion (first array index from the dark end clearing 4.5:1 against the lightest surface *and* 4.5:1 under white text). P74-N ships `default-dark.json` with no `primaryShade` value — only a `_primaryShade` note — so Phase 74 can close without guessing an index the OKLCH generator will immediately invalidate. **This track sets the live index** against the new ramp, in the same commit as the generator swap. Under the current HSL generator the criterion is index 7 (`#0f7971`); the OKLCH-side answer is not derivable until this track chooses lightness stops.
+- **Rig Cyan's `primaryShade` (moved from P74-N, Phase 74 Decision I).** The designer's spec (`docs/design/COLOR-SPEC.md` §2) defines `primaryShade` by criterion (first array index from the dark end clearing 4.5:1 against the lightest surface *and* 4.5:1 under white text). P74-N ships `default-dark.json` with no `primaryShade` value — only a `_primaryShade` note — so Phase 74 can close without guessing an index the OKLCH generator will immediately invalidate. **This track sets the live index** against the new ramp, in the same commit as the generator swap. Under the current HSL generator the criterion is index 7 (`#0f7971`); the OKLCH-side answer is not derivable until this track chooses lightness stops.
 - **P75-E step 3's repair layer**, which selects a ramp rung by criterion (nearest rung clearing 3:1 against a panel/UI surface) — correctness of that selection depends on the ramp itself being generated correctly.
 
 ### The gamut-mapping requirement (not optional)
@@ -371,7 +371,7 @@ A naive OKLCH port would be **worse** than the HSL generator it replaces for exa
 
 Before emitting each rung, test whether `oklch(L, C, H)` falls inside sRGB; if not, binary-search chroma downward, holding L and H fixed, until it does. Estimated ~15 lines. The chroma taper already used cosmetically for the Rig Cyan ramp is a refinement on top of this, not a substitute for it.
 
-**This is a data migration, not only an algorithm change — treat it as such in the same commit.** A theme's `primaryShade` index doesn't name a color, it names a *position* in a ramp; swapping the ramp-generation algorithm silently changes what every existing index resolves to. **16 of the 23 shipped themes set a non-default `primaryShade`.** Migrating the generator without re-deriving those 16 values would silently recolor every filled button/UI-fill element in each of those themes — a real regression, not a cosmetic one, and one that would ship invisibly (nothing currently asserts that a theme's *resolved* `primaryShade` color still clears its intended contrast bar, only that the field is present). Confirmed via the designer's round-5 review (`.wordpress-org/color-response-from-designer.md.md`) — their specific example numbers didn't reproduce against the real `generateColorScale` function when checked directly (see the Note below), but the underlying coupling is real and independently verified against our own code.
+**This is a data migration, not only an algorithm change — treat it as such in the same commit.** A theme's `primaryShade` index doesn't name a color, it names a *position* in a ramp; swapping the ramp-generation algorithm silently changes what every existing index resolves to. **16 of the 23 shipped themes set a non-default `primaryShade`.** Migrating the generator without re-deriving those 16 values would silently recolor every filled button/UI-fill element in each of those themes — a real regression, not a cosmetic one, and one that would ship invisibly (nothing currently asserts that a theme's *resolved* `primaryShade` color still clears its intended contrast bar, only that the field is present). Confirmed via the designer's round-5 review (`docs/design/correspondences/color-response-from-designer.md`) — their specific example numbers didn't reproduce against the real `generateColorScale` function when checked directly (see the Note below), but the underlying coupling is real and independently verified against our own code.
 
 **In the same change that swaps the generator:**
 1. **Set Rig Cyan / `default-dark`'s `primaryShade`** (the value P74-N deliberately omitted) against the new OKLCH ramp, by the criterion in `COLOR-SPEC.md` §2. Remove the `_primaryShade` note once a real index is in the file.
@@ -425,7 +425,7 @@ Sourced from the 2026-08-25 P74 PR Review leftover list.
 
 ### Fix
 
-**Do not invent hexes.** Ask the designer for a Rig Cyan *light* 11-role spec, same roles as [COLOR-SPEC.md](../.wordpress-org/COLOR-SPEC.md) §1 (`background`, `surface`, `surfaceRaised`, `border`, `borderStrong`, `text`, `textMuted`, `accent`, `success`, `warning`, `error`), plus whatever they want for `info` / `accentGreen` / `accentPurple`. Wordmark-on-light and "accent on light" (`#007a70`) already exist in COLOR-SPEC §3 as *brand* rules, not as a full theme. Those are not enough to fill `default-light.json` on their own.
+**Do not invent hexes.** Ask the designer for a Rig Cyan *light* 11-role spec, same roles as [COLOR-SPEC.md](design/COLOR-SPEC.md) §1 (`background`, `surface`, `surfaceRaised`, `border`, `borderStrong`, `text`, `textMuted`, `accent`, `success`, `warning`, `error`), plus whatever they want for `info` / `accentGreen` / `accentPurple`. Wordmark-on-light and "accent on light" (`#007a70`) already exist in COLOR-SPEC §3 as *brand* rules, not as a full theme. Those are not enough to fill `default-light.json` on their own.
 
 Once values exist:
 
@@ -448,6 +448,46 @@ Once values exist:
 - `auditThemeContrast` / theme-engine Vitest, including a light-scheme case.
 - `node scripts/validate-themes.mjs`.
 - Manual: ThemeSelector, switch Default dark ↔ light, confirm brand continuity (or the won't-fix copy).
+
+### Implementation Notes (2026-08-25)
+
+Outcome **(a)**: the designer supplied a full light 11-role spec ([LIGHT-THEME-SPEC.md](design/LIGHT-THEME-SPEC.md)), so `default-light.json` was overwritten in place with authored values. No hex in this track was invented on our side.
+
+**Every designer number was re-measured before use, not taken on faith.** Per the reliability rule in [COLOR-SPEC.md](design/COLOR-SPEC.md) — pure colour math on fixed hexes is trustworthy, anything modelling our code is not — all 11 roles were run through the real `chroma.contrast` against all three light grounds, plus the OKLCH hue deltas against their dark siblings. **All of it reproduced to two decimals** (`text` 14.25/15.88/16.65, `textMuted` 4.64/5.17/5.43, `success` 4.60/5.13/5.38, `warning` 4.61/5.14/5.39, `error` 4.60/5.13/5.38, `borderStrong` 3.12/3.48/3.65, `accent` 4.58/5.11/5.36, white-on-accent 5.36, text-on-accent 3.11, hue deltas 0.1°/0.1°/0.6°/0.1°). This is the first category doing its job again.
+
+**`primaryShade` is derived, not copied.** The plan warned against reusing Rig Cyan dark's `{light:6, dark:5}`. Run against the *light* palette, `derivePrimaryShade` independently returns `{light:6, dark:5}` — the same tuple, for a different reason: `inkContrastGround` picks `surfaceRaised` `#ffffff` as the lightest ground (the dark theme falls through to its `text` token), and index 6 of the OKLCH ramp from `#007870` is the first rung clearing 4.5:1 on white *and* 4.5:1 under white text. The value is authored in the JSON because `colorGen.test.ts`'s P75-F gate requires every bundled theme to state an index that matches live derivation; leaving it absent failed that test.
+
+**One designer claim did not hold, and it changed nothing.** The spec says `info` / `accentGreen` / `accentPurple` are omitted "so the pair stays symmetric with the dark theme, which does not author them either." `default-dark.json` **does** author all three — the premise is wrong (code-modelling category, as predicted). The conclusion survives anyway, for a better reason: resolve's fallbacks land on exactly the values the dark theme authors (`info` → `primary`, `accentGreen` → `success`, `accentPurple` → the literal `#a855f7` dark authors), and none of the three is read by any component — `adapter.ts` only forwards them into Mantine's `other`. Omitting them is therefore behaviour-identical *and* keeps the "no invented hexes" bar. The JSON `_comment` records that reasoning rather than the designer's.
+
+**Carried in from the same review: a real defect in the shipped dark theme.** `borderStrong` `#577577` measures **2.58:1 on `surfaceRaised` `#1a3542`** — it was originally verified against `surface` (3.17:1) and never against the raised ground, so any input or focusable edge inside a menu or popover was under the 1.4.11 bar. Fixed to `#648284` (same hue to 0.1°, 4.50/3.81/**3.11** on the three dark grounds, still 2.62:1 clear of `border`). Three follow-through changes so the class of bug cannot recur:
+
+- `deriveBorderStrong(surface, alsoAgainst[])` now satisfies 3:1 against *every* ground it is given; `resolveColors` passes `[surfaceRaised]`. Its four-theme test asserts both grounds.
+- `intendedUiContrastChecks` gained `borderStrong on surface2` and `borderStrong on surfaceRaised`, so the 23-theme audit samples the elevated grounds. All 23 pass — the omission the designer suspected in other bundled themes is not there.
+- `COLOR-SPEC.md` §1 and its fallback table carry the corrected value.
+
+**Brand-token alignment.** COLOR-SPEC §3's hand-derived *accent on light* `#007a70` is superseded by `#007870` — hue 186.7 vs the brand's 186.8 (the old value drifted to 184.9), ΔE ≈ 1, and it is the exact hex the dark theme's own fill resolves to. Brand and product now share one teal, and `colorGen.test.ts` tightened its assertion from ΔE < 3 to ΔE < 1 accordingly.
+
+**A gap the visual gate does not cover.** Controlled test: reverting the dark `borderStrong` to `#577577` and force-recapturing produced a **byte-identical** `display-settings-default-dark` and `theme-selector-open-default-dark`. borderStrong is painted on Input/Select/Checkbox/Switch outlines (`adapter.ts` ×9) but no theme-QA snapshot state exercises one. The whole 4-file baseline delta below is the light palette plus the "Mullion Light" label — nothing in the visual suite would have caught the 2.58:1 regression. `uiContrastAudit` is the only gate that covers it. Worth a Phase-76+ note if the snapshot matrix is ever extended.
+
+**The design docs moved out of `.wordpress-org/`.** `svn-deploy.yml` runs `10up/action-wordpress-plugin-deploy@v2` with `ASSETS_DIR` unset, so it syncs that **entire** directory into the listing's SVN `/assets/` area — publicly browsable. `COLOR-SPEC.md` and `DESIGN_BRIEF.md` were already exposed that way; adding the light spec and three rounds of designer correspondence would have widened it. All of it now lives under `docs/design/` (specs + brief) and `docs/design/correspondences/` (the request/response log), leaving `.wordpress-org/` holding only listing artwork and its filename manifest. Every reference was rewritten — 5 files in `docs/` and `packages/`, plus the cross-links inside the moved docs and the `.wordpress-org/README.md` pointer, which now states the exposure rule so the directory does not silently re-accumulate internal docs.
+
+**Catalog copy.** `theme-catalog.json` `default-light` → name "Mullion Light", description "Rig Cyan — light companion to the brand default"; the PHP picker label follows. The gettext catalogs still carry the orphaned `Default Light` msgid (and `Default Dark`, and `#: class-wpsg-*.php` refs) — that is **P76-A's** harvest, not this track's; `npm run i18n:check:locales` only covers front-end strings and stays green. `DESIGN_BRIEF.md` / `design-brief.html` swatches were retargeted off the retired `#f8fafc` / `#3b82f6`.
+
+### Validation results (2026-08-25)
+
+| Gate | Result |
+|---|---|
+| `npx vitest run` (full) | 3880 passed / 258 files |
+| theme-engine suite incl. `auditThemeContrast` + `uiContrastAudit` (23 themes, light case included) | 411 passed |
+| `node scripts/validate-themes.mjs` | 23 definitions, 0 errors, 0 warnings |
+| `npx tsc -b` | clean |
+| `npm run lint` | clean |
+| `npm run i18n:check` / `i18n:check:locales` | up to date / 5 locales complete |
+| `npx playwright test theme-qa` | 18 passed; 4 baselines recaptured (3× `default-light`, `theme-selector-open-default-dark`), other 10 byte-identical |
+| `npx playwright test --config=playwright.visual.config.ts` (Storybook, 0.1% tolerance) | 33 passed, no recapture needed |
+| `npm run validate:adapter-settings` | fails — **pre-existing**, reproduces on a clean `git stash` of this branch; unrelated to colour work |
+
+**Manual:** ThemeSelector dropdown captured on the light theme — the Default group now reads *Mullion / Rig Cyan — the Mullion brand default* above *Mullion Light / Rig Cyan — light companion to the brand default*, both swatch strips teal-led. Gallery shell renders the teal FAB and filter chip on `#e9eef1`. Acceptance criterion 2 satisfied: the Default group no longer pairs Rig Cyan dark with Instrument Blue light.
 
 ---
 
@@ -515,12 +555,12 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 ## Implementation Notes
 
-Phase 74 (including P74-K) has landed, so this phase is unblocked. P75-A through P75-F and P75-H have landed — see those tracks' Implementation Notes. G remains planned (blocked on designer light hexes).
+Phase 74 (including P74-K) has landed, so this phase is unblocked. All eight tracks have landed — see each track's Implementation Notes.
 
 ## Outcome
 
-**In progress.** P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-F landed (OKLCH ramp + sRGB chroma gamut-map; all 23 `primaryShade` indices re-derived by criterion; Rig Cyan dark fill `#007870`). P75-E landed (authored `primaryFill` replaces hardcoded `[5]`; `primaryStroke` is the nearest 3:1 rung — two roles, 13/23 dark-ish themes split; `uiContrastAudit` is the 1.4.11 CI gate).
+**Complete.** P75-G landed (designer-supplied Rig Cyan light overwrites `default-light.json`; `primaryShade` re-derived against the light palette, not copied; dark `borderStrong` corrected `#577577` → `#648284` after the same review found it at 2.58:1 on `surfaceRaised`; `deriveBorderStrong` and `uiContrastAudit` now both cover the raised ground). P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-F landed (OKLCH ramp + sRGB chroma gamut-map; all 23 `primaryShade` indices re-derived by criterion; Rig Cyan dark fill `#007870`). P75-E landed (authored `primaryFill` replaces hardcoded `[5]`; `primaryStroke` is the nearest 3:1 rung — two roles, 13/23 dark-ish themes split; `uiContrastAudit` is the 1.4.11 CI gate).
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-G (Rig Cyan light companion, blocked on a light spec from them) is the remaining color-system track. Once G lands, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration is closed on the colour system.** The designer supplied the light 11-role spec, which landed in P75-G along with the dark `borderStrong` defect they found while cross-checking it. Their only remaining external gate is trademark clearance for "Mullion"; nothing in the colour system is waiting on either side.
 
-Once the remaining tracks land, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).
+This phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

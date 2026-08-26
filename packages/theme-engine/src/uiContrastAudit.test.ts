@@ -10,7 +10,7 @@ import type { ThemeColors } from './types';
 
 describe('theme UI contrast — WCAG 1.4.11 (P75-E)', () => {
   for (const def of bundledThemeDefinitions) {
-    it(`${def.id}: affordance strokes meet ${UI_CONTRAST_MIN}:1`, () => {
+    it(`${def.id}: affordance strokes and borderStrong meet ${UI_CONTRAST_MIN}:1`, () => {
       const colors = def.colors as ThemeColors;
       const failures = auditUiContrast(colors, def.colorScheme);
       const report = failures

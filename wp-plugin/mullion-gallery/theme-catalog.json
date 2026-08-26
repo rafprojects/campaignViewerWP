@@ -10,10 +10,10 @@
   },
   {
     "id": "default-light",
-    "name": "Default Light",
+    "name": "Mullion Light",
     "colorScheme": "light",
     "group": "Default",
-    "description": "Clean light baseline — minimal and neutral",
+    "description": "Rig Cyan — light companion to the brand default",
     "displayOrder": 2,
     "seasonal": false
   },

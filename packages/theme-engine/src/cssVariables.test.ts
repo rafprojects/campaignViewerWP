@@ -51,7 +51,7 @@ describe('generateCssVariables', () => {
     expect(result).toContain('--mullion-color-surface-raised:');
     expect(result).toContain('#1a3542');
     expect(result).toContain('--mullion-color-border-strong:');
-    expect(result).toContain('#577577');
+    expect(result).toContain('#648284');
   });
 
   it('includes --mullion-color-background variable', () => {

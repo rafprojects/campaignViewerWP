@@ -13,7 +13,7 @@ Create custom themes for Mullion by writing a JSON file that specifies colors, a
       packages/theme-engine/src/definitions/my-brand.json
    ```
 
-   The bundled default (`id: "default-dark"`, display name **Mullion**) is the Rig Cyan palette in [COLOR-SPEC.md](../../.wordpress-org/COLOR-SPEC.md). The hexes in the examples below are a generic dark slate used to illustrate the schema, not that default.
+   The bundled default (`id: "default-dark"`, display name **Mullion**) is the Rig Cyan palette in [COLOR-SPEC.md](../design/COLOR-SPEC.md). The hexes in the examples below are a generic dark slate used to illustrate the schema, not that default.
 
 2. **Edit** the JSON — at minimum change `id`, `name`, and colors.
 

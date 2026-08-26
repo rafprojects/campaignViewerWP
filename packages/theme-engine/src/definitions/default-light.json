@@ -1,30 +1,26 @@
 {
-  "_comment": "Default Light — light counterpart to the flagship dark theme",
+  "_comment": "Mullion Light / Rig Cyan — light companion. Palette from docs/design/LIGHT-THEME-SPEC.md (P75-G). surface2/surface3/textMuted2 derived at resolve time from the authored anchors. info/accentGreen/accentPurple omitted: resolve's fallbacks (primary / success / #a855f7) land on exactly the values default-dark authors, and none of the three is read by a component.",
   "id": "default-light",
-  "name": "Default Light",
+  "name": "Mullion Light",
   "colorScheme": "light",
   "colors": {
-    "background": "#f8fafc",
-    "surface": "#ffffff",
-    "surface2": "#f1f5f9",
-    "surface3": "#e2e8f0",
+    "background": "#e9eef1",
+    "surface": "#f7fafb",
+    "surfaceRaised": "#ffffff",
 
-    "text": "#0f172a",
-    "textMuted": "#475569",
-    "textMuted2": "#677180",
+    "text": "#132025",
+    "textMuted": "#5f6c71",
 
-    "border": "#cbd5e1",
+    "border": "#cddadb",
+    "borderStrong": "#78898b",
 
-    "primary": "#3b82f6",
-    "primaryShade": { "light": 5, "dark": 5 },
+    "primary": "#007870",
+    "primaryShade": { "light": 6, "dark": 5 },
 
-    "success": "#16a34a",
-    "warning": "#d97706",
-    "error": "#dc2626",
-    "info": "#2563eb",
+    "success": "#227b00",
+    "warning": "#8e6200",
+    "error": "#c5342d",
 
-    "accent": "#3b82f6",
-    "accentGreen": "#16a34a",
-    "accentPurple": "#9333ea"
+    "accent": "#007870"
   }
 }

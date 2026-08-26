@@ -1,5 +1,5 @@
 {
-  "_comment": "Mullion / Rig Cyan — brand default. Palette from .wordpress-org/COLOR-SPEC.md §1 (P74-N). surface2/surface3/textMuted2 are derived at resolve time from the authored anchors.",
+  "_comment": "Mullion / Rig Cyan — brand default. Palette from docs/design/COLOR-SPEC.md §1 (P74-N). surface2/surface3/textMuted2 are derived at resolve time from the authored anchors.",
   "id": "default-dark",
   "name": "Mullion",
   "colorScheme": "dark",
@@ -12,7 +12,7 @@
     "textMuted": "#9db4bf",
 
     "border": "#22414f",
-    "borderStrong": "#577577",
+    "borderStrong": "#648284",
 
     "primary": "#1ad1c4",
     "primaryShade": { "light": 6, "dark": 5 },

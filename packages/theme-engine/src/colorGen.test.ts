@@ -130,13 +130,14 @@ describe('deriveDarkTuple', () => {
 
 describe('deriveBorderStrong', () => {
   it.each([
-    ['#102530', 'rig-cyan surface'],
-    ['#1a1b26', 'tokyo-night surface'],
-    ['#fffbeb', 'sunset-boulevard surface'],
-    ['#f3f5f4', 'forest-whisper surface'],
-  ])('clears 3:1 against %s (%s)', (surface) => {
-    const derived = deriveBorderStrong(surface);
+    ['#102530', '#1a3542', 'rig-cyan'],
+    ['#1a1b26', '#24283b', 'tokyo-night'],
+    ['#fffbeb', '#fde68a', 'sunset-boulevard'],
+    ['#f3f5f4', '#cbd5b1', 'forest-whisper'],
+  ])('clears 3:1 against %s and raised %s (%s)', (surface, raised) => {
+    const derived = deriveBorderStrong(surface, [raised]);
     expect(chroma.contrast(derived, surface)).toBeGreaterThanOrEqual(3);
+    expect(chroma.contrast(derived, raised)).toBeGreaterThanOrEqual(3);
   });
 });
 
@@ -365,8 +366,8 @@ describe('primaryShade criterion (P75-F)', () => {
     const hex = ramp[derived.dark]!;
     expect(chroma.contrast(hex, ground)).toBeGreaterThanOrEqual(PRIMARY_SHADE_CONTRAST_MIN);
     expect(chroma.contrast('#ffffff', hex)).toBeGreaterThanOrEqual(PRIMARY_SHADE_CONTRAST_MIN);
-    // Brand "accent on light" #007a70 is the same lightness band (ΔE ~1).
-    expect(chroma.deltaE(hex, '#007a70')).toBeLessThan(3);
+    // Brand "accent on light" is the same hex the dark fill resolves to.
+    expect(chroma.deltaE(hex, '#007870')).toBeLessThan(1);
     expect(derived.dark).toBe(selectPrimaryShadeIndex(ramp, ground));
   });
 

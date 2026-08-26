@@ -6,12 +6,17 @@ It is **not** shipped inside the plugin ZIP. The WordPress.org deploy workflow
 this directory automatically and publishes its contents to the SVN **`/assets/`** area of
 the listing. For a premium/Freemius or CodeCanyon listing, reuse the same source graphics.
 
+> Everything in here becomes **publicly browsable** at
+> `https://plugins.svn.wordpress.org/mullion-gallery/assets/`. Keep it to listing artwork and
+> this manifest — internal design specs and designer correspondence live under
+> [`docs/design/`](../docs/design/) (moved there in P75-G for exactly this reason).
+
 > **Status: slots specified, artwork pending.** The image files below are graphic-design
 > deliverables. This README defines the exact filenames, dimensions, and content brief so a
 > designer (or a later screenshot-capture pass) can drop finals straight in — no further
 > spec work needed. Filenames must match **exactly**; WordPress.org keys off them.
 
-> **Designers start here:** [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md) is the creative brief — what the
+> **Designers start here:** [`docs/design/DESIGN_BRIEF.md`](../docs/design/DESIGN_BRIEF.md) is the creative brief — what the
 > product is, who it's for, the agreed direction for the icon and banner, the Freemius asset
 > requirements, and the rendering constraints (notably: the Freemius opt-in screen circle-crops
 > the icon at 80×80 on white). This file remains the authoritative **filename and dimension spec**.
