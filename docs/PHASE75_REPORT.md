@@ -563,7 +563,7 @@ Phase 74 (including P74-K) has landed, so this phase is unblocked. All eight tra
 
 Self-review of the whole branch (`main...HEAD`, 8 commits, 110 files) after all eight tracks landed, reading the diff rather than re-reading the track prose.
 
-**Every existing gate was re-run on the branch as delivered, before any change:** `npx tsc -b` clean, `npm run lint` clean, `npx vitest run` 3880/258 files, `node scripts/validate-themes.mjs` 23/23, `npm run i18n:check` up to date, and the full wp-env PHPUnit suite 1312 tests / 13,699 assertions green. Nothing below was caught by a gate — that is the point of the pass. Six defects found; all six fixed here. Post-fix: 3881 Vitest tests (one new regression test), same PHP suite green, `php -l` clean.
+**Every existing gate was re-run on the branch as delivered, before any change:** `npx tsc -b` clean, `npm run lint` clean, `npx vitest run` 3880/258 files, `node scripts/validate-themes.mjs` 23/23, `npm run i18n:check` up to date, and the full wp-env PHPUnit suite 1312 tests / 13,699 assertions green. Nothing below was caught by a gate — that is the point of the pass. Seven defects found; all seven fixed here (R7 followed a round of follow-up questions on this review). Post-fix: 3881 Vitest tests (one new regression test), same PHP suite green, `php -l` clean.
 
 | # | Track | Class | Finding |
 |---|-------|-------|---------|
@@ -573,6 +573,7 @@ Self-review of the whole branch (`main...HEAD`, 8 commits, 110 files) after all 
 | R4 | P75-E/G | Robustness | `deriveBorderStrong` guaranteed fewer grounds than the 1.4.11 audit asserts |
 | R5 | P75-F | Docs | `THEME_AUTHORING_GUIDE.md` still described the ramp as LAB |
 | R6 | P75-H | Docs | Track notes still quote the superseded `borderStrong` `#577577` |
+| R7 | P75-G | Exposure | The store-assets manifest was itself published to the public WordPress.org `/assets/` area |
 
 ### R1 — `AdminChromeProvider` wrote a global attribute onto `document.body`
 
@@ -616,13 +617,30 @@ While in that file, three further gaps from this phase were closed, because they
 
 P75-H's acceptance criteria and Implementation Notes both cite Rig Cyan `borderStrong` as `#577577`, which was accurate when that commit landed and wrong three commits later once P75-G corrected the token to `#648284`. Both lines now say what shipped and point at the correcting track. `PHASE74_REPORT.md` and the designer correspondence keep `#577577` on purpose — those are historical records of what was true at the time.
 
+### R7 — the store-assets manifest was itself published to the public listing
+
+P75-G moved the design specs out of `.wordpress-org/` because `svn-deploy.yml` runs `10up/action-wordpress-plugin-deploy@v2` with `ASSETS_DIR` unset, and left `README.md` behind on the grounds that a manifest is a listing artefact. It is not — it is an internal spec, and it was the *only* file in that directory, so the first SVN deploy would have published a design brief to `https://plugins.svn.wordpress.org/mullion-gallery/assets/` and nothing else. The initial review recorded this as a documented trade-off; on a second look the reasoning does not hold, so it is fixed rather than accepted.
+
+Read the action's `deploy.sh` rather than assuming its behaviour. Two facts settled the fix:
+
+```sh
+if [[ -d "$GITHUB_WORKSPACE/$ASSETS_DIR/" ]]; then
+    rsync -rc "$GITHUB_WORKSPACE/$ASSETS_DIR/" assets/ --delete
+else
+    echo "ℹ︎ No assets directory found; skipping asset copy"
+fi
+```
+
+`--delete` means the directory's contents *are* the published listing assets, and the `[[ -d ]]` guard means an absent directory is skipped cleanly — `trunk/` still deploys.
+
+**Rationale:** the file moved to `docs/design/STORE_ASSETS.md`, next to `DESIGN_BRIEF.md` (which its own opening line names as its companion) and `COLOR-SPEC.md` — the home P75-G already established for designer-facing specs. `.wordpress-org/` is now absent from the repo entirely rather than kept alive with a placeholder, because any placeholder would also be published; the moved doc says to create the directory when the first artwork lands and to put image files in it and nothing else, and quotes the guard above so the absence does not read as an accident. Four inbound links updated (`MARKETPLACE_READINESS.md` ×2, `GO_LIVE_PUNCH_LIST.md`, `DESIGN_BRIEF.md` ×2). `PHASE74_REPORT.md`'s references stay as written — they record what was true during the rebrand, the same treatment R6 gives the superseded hex.
+
 ### Reviewed and deliberately not changed
 
 - **`e2e/theme-qa.spec.ts` "changing theme in Display Settings persists to localStorage" is vacuous.** Its assertion (`typeof saved === 'string' || saved === null`) is a tautology over `localStorage.getItem`'s own return type, and P75-D additionally made the save click conditional. The test never changes a theme and cannot fail. It was already vacuous before this branch, and rewriting a Playwright test that cannot be executed in this session would be worse than leaving it visibly flagged. Deferred to [FUTURE_TASKS.md](FUTURE_TASKS.md#vacuous-e2e-test--theme-qa-changing-theme--persists-to-localstorage) (Code Quality & Refactoring).
-- **`.wordpress-org/README.md` is itself published to the public SVN `/assets/` area.** P75-G moved the design specs out for exactly that reason and left the manifest behind, with the exposure rule written into the file. That is a deliberate, documented trade-off, not an oversight.
 - **`AdminChromeProvider` toggling remounts the Drawer subtree.** Switching `applyThemeEverywhere` swaps between "no provider" and "provider", which changes the element tree and unmounts the panel's children (resetting scroll and accordion state; the draft settings live in the parent and survive). That follows directly from P75-D's stated "passthrough so chrome is pixel-identical" decision; changing it means giving up that guarantee.
-- **Mantine's `light-dark()` CSS cannot reach the locked chrome.** `cssVariablesSelector` scopes the nested `--mantine-*` block to `.mullion-admin-chrome`, but Drawer/Modal parts are portaled under `document.body` while that `<style>` renders in the shadow tree, and no ancestor of the portal carries the chrome's `data-mantine-color-scheme`. The brand lock still works, because it is carried by the adapter's JS component styles through React context. Making the CSS layer follow too would mean putting the scheme attribute on the portaled parts (Mantine 9's `attributes` prop) — a visual change that needs a browser to verify, so it is a follow-on, not a review fix.
-- **`--mullion-color-primary-6` / `-8` in `src/styles/_tokens.scss`** are hardcoded ramp rungs that P75-E's "no hardcoded index" sweep did not cover. They drive filter-chip and accent-purple tints classified as decorative, so they are outside 1.4.11 and outside the fill/stroke split. Noted, not changed.
+- **Mantine's `light-dark()` CSS cannot reach the locked chrome.** `cssVariablesSelector` scopes the nested `--mantine-*` block to `.mullion-admin-chrome`, but Drawer/Modal parts are portaled under `document.body` while that `<style>` renders in the shadow tree, and no ancestor of the portal carries the chrome's `data-mantine-color-scheme`. The brand lock still works, because it is carried by the adapter's JS component styles through React context. Making the CSS layer follow too would mean putting the scheme attribute on the portaled parts (Mantine 9's `attributes` prop) — a visual change that needs a browser to verify, so it is a follow-on, not a review fix. **Scheduled as [PHASE76_REPORT.md](PHASE76_REPORT.md) track P76-D**, which starts by verifying P75-D's acceptance criteria in a browser — they were never checked — before choosing a mechanism.
+- **`--mullion-color-primary-6` / `-8` in `src/styles/_tokens.scss`** are hardcoded ramp rungs that P75-E's "no hardcoded index" sweep did not cover. A follow-up grep found the whole legacy bridge has **zero** consumers — 23 of its 24 aliases are defined and never read, `--z-header` being the sole survivor — so the right fix is deleting the file rather than correcting the rungs. **Scheduled as [PHASE76_REPORT.md](PHASE76_REPORT.md) track P76-E.**
 
 ## Outcome
 

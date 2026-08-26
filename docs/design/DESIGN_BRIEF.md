@@ -1,7 +1,7 @@
 # Mullion — design brief
 
 This is the creative brief for the plugin's visual identity: icon, banner, and supporting marks.
-It is the companion to [`.wordpress-org/README.md`](../../.wordpress-org/README.md), which holds the hard
+It is the companion to [`STORE_ASSETS.md`](STORE_ASSETS.md), which holds the hard
 **filename and dimension spec**. Read that one for *what files to produce*; read this one for
 *what they should look like and why*.
 
@@ -372,9 +372,9 @@ Suggested order, reflecting the builder-led positioning:
 | 4 | **Lightbox viewer** | Open over a gallery, navigation controls visible. |
 | 5 | **Theme / adapter variety** | The theme selector, or a composite of one gallery across several adapters. Sells configurability better than a settings panel does. |
 
-> **Note:** this reorders the manifest currently recorded in [`.wordpress-org/README.md`](../../.wordpress-org/README.md), which
+> **Note:** this reorders the manifest currently recorded in [`STORE_ASSETS.md`](STORE_ASSETS.md), which
 > leads with the classic grid. The reorder is a recommendation pending sign-off. If it is
-> adopted, the captions in `readme.txt` and the manifest table in `.wordpress-org/README.md` **must be updated
+> adopted, the captions in `readme.txt` and the manifest table in `docs/design/STORE_ASSETS.md` **must be updated
 > together** — WordPress.org matches captions to files by number, and they will silently
 > mismatch otherwise.
 
