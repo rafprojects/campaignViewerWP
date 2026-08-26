@@ -54,7 +54,19 @@ if (!function_exists('mullion_is_premium_package')) {
      * and the SDK's own dynamic_init default for `is_premium` (true).
      */
     function mullion_is_premium_package(): bool {
+        // Memoized per resolved path: mullion_fs() does not cache its null
+        // result (isset() is false for null), so every Mullion_License
+        // entitlement check re-enters this function. Keying on the path keeps
+        // the `mullion_edition_marker_path` filter (and its tests) working.
+        static $cache = [];
+
         $path = mullion_edition_marker_path();
+        if (array_key_exists($path, $cache)) {
+            return $cache[$path];
+        }
+
+        $cache[$path] = true;
+
         if (!is_readable($path)) {
             return true;
         }
@@ -69,7 +81,8 @@ if (!function_exists('mullion_is_premium_package')) {
             return true;
         }
 
-        return $data['premium'];
+        $cache[$path] = $data['premium'];
+        return $cache[$path];
     }
 }
 

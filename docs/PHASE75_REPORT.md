@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** Complete — all 8 tracks landed
+**Status:** Complete — all 8 tracks landed + branch review
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P75-G: Rig Cyan light companion shipped; dark `borderStrong` corrected to `#648284`)
+**Last updated:** 2026-08-25 (branch review: 6 fixes — see [Branch Review](#branch-review-2026-08-25))
 
 ### Tracks
 
@@ -516,7 +516,7 @@ Independent of P75-F: `borderStrong` is a surface-relative derived token, not a 
 
 ### Acceptance criteria
 
-- Unchecked Checkbox and Switch track outlines resolve to `borderStrong` (Rig Cyan `#577577`, ~3.18:1 on surface).
+- Unchecked Checkbox and Switch track outlines resolve to `borderStrong` (Rig Cyan `#577577` at plan time, ~3.18:1 on surface; P75-G later corrected the shipped value to `#648284` — see that track).
 - Checked / on styles unchanged by this track.
 - Adapter unit test fails if either site regresses to `rc.border`.
 
@@ -528,7 +528,7 @@ Independent of P75-F: `borderStrong` is a surface-relative derived token, not a 
 ### Implementation Notes (2026-08-25)
 
 - **Verified the leftover against the adapter, not just the plan.** After P74-N and the P74-review NumberInput/ColorInput pass, `Checkbox.input.borderColor` and `Switch.track.borderColor` were still `rc.border`. Chip, Divider, Paper, Accordion, Card, and dropdown chrome stay on `rc.border` — left alone as decorative unless P75-E's spike reclassifies them.
-- **Fix.** Unchecked Checkbox outline and Switch track outline now use `rc.borderStrong` (`#577577` on Rig Cyan). Checkbox `&:checked` fill/border still `rc.primary[5]` — the `primaryShade` swap is P75-E/F, not this track. Switch has no explicit on-state override in this adapter; none was added.
+- **Fix.** Unchecked Checkbox outline and Switch track outline now use `rc.borderStrong` (`#577577` on Rig Cyan at the time of this commit; P75-G later corrected the token itself to `#648284`, so the shipped outline is that). Checkbox `&:checked` fill/border still `rc.primary[5]` — the `primaryShade` swap is P75-E/F, not this track. Switch has no explicit on-state override in this adapter; none was added.
 - **Test.** Extended the P74-review adapter test to cover Checkbox `input` and Switch `track`, plus an assertion that Checkbox checked styles still resolve to `primary[5]` so this track cannot silently retarget the fill.
 - **Validation.** `npx vitest run src/themes/__tests__/adapter.test.ts` — 13 passed. No browser MCP in this session, so the Settings Panel visual check was not run here.
 
@@ -557,10 +557,79 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 
 Phase 74 (including P74-K) has landed, so this phase is unblocked. All eight tracks have landed — see each track's Implementation Notes.
 
+---
+
+## Branch Review (2026-08-25)
+
+Self-review of the whole branch (`main...HEAD`, 8 commits, 110 files) after all eight tracks landed, reading the diff rather than re-reading the track prose.
+
+**Every existing gate was re-run on the branch as delivered, before any change:** `npx tsc -b` clean, `npm run lint` clean, `npx vitest run` 3880/258 files, `node scripts/validate-themes.mjs` 23/23, `npm run i18n:check` up to date, and the full wp-env PHPUnit suite 1312 tests / 13,699 assertions green. Nothing below was caught by a gate — that is the point of the pass. Six defects found; all six fixed here. Post-fix: 3881 Vitest tests (one new regression test), same PHP suite green, `php -l` clean.
+
+| # | Track | Class | Finding |
+|---|-------|-------|---------|
+| R1 | P75-D | Correctness | `AdminChromeProvider` stamped `data-mantine-color-scheme` on the host page's `<body>` |
+| R2 | P75-E | Accessibility | Focus-ring `color-mix()` had no fallback, so the ring can vanish entirely |
+| R3 | P75-A | Efficiency | Edition marker re-read from disk on every entitlement check |
+| R4 | P75-E/G | Robustness | `deriveBorderStrong` guaranteed fewer grounds than the 1.4.11 audit asserts |
+| R5 | P75-F | Docs | `THEME_AUTHORING_GUIDE.md` still described the ramp as LAB |
+| R6 | P75-H | Docs | Track notes still quote the superseded `borderStrong` `#577577` |
+
+### R1 — `AdminChromeProvider` wrote a global attribute onto `document.body`
+
+`src/components/Admin/AdminChromeProvider.tsx` resolved its Mantine root element with `document.querySelector('.mullion-admin-chrome')`, falling back to `document.body`. `document.querySelector` does not pierce shadow roots, and the Settings Panel renders inside one — `SettingsPanel`'s own shadow sentinel (`root instanceof ShadowRoot`) is the proof. So the lookup returned `null` and Mantine's `useProviderColorScheme` wrote `data-mantine-color-scheme="dark"` onto the wp-admin / front-end page's `<body>`, where nothing ever removes it. The scope element P75-D actually intended to target never received it. In light-DOM mounts the selector was also non-deterministic: with a panel open, the first `.mullion-admin-chrome` in document order can be another provider's portaled Drawer part rather than this provider's sentinel.
+
+**Rationale for the fix:** a ref resolves the real node in both light and shadow DOM, and Mantine calls `getRootElement()?.setAttribute(...)`, so returning `undefined` is a safe no-op rather than a fallback onto an element this provider does not own. Dropping the `document.body` fallback restores pre-P75-D behaviour for `<body>` (before this track nothing wrote to it) — it does not remove styling the chrome was relying on, because a node portaled directly under `<body>` was never a descendant of the shadow host that the outer `ThemedApp` provider marks either.
+
+Regression test added to `AdminChromeProvider.test.tsx`: render the provider into a container inside a real `attachShadow` root and assert `<body>` stays clean while the sentinel carries the brand scheme. Verified it fails against the previous implementation (`expected true to be false`) before the fix, so it locks the actual defect and not just the new code path. The two pre-existing tests in that file render in the light DOM, which is exactly why the bug got through.
+
+### R2 — focus rings could disappear instead of getting the repaired stroke colour
+
+P75-E retargeted two `:focus-visible` rings to `--mullion-color-primary-stroke` with no fallback:
+
+```scss
+box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary-stroke) 60%, transparent);
+```
+
+An undefined custom property inside `color-mix()` invalidates the whole declaration, so the ring does not degrade to a wrong colour — it is not painted at all. `MediaCard` renders inside the Layout Builder `Modal`, which Mantine portals to a shared node under `document.body`; the theme's variables live either on the shadow root's `:host` rule or, in non-shadow mounts, on a `[data-mullion-theme-scope]` rule matching the mount host. Neither is an ancestor of that portal node. The two sibling sites changed in the same commit (`useMediaDnd`, `SpotlightGallery`) *did* get layered fallbacks; these two were the inconsistent pair.
+
+**Rationale:** `var(--mullion-color-primary-stroke, var(--mantine-primary-color-filled))` — Mantine's own `styles.css` defines that token on `:root`, so it resolves wherever Mantine is loaded at all. Chaining through `--mullion-color-primary` first would be dead weight: both variables are emitted by the same `generateCssVariables` block, so either both are present or neither is. `CampaignCard` is always inside the themed gallery and was not actually exposed; it changed for symmetry, so the rule reads the same at every 1.4.11 stroke site. This was pre-existing (the old `--mullion-color-primary` had the same hole) but it sits inside the track whose whole subject is non-text contrast, which is why it is fixed rather than deferred.
+
+### R3 — the edition marker was re-read from disk on every entitlement check
+
+`mullion_fs()` caches its result in a global guarded by `isset()`, and `isset(null)` is `false` — so in the normal no-credentials state the function never short-circuits and re-runs its body on every call. P75-A put `mullion_is_premium_package()` inside that body, turning each `Mullion_License::is_sdk_active()` / `can_use_premium_code()` / `can_use_feature()` call into an `is_readable()` + `file_get_contents()` + `json_decode()`. `enforce_license_gates()` alone calls it twice per template write, and `Mullion_Embed` once per rendered embed.
+
+**Rationale:** memoize in a `static` array **keyed by the resolved marker path**, not a bare boolean. A flat static would break `Mullion_Package_Edition_Test`, which repoints `mullion_edition_marker_path` at a fresh `uniqid()` fixture per case; keying on the path keeps the filter meaningful and the tests honest. The `mullion_fs()` null-caching problem itself is pre-existing and out of scope for a review pass. Confirmed with the full PHP suite (1312 tests) and the 22 edition + license tests specifically.
+
+### R4 — `deriveBorderStrong` guaranteed fewer grounds than the audit checks
+
+P75-G taught `deriveBorderStrong(surface, alsoAgainst[])` to satisfy 3:1 against extra grounds and `intendedUiContrastChecks` to sample `borderStrong` on `surface`, `surface2`, **and** `surfaceRaised` — but `resolveColors` only passed `[surfaceRaised]`. For the 21 bundled themes that let `borderStrong` derive, `surface2` is a LAB interpolation between `surface` and `surfaceRaised`, so its luminance is bracketed by the two grounds already checked and the omission is invisible. A theme that *authors* a `surface2` outside that bracket would fail a blocking CI audit on a value the engine derived for it.
+
+**Rationale:** pass `[surface2, surfaceRaised]` so the deriver's guarantee is exactly the audit's assertion. Verified against every bundled theme before committing: **0 of 21 derived values change**, so this is a pure invariant fix with no palette movement.
+
+### R5 — the theme authoring guide still described the ramp as LAB
+
+P75-F's own notes open with "HSL comment was always wrong" and it fixed the stale header in `colorGen.ts` — but `docs/guides/THEME_AUTHORING_GUIDE.md` still told theme authors the shade array is "generated using `chroma.js` in LAB color space". That is the exact class of stale-doc bug the track existed to correct, one file over. Updated to describe OKLCH with chroma-reduction gamut mapping (and to keep the true LAB caveat for `deriveDarkTuple`).
+
+While in that file, three further gaps from this phase were closed, because they change what an author is supposed to write: `primaryShade` is now documented as **optional and criterion-derived** rather than "typically 5/6" (with the warning that a ramp change invalidates every authored index — the coupling P75-F is built on), `primaryStroke` is documented as engine-derived and not authorable, and a new "Non-text contrast (WCAG 1.4.11)" subsection names `auditUiContrast` as a blocking gate alongside `auditThemeContrast`. Without that last one, a theme author's first signal that 1.4.11 is enforced is a red CI run.
+
+### R6 — P75-H's notes quote a value P75-G superseded
+
+P75-H's acceptance criteria and Implementation Notes both cite Rig Cyan `borderStrong` as `#577577`, which was accurate when that commit landed and wrong three commits later once P75-G corrected the token to `#648284`. Both lines now say what shipped and point at the correcting track. `PHASE74_REPORT.md` and the designer correspondence keep `#577577` on purpose — those are historical records of what was true at the time.
+
+### Reviewed and deliberately not changed
+
+- **`e2e/theme-qa.spec.ts` "changing theme in Display Settings persists to localStorage" is vacuous.** Its assertion (`typeof saved === 'string' || saved === null`) is a tautology over `localStorage.getItem`'s own return type, and P75-D additionally made the save click conditional. The test never changes a theme and cannot fail. It was already vacuous before this branch, and rewriting a Playwright test that cannot be executed in this session would be worse than leaving it visibly flagged. Follow-on.
+- **`.wordpress-org/README.md` is itself published to the public SVN `/assets/` area.** P75-G moved the design specs out for exactly that reason and left the manifest behind, with the exposure rule written into the file. That is a deliberate, documented trade-off, not an oversight.
+- **`AdminChromeProvider` toggling remounts the Drawer subtree.** Switching `applyThemeEverywhere` swaps between "no provider" and "provider", which changes the element tree and unmounts the panel's children (resetting scroll and accordion state; the draft settings live in the parent and survive). That follows directly from P75-D's stated "passthrough so chrome is pixel-identical" decision; changing it means giving up that guarantee.
+- **Mantine's `light-dark()` CSS cannot reach the locked chrome.** `cssVariablesSelector` scopes the nested `--mantine-*` block to `.mullion-admin-chrome`, but Drawer/Modal parts are portaled under `document.body` while that `<style>` renders in the shadow tree, and no ancestor of the portal carries the chrome's `data-mantine-color-scheme`. The brand lock still works, because it is carried by the adapter's JS component styles through React context. Making the CSS layer follow too would mean putting the scheme attribute on the portaled parts (Mantine 9's `attributes` prop) — a visual change that needs a browser to verify, so it is a follow-on, not a review fix.
+- **`--mullion-color-primary-6` / `-8` in `src/styles/_tokens.scss`** are hardcoded ramp rungs that P75-E's "no hardcoded index" sweep did not cover. They drive filter-chip and accent-purple tints classified as decorative, so they are outside 1.4.11 and outside the fill/stroke split. Noted, not changed.
+
 ## Outcome
 
 **Complete.** P75-G landed (designer-supplied Rig Cyan light overwrites `default-light.json`; `primaryShade` re-derived against the light palette, not copied; dark `borderStrong` corrected `#577577` → `#648284` after the same review found it at 2.58:1 on `surfaceRaised`; `deriveBorderStrong` and `uiContrastAudit` now both cover the raised ground). P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-F landed (OKLCH ramp + sRGB chroma gamut-map; all 23 `primaryShade` indices re-derived by criterion; Rig Cyan dark fill `#007870`). P75-E landed (authored `primaryFill` replaces hardcoded `[5]`; `primaryStroke` is the nearest 3:1 rung — two roles, 13/23 dark-ish themes split; `uiContrastAudit` is the 1.4.11 CI gate).
 
 **The design collaboration is closed on the colour system.** The designer supplied the light 11-role spec, which landed in P75-G along with the dark `borderStrong` defect they found while cross-checking it. Their only remaining external gate is trademark clearance for "Mullion"; nothing in the colour system is waiting on either side.
+
+A branch-wide self-review followed the eight tracks and fixed six defects none of the existing gates caught — see [Branch Review](#branch-review-2026-08-25) for each finding and its rationale.
 
 This phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

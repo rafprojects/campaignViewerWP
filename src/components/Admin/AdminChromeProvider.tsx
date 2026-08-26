@@ -9,7 +9,7 @@
  * pixel-identical to the parent (gallery) MantineProvider.
  */
 
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useRef, type ReactNode } from 'react';
 import { MantineProvider, mergeThemeOverrides } from '@mantine/core';
 import i18n from '@/i18n';
 import { DEFAULT_THEME_ID, getTheme } from '@/themes/index';
@@ -25,6 +25,14 @@ export function AdminChromeProvider({
   children,
 }: AdminChromeProviderProps) {
   const brand = getTheme(DEFAULT_THEME_ID);
+  // P75 review: Mantine writes `data-mantine-color-scheme` onto whatever
+  // getRootElement() returns. A `document.querySelector` cannot see this
+  // sentinel when the panel renders inside the plugin's shadow root (the
+  // common case — see SettingsPanel's own shadow sentinel), so it used to
+  // fall back to `document.body` and stamp the attribute on the host page.
+  // A ref resolves the real node in both light and shadow DOM; returning
+  // undefined is a no-op inside Mantine (`getRootElement()?.setAttribute`).
+  const scopeRef = useRef<HTMLDivElement>(null);
   const themeWithA11y = useMemo(
     () =>
       mergeThemeOverrides(brand.mantine, {
@@ -42,6 +50,7 @@ export function AdminChromeProvider({
   return (
     <>
       <div
+        ref={scopeRef}
         className={ADMIN_CHROME_CLASS}
         data-mantine-color-scheme={brand.meta.colorScheme}
         hidden
@@ -51,11 +60,7 @@ export function AdminChromeProvider({
         theme={themeWithA11y}
         forceColorScheme={brand.meta.colorScheme}
         cssVariablesSelector={`.${ADMIN_CHROME_CLASS}`}
-        getRootElement={() =>
-          (typeof document !== 'undefined'
-            ? (document.querySelector(`.${ADMIN_CHROME_CLASS}`) as HTMLElement | null)
-            : null) ?? (typeof document !== 'undefined' ? document.body : undefined as never)
-        }
+        getRootElement={() => scopeRef.current ?? undefined}
         deduplicateInlineStyles
       >
         {children}

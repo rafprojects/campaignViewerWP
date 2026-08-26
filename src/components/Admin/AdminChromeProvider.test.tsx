@@ -40,4 +40,32 @@ describe('AdminChromeProvider', () => {
     expect(document.querySelector(`.${ADMIN_CHROME_CLASS}`)).not.toBeNull();
     expect(screen.getByTestId('primary-swatch').textContent).toBe(brandPrimary);
   });
+
+  // P75 review: Mantine stamps `data-mantine-color-scheme` on getRootElement().
+  // A document-level querySelector cannot see the scope sentinel from inside a
+  // shadow root, so it used to fall back to document.body and write the
+  // attribute onto the host wp-admin page.
+  it('never writes the color-scheme attribute onto document.body from a shadow root', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const container = document.createElement('div');
+    shadow.appendChild(container);
+
+    render(
+      <ThemeProvider forcedThemeId="tokyo-night">
+        <AdminChromeProvider applyThemeEverywhere={false}>
+          <span>ok</span>
+        </AdminChromeProvider>
+      </ThemeProvider>,
+      { container },
+    );
+
+    expect(document.body.hasAttribute('data-mantine-color-scheme')).toBe(false);
+    const sentinel = shadow.querySelector(`.${ADMIN_CHROME_CLASS}`);
+    expect(sentinel).not.toBeNull();
+    expect(sentinel?.getAttribute('data-mantine-color-scheme')).toBe(
+      getTheme(BRAND_THEME_ID).meta.colorScheme,
+    );
+  });
 });

@@ -135,7 +135,7 @@ The primary color can be specified in two ways:
 }
 ```
 
-Both forms produce the same result. The shade array is generated using `chroma.js` in LAB color space for perceptual uniformity.
+Both forms produce the same result. The shade array is generated in **OKLCH** (P75-F): lightness steps linearly between scheme endpoints while chroma and hue are held, and any rung that falls outside sRGB has its chroma reduced until it fits. Channel-clipping is deliberately not used — it shifts hue by up to ~25° on high-chroma accents. (`deriveDarkTuple` still interpolates in LAB; that is a different function.)
 
 ### Primary Shade Index
 
@@ -145,7 +145,11 @@ Both forms produce the same result. The shade array is generated using `chroma.j
 }
 ```
 
-Mantine uses this to pick the "active" shade index from the 10-step array. Typically `5` for dark themes (a brighter shade) and `6` for light themes (a darker shade).
+The index (0–9, plain array index — never a Tailwind-style rung name) of the **fill** shade: filled buttons, checked checkboxes, selected options. Mantine reads it as its own `primaryShade`, and `resolveColors` exposes the resolved hex as `primaryFill`.
+
+**Optional.** When omitted, the engine derives both indices by the [COLOR-SPEC](../design/COLOR-SPEC.md) §2 criterion — the lightest rung that clears 4.5:1 against the theme's lightest surface *and* 4.5:1 under white text. `{ light: 6, dark: 5 }` is a common answer, not a default; author a value only if you have re-derived it against the current generator. Changing the ramp algorithm invalidates every authored index, so bundled themes are re-derived in the same change (`colorGen.test.ts` asserts authored values still match live derivation).
+
+You do not author the affordance-stroke color. `resolveColors` derives `primaryStroke` from the ramp: the fill index when it already clears 3:1 against `surface` / `surface2` / `surfaceRaised`, otherwise the nearest rung that does. Borders, focus rings, and active-tab indicators use that; fills use `primaryFill`.
 
 ### Semantic Status Colors
 
@@ -308,6 +312,19 @@ const ratio = chroma.contrast('#ffffff', '#0f172a'); // → 16.75
 
 The `high-contrast` bundled theme targets WCAG AAA compliance.
 
+### Non-text contrast (WCAG 1.4.11) — a blocking gate
+
+Text contrast is not the only bar. Anything that is the *sole* indicator of a component or its state — input outlines, focus rings, active-tab borders, drop-target lines — must clear **3:1** against the surface behind it. Decorative dividers are exempt.
+
+Two audits run over every bundled theme in CI and fail the build on a regression:
+
+| Audit | Module | Covers |
+|-------|--------|--------|
+| `auditThemeContrast` | `contrastAudit.ts` | 1.4.3 text pairs, including the auto black/white label on `primaryFill` |
+| `auditUiContrast` | `uiContrastAudit.ts` | 1.4.11: `primaryStroke` and `borderStrong` against `surface`, `surface2`, and `surfaceRaised` |
+
+If you add a bundled theme, run both before committing. `primaryStroke` self-repairs (it steps to a passing rung), so the realistic failure is an authored `borderStrong` that was only ever checked against `surface` — check it against `surfaceRaised` too, or omit it and let the engine derive one.
+
 ---
 
 ## Architecture Overview
@@ -332,7 +349,9 @@ All processing happens **once at startup**. Theme switching at runtime is a simp
 |------|---------|
 | `packages/theme-engine/src/types.ts` | TypeScript interfaces |
 | `packages/theme-engine/src/validation.ts` | Schema validation |
-| `packages/theme-engine/src/colorGen.ts` | chroma.js shade generation + `surfaceRaised` / `borderStrong` derivation |
+| `packages/theme-engine/src/colorGen.ts` | OKLCH shade generation + `surfaceRaised` / `borderStrong` / `primaryShade` / `primaryStroke` derivation |
+| `packages/theme-engine/src/contrastAudit.ts` | WCAG 1.4.3 text-contrast audit (CI gate) |
+| `packages/theme-engine/src/uiContrastAudit.ts` | WCAG 1.4.11 non-text-contrast audit (CI gate) |
 | `packages/theme-engine/src/cssVariables.ts` | `--mullion-*` CSS variable generation |
 | `packages/theme-engine/src/definitions/_base.json` | Shared defaults |
 | `packages/theme-engine/src/definitions/*.json` | Individual theme definitions |

@@ -159,8 +159,9 @@ export function deriveDarkTuple(
  *
  * Holds hue, eases chroma slightly, and steps lightness toward mid-grey
  * until WCAG 1.4.11's 3:1 bar clears against `surface` *and* every extra
- * ground (typically surfaceRaised — menus/popovers). Must not alias to
- * `border`, which is often a decorative divider below 3:1.
+ * ground (`resolveColors` passes surface2 and surfaceRaised — elevated form
+ * chrome and menus/popovers, the grounds `intendedUiContrastChecks` samples).
+ * Must not alias to `border`, which is often a decorative divider below 3:1.
  */
 export function deriveBorderStrong(
   surface: string,
@@ -376,8 +377,11 @@ export function resolveColors(
   const textMuted2 = colors.textMuted2
     ?? chroma.mix(colors.text, colors.textMuted, 0.65, 'lab').hex();
 
+  // Every ground `intendedUiContrastChecks` samples for borderStrong must be
+  // passed here, or a theme that authors an out-of-bracket `surface2` could
+  // fail the 23-theme 1.4.11 audit on a value the engine itself derived.
   const borderStrong = colors.borderStrong
-    ?? deriveBorderStrong(colors.surface, [surfaceRaised]);
+    ?? deriveBorderStrong(colors.surface, [surface2, surfaceRaised]);
 
   const primaryShade = colors.primaryShade ?? derivePrimaryShade(colors);
   const fillIndex = Math.min(
