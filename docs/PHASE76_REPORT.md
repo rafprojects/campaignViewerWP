@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-08-25
-**Last updated:** 2026-08-25 (P76-D / P76-E / P76-F added from the Phase 75 branch review)
+**Last updated:** 2026-08-25 (P76-D–G added from the Phase 75 branch review)
 
 ### Tracks
 
@@ -14,6 +14,7 @@
 | P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | Planned | Medium |
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | Planned | Small |
 | P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | Planned | Small |
+| P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | Planned | Small |
 
 ---
 
@@ -25,7 +26,7 @@
 
 Runtime English is already Mullion: gettext only matches identical msgids, so the stale `WP Super Gallery` entries are dead keys, not live UI. This phase retires those dead keys and fills the real ones.
 
-4. **Why three admin-chrome / colour tracks joined a catalogs phase.** P76-D, P76-E, and P76-F are the whole of the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25)'s "reviewed and deliberately not changed" list that is code rather than test debt — the items needing a browser (D), a decision about a shipped surface (E), or a change to a stated behavioural guarantee (F), none of which a review pass should settle unilaterally. None shares a dependency with A/B/C; the phase is a container, not a theme. This repo has run mixed-domain phases before (Phase 72 landed seven unrelated tracks). All three are strictly smaller than A/B, and E in particular is a five-minute deletion that has been carrying a "TODO: Phase 9 follow-up" comment since Phase 9. The list's fourth item, a vacuous `theme-qa` test, went to [FUTURE_TASKS.md](FUTURE_TASKS.md#vacuous-e2e-test--theme-qa-changing-theme--persists-to-localstorage) instead — it needs an executable Playwright run rather than a scheduled slot.
+4. **Why four Phase 75 follow-on tracks joined a catalogs phase.** P76-D, P76-E, and P76-F are the whole of the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25)'s "reviewed and deliberately not changed" list that is code rather than test debt — the items needing a browser (D), a decision about a shipped surface (E), or a change to a stated behavioural guarantee (F), none of which a review pass should settle unilaterally. None shares a dependency with A/B/C; the phase is a container, not a theme. This repo has run mixed-domain phases before (Phase 72 landed seven unrelated tracks). All four are strictly smaller than A/B, and E in particular is a five-minute deletion that has been carrying a "TODO: Phase 9 follow-up" comment since Phase 9. The list's fourth item, a vacuous `theme-qa` test, went to [FUTURE_TASKS.md](FUTURE_TASKS.md#vacuous-e2e-test--theme-qa-changing-theme--persists-to-localstorage) instead — it needs an executable Playwright run rather than a scheduled slot. **P76-G** came from the same review by a different route: P75-G's validation table recorded `npm run validate:adapter-settings` as failing pre-existing, which correctly scoped it out of the colour work and left it with no owner.
 
 ## Key Decisions
 
@@ -40,6 +41,7 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 | G | P76-E: delete the token bridge, or migrate the hardcoded rungs to `primaryFill` / `primaryStroke`? | **Delete.** The migration question is moot — a full grep of `src/` and `packages/` finds **zero** consumers of any `--color-*`, `--radius-*`, or `--shadow-*` alias, so the three hardcoded rungs are not painting anything. Rewriting dead declarations to use the correct token would be busywork that keeps a file whose own header has said "migrate, then delete this file" since Phase 9. Only `--z-header` has live consumers and only that survives. |
 | H | P76-F: stabilise the element tree, or read the *saved* `applyThemeEverywhere` instead of the live draft? | **Stabilise the tree.** Reading the saved value would also stop the remount — the panel reads the live draft today, which is exactly why the switch applies instantly — but it buys that by making the toggle *not* instantaneous, which is the behaviour worth keeping. Always rendering the nested provider keeps both properties. |
 | I | P76-F: what preserves P75-D's "pixel-identical with the toggle on" guarantee once a provider is always mounted? | **The theme override, plus the existing baselines as proof.** Follow mode feeds the nested provider the parent's own `MantineThemeOverride` from `useTheme()`, run through the same `CloseButton` merge `ThemedApp` applies — same input, same output. It is checkable rather than assertable: all six `display-settings-*` theme-QA baselines were captured with `applyThemeEverywhere: true`, so if they stay byte-identical, follow mode is unchanged. Treat a recapture requirement as a failure of this track, not a baseline refresh. |
+| J | P76-G: repair the parity script or delete it? | **Delete.** The surviving Vitest guard's own header says `replaces P31-D regex parity test` — the script *is* P31-D, superseded by P55-C and never removed. Repairing it would resurrect a weaker, unrun duplicate: one-way key-existence scraping versus eight checks against the `adapter-fields.json` single source of truth. Nothing calls the script, so deleting it cannot regress a gate. |
 
 ## Execution Priority
 
@@ -48,7 +50,8 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 3. **P76-C** is independent of A/B (no i18n coupling) but is a **release gate**: it must land before the first WordPress.org upload (`svn-deploy.yml` / [GO_LIVE_PUNCH_LIST.md](guides/GO_LIVE_PUNCH_LIST.md)). The.org account can be created in parallel with A/B; the `readme.txt` edit waits on that account.
 4. **P76-E** is independent of everything and landable first if convenient — it is a deletion with no consumers, and it does not touch the theme engine, so it cannot collide with D.
 5. **P76-F** before **P76-D**. Both touch `AdminChromeProvider`, and F changes the component tree that D's browser pass is supposed to be observing — running D first means QA-ing a structure F is about to replace. F is also the smaller, fully-specified one.
-6. **P76-D** last of the code tracks, because its step 1 is a browser QA pass whose findings define the rest of the track. It should also absorb every theme-QA snapshot change the phase needs — F's byte-identical check, D's own new default-state baseline, and the `borderStrong` coverage gap below — rather than each track recapturing separately.
+6. **P76-G** is independent of everything, like E — a deletion with no callers.
+7. **P76-D** last of the code tracks, because its step 1 is a browser QA pass whose findings define the rest of the track. It should also absorb every theme-QA snapshot change the phase needs — F's byte-identical check, D's own new default-state baseline, and the `borderStrong` coverage gap below — rather than each track recapturing separately.
 
 ---
 
@@ -63,6 +66,7 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 - Every `#:` source-reference comment still names `wp-super-gallery.php` / `class-wpsg-*.php`.
 - ~150 strings added after 2026-07-23 (carousel/adapter/settings work, later phases) were never harvested. English ships; the five locales fall through to English for those keys.
 - P74-O changed the glow-color placeholder `#7c9ef8` → `#1ad1c4` in source JSON/PHP; the POT still has msgid `#7c9ef8`.
+- P75-G renamed the `default-light` theme to **Mullion Light** in `theme-catalog.json` and the PHP picker; the catalogs still carry the orphaned `Default Light` msgid, alongside `Default Dark` from the P74-N rename. Handed to this track by that phase; `npm run i18n:check:locales` stays green because it only covers front-end strings.
 
 P74-C's header-only edit (`Project-Id-Version`, `Report-Msgid-Bugs-To`, `X-Domain`) is still correct and should survive the harvest.
 
@@ -326,6 +330,49 @@ Apply the same change at both call sites — `SettingsPanel` and `LayoutBuilderM
 
 ---
 
+## Track P76-G - Delete the superseded adapter-settings parity script
+
+### Problem
+
+`npm run validate:adapter-settings` fails, today, on a clean checkout:
+
+```
+✗ Could not locate SETTING_GROUP_DEFINITIONS block in adapterRegistry.ts
+```
+
+`scripts/validate-adapter-settings-parity.mjs` text-scrapes `const SETTING_GROUP_DEFINITIONS` out of `src/components/Galleries/Adapters/adapterRegistry.ts`. That constant was extracted to `src/data/adapterSettingGroups.ts` — the registry now only imports it — so the script's `indexOf()` returns `-1` and it exits 1 before checking anything.
+
+It has been silently broken since that extraction, because **nothing runs it**: a grep of `.github/`, `.husky/`, and `.lintstagedrc.cjs` finds no caller, only the `package.json` entry. So no build ever went red, and the script has sat in the script list looking like a working gate.
+
+The parity coverage it appears to provide is not lost — it moved. `src/components/Galleries/Adapters/adapterSettingsParity.test.ts` imports the constant properly, runs in the blocking Vitest suite, and opens with:
+
+> `P55-C: Adapter fields schema contract guard (replaces P31-D regex parity test).`
+
+That script *is* P31-D. It was explicitly superseded by P55-C and never deleted. The Vitest guard is also strictly stronger: eight checks against the `adapter-fields.json` single source of truth, versus the script's one-way "registry keys exist in the PHP map" scrape.
+
+Surfaced by the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) — P75-G's validation table recorded `validate:adapter-settings` as *"fails — pre-existing, reproduces on a clean `git stash` of this branch; unrelated to colour work"*, correctly scoping it out of the colour work but leaving it unowned.
+
+### Fix
+
+- Delete `scripts/validate-adapter-settings-parity.mjs`.
+- Delete the `validate:adapter-settings` entry from `package.json`.
+- Grep the docs for references and repoint them at `npx vitest run adapterSettingsParity` (the command the surviving guard's own header documents).
+
+Do **not** repair the script by retargeting it at `src/data/adapterSettingGroups.ts`. That would restore a weaker, unrun duplicate of a check that already passes in CI — Key Decision J.
+
+### Acceptance criteria
+
+- `scripts/validate-adapter-settings-parity.mjs` no longer exists and `npm run` no longer lists `validate:adapter-settings`.
+- `npx vitest run adapterSettingsParity` passes and is still reached by the default `npx vitest run`.
+- No doc or workflow references the removed script.
+
+### Validation
+
+- `npx vitest run adapterSettingsParity` before and after — unchanged pass.
+- `npm run` lists no broken script; `grep -rn "validate:adapter-settings" .` returns nothing outside phase history.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -335,8 +382,8 @@ Apply the same change at both call sites — `SettingsPanel` and `LayoutBuilderM
 
 ## Implementation Notes
 
-Not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D/E/F were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
+Not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D–G were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
 
 ## Outcome
 
-**Planned.** Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D/E/F are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E is a deletion, F is an a11y/UX fix to a toggle that already works.
+**Planned.** Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D–G are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E and G are deletions, F is an a11y/UX fix to a toggle that already works.
