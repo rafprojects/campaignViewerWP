@@ -195,6 +195,26 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
+### Vacuous e2e test — `theme-qa` "changing theme … persists to localStorage"
+
+**Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Branch Review, "Reviewed and deliberately not changed" (2026-08-25). Pre-existing before Phase 75; P75-D touched the test but did not cause the defect.
+
+**Context:** `e2e/theme-qa.spec.ts`'s `changing theme in Display Settings persists to localStorage` cannot fail. Three compounding problems:
+
+1. Its only assertion is `expect(typeof saved === 'string' || saved === null).toBe(true)` — a tautology over `localStorage.getItem`'s own return type. It is true whether or not the theme was written.
+2. The test never changes a theme. It opens Display Settings, asserts the combobox is visible, and saves. The removed comment said as much: *"may be default-dark if unchanged."*
+3. P75-D additionally made the save conditional (`if (await save.isEnabled()) await save.click()`), because the panel's Save button is disabled until the draft is dirty — which, given (2), it never is. So the test now usually does not even click Save.
+
+Net effect: a green test asserting nothing, sitting in the suite that is supposed to protect theme persistence. The adjacent behavioral test (`Display Settings shows the active theme`) is real and does assert a value; this one is the only vacuous case in the file.
+
+**What to implement:** Make the test do what its name says — select a *different* theme in the combobox (the P75-D-era locator is the display name, e.g. `Tokyo Night`, not the id), wait for the Save button to enable, click it, then assert `localStorage.getItem('mullion-theme-id')` equals the newly selected **id**. Drop the conditional click: if Save is disabled after changing the theme, that is the failure the test exists to catch. Consider a second assertion after a reload, since "persists" is the claim.
+
+**Dependencies / risk:** needs a working Playwright run against wp-env (`npx playwright test theme-qa`) to author — the Phase 75 branch review flagged rather than fixed it precisely because rewriting an unexecutable browser test is worse than leaving it visibly marked. Pairs naturally with any track that already has to recapture theme-qa baselines.
+
+**Effort:** Small (one test body, ~15 lines) | **Impact:** Medium — theme persistence is currently unguarded end-to-end despite appearing covered, which is worse than a known gap.
+
+---
+
 ## Internationalization
 
 ### ~~Full Admin-Panel i18n Migration~~ — ✅ RESOLVED (Phase 60-I + Phase 61)
