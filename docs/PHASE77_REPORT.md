@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-08-25
-**Last updated:** 2026-08-25 (created from the Phase 75 branch review's residue)
+**Last updated:** 2026-08-26 (P77-C added — the last unowned Phase 75 review item)
 
 ### Tracks
 
@@ -10,16 +10,17 @@
 |-------|-------------|--------|--------|
 | P77-A | Single-source the distribution exclude list — `release.yml`'s inline `zip -x` consumes `.distignore` instead of duplicating it | Planned | Small-Medium |
 | P77-B | Add `actionlint` to CI so the four workflow YAMLs are linted, closing Phase 75's "manual review substitutes for tooling" gap | Planned | Small |
+| P77-C | Make `mullion_fs()`'s no-op result actually cache — `isset()` is false for `null`, so the credential-less path re-runs on every entitlement check | Planned | Small |
 
 ---
 
 ## Rationale
 
-1. **What triggered it.** The [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) left two items with no owner once its own findings were placed into Phase 76. Both are release-pipeline rather than product code, and neither is blocked on anything: the packaging exclude list is duplicated between `.distignore` and `release.yml` and has already drifted, and Phase 75 shipped ~160 lines of new workflow YAML across `release.yml` and `svn-deploy.yml` with its own validation section conceding *"No `actionlint`/`yamllint` tooling exists in this repo today; out of scope to add it here — manual review plus the local dry-run substitute for automated YAML linting."*
+1. **What triggered it.** The [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) left three items with no owner once its own findings were placed into Phase 76. None is blocked on anything: the packaging exclude list is duplicated between `.distignore` and `release.yml` and has already drifted, and Phase 75 shipped ~160 lines of new workflow YAML across `release.yml` and `svn-deploy.yml` with its own validation section conceding *"No `actionlint`/`yamllint` tooling exists in this repo today; out of scope to add it here — manual review plus the local dry-run substitute for automated YAML linting."* The third is a caching bug in the Freemius bootstrap that the review's R3 finding uncovered and then partly masked.
 
-2. **Why they belong together, and why not Phase 76.** Phase 76 is already a container spanning gettext catalogs, listing identity, admin chrome, theme CSS, and a dead script; adding release packaging and CI tooling would make it incoherent rather than merely mixed. These two share an actual subject — the correctness of the pipeline that produces and ships the two release ZIPs — and they share a review path, since both are verified by reading a workflow run rather than by a unit test.
+2. **Why they belong together, and why not Phase 76.** Phase 76 is already a container spanning gettext catalogs, listing identity, admin chrome, theme CSS, and a dead script; adding release packaging and CI tooling would make it incoherent rather than merely mixed. A and B share an actual subject — the correctness of the pipeline that produces and ships the two release ZIPs. C is the odd one out by domain (it is PHP, not CI) but belongs by *origin and size*: it is the last unowned item from the same review, it is small, and Phase 76 has no track it fits under. Filing it here beats a `FUTURE_TASKS` entry it would outlive, and beats leaving it in a conversation.
 
-3. **Success.** There is exactly one list of files that do not ship, and both the GitHub Release ZIPs and the WordPress.org SVN package are built from it. A malformed workflow YAML fails a PR instead of a `workflow_dispatch` run.
+3. **Success.** There is exactly one list of files that do not ship, and both the GitHub Release ZIPs and the WordPress.org SVN package are built from it. A malformed workflow YAML fails a PR instead of a `workflow_dispatch` run. `mullion_fs()` resolves once per request instead of once per entitlement check.
 
 ## Key Decisions
 
@@ -29,10 +30,11 @@
 | B | Translate `.distignore` into `zip -x` patterns, or stage the payload and zip the staged tree? | **Decide at implementation; prefer staging.** `.distignore` is gitignore-syntax (comments, blank lines, leading `/` anchoring, directory semantics) and `zip -x` takes glob patterns rooted at the archive path — the translation is the whole difficulty of this track, and getting it subtly wrong ships a file. `rsync -a --exclude-from=` into a staging directory (or building the list from `git ls-files` plus the two gitignored-but-required directories, `vendor/` and `assets/`) sidesteps the translation entirely. Whatever is chosen must be asserted, not assumed — see the acceptance criteria. |
 | C | Fix the known drift by hand now, or only via single-sourcing? | **Only via single-sourcing.** Hand-patching `zip -x` to add `phpunit`, `.distignore`, `.DS_Store`, and `Thumbs.db` would close today's gap and leave the mechanism that produced it. The drift is the bug; the four missing entries are the symptom. |
 | D | `actionlint` only, or also a markdown link checker? | **`actionlint` only.** Phase 75's Follow-On Candidates row bundles the two, but they are unrelated tools solving unrelated problems, and the link checker has a much worse signal-to-noise profile against ~200 cross-linked docs with historical phase reports that intentionally reference moved paths. Keep the link checker as a Follow-On here rather than pulling it in. |
+| E | P77-C: is the missing cache also load-bearing? | **Settle it explicitly, do not just add a cache.** Because `mullion_fs()` re-reads the `mullion_freemius_config` filter on every call, credentials registered *after* the bootstrap call currently start working on the next entitlement check. Caching freezes that. The documented injection paths (a `wp-config.php` constant, or an mu-plugin — both of which load before regular plugins) are unaffected, so the track should cache and say so; but a filter added on `init` or `plugins_loaded` would change behaviour. Name it in the code comment rather than discovering it from a support ticket. |
 
 ## Execution Priority
 
-Independent; either order. **P77-B** is the smaller and lower-risk of the two and validates itself on its own PR, so land it first if the two are split.
+All three are independent. **P77-B** is the smallest and validates itself on its own PR, so land it first if they are split. **P77-C** touches PHP only and cannot collide with A or B.
 
 ---
 
@@ -117,6 +119,66 @@ P75-B's own Implementation Notes name step ordering as the genuine footgun in th
 
 ---
 
+## Track P77-C - Make the Freemius bootstrap's no-op result actually cache
+
+### Problem
+
+`mullion_fs()` memoizes through a global guarded by `isset()`:
+
+```php
+function mullion_fs() {
+    global $mullion_fs;
+
+    if (isset($mullion_fs)) {
+        return $mullion_fs;
+    }
+    …
+    if (empty($config['id']) || empty($config['public_key'])) {
+        $mullion_fs = null;
+        return null;
+    }
+```
+
+`isset()` is `false` for `null`. The credential-less path assigns `null` and then can never short-circuit on it, so the guard is dead precisely in the state every install is in today, and the state Phase 62 designed for (*"with no Freemius credentials configured, `mullion_fs()` returns null and every check below falls back to the `mullion_license_is_pro` filter"*).
+
+Every call therefore re-runs the body: an `apply_filters('mullion_freemius_config', …)` dispatch with whatever callbacks are hooked, the config array construction, and two `empty()` checks. Callers are `Mullion_License::is_sdk_active()` → `can_use_premium_code()` → `can_use_feature()`, reached from `class-mullion-embed.php:85` (once per rendered embed) and `class-mullion-layout-templates.php:562,565` (twice per template write).
+
+Found during the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25). Finding R3 fixed the expensive half — P75-A had added a marker file read inside that body, so the missing cache meant an `is_readable()` + `file_get_contents()` + `json_decode()` per entitlement check — by memoizing `mullion_is_premium_package()` per resolved path. That was the right scope for a review pass, but it also **masked the underlying bug**: the remaining per-call work is now cheap enough that nothing will ever prompt a second look. This track is the reason it does not get forgotten.
+
+### Fix
+
+Distinguish "not yet resolved" from "resolved to `null`" with a function-static flag, keeping the global for Freemius's own convention:
+
+```php
+function mullion_fs() {
+    global $mullion_fs;
+    static $resolved = false;
+
+    if ($resolved) {
+        return $mullion_fs;
+    }
+    …
+```
+
+set `$resolved = true` on **every** return path, and document the late-registration consequence from Key Decision E on the static.
+
+Nothing else in the plugin reads `global $mullion_fs` (grep confirms the only occurrence is this function's own declaration), so the change is local. `Mullion_License_Test::test_get_config_from_filter` adds a `mullion_freemius_config` filter but reaches it through `Mullion_License::get_config()`, not `mullion_fs()`, so it is unaffected — verify that rather than assume it, since it is the one test in the suite that could plausibly break.
+
+### Acceptance criteria
+
+- `mullion_fs()` executes its body at most once per request in the credential-less state; a second call returns the cached `null` without re-running `apply_filters`.
+- `Mullion_License::can_use_premium_code()` / `can_use_feature()` behaviour is unchanged in both the unlicensed default and under `add_filter('mullion_license_is_pro', '__return_true')`.
+- The code says, at the cache, what happens to credentials registered after bootstrap.
+- Full PHPUnit suite green (1312 tests as of Phase 75), `Mullion_License_Test` in particular.
+
+### Validation
+
+- `php -l` on `mullion-gallery.php`.
+- wp-env PHPUnit: `Mullion_License_Test`, `Mullion_Package_Edition_Test`, `Mullion_Layout_Templates_Test` (the licence-gate consumer), then the full suite.
+- A throwaway assertion that the body runs once — e.g. a counter on the `mullion_freemius_config` filter, called twice, expecting one dispatch. It fails against the current implementation, which is what makes it worth writing.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -127,8 +189,8 @@ P75-B's own Implementation Notes name step ordering as the genuine footgun in th
 
 ## Implementation Notes
 
-Not started. Both tracks are the residue of the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) after its findings were placed into Phase 76 — the two items that were neither product code nor blocked on a human gate.
+Not started. All three tracks are the residue of the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) after its findings were placed into Phase 76 — the items that were not blocked on a human gate and had nowhere else to go. With P77-C filed, every item that review surfaced has an owner.
 
 ## Outcome
 
-**Planned.** Neither track blocks a release. P77-A closes a correctness gap that currently only bites a manual packager, and removes the mechanism that produced it; P77-B replaces "manual review substitutes for tooling" with tooling.
+**Planned.** No track blocks a release. P77-A closes a correctness gap that currently only bites a manual packager, and removes the mechanism that produced it; P77-B replaces "manual review substitutes for tooling" with tooling; P77-C makes a cache that never fired actually fire, and settles whether late-registered credentials are a supported path or an accident.
