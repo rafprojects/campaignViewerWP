@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-08-25
-**Last updated:** 2026-08-25 (P76-D / P76-E added from the Phase 75 branch review)
+**Last updated:** 2026-08-25 (P76-D / P76-E / P76-F added from the Phase 75 branch review)
 
 ### Tracks
 
@@ -13,6 +13,7 @@
 | P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
 | P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | Planned | Medium |
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | Planned | Small |
+| P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | Planned | Small |
 
 ---
 
@@ -24,7 +25,7 @@
 
 Runtime English is already Mullion: gettext only matches identical msgids, so the stale `WP Super Gallery` entries are dead keys, not live UI. This phase retires those dead keys and fills the real ones.
 
-4. **Why two colour-system tracks joined a catalogs phase.** P76-D and P76-E come from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25)'s "reviewed and deliberately not changed" list — the two items that need a browser (D) or a decision about a shipped public-ish surface (E), and so could not be settled inside a review pass. Neither shares a dependency with A/B/C; the phase is a container, not a theme. This repo has run mixed-domain phases before (Phase 72 landed seven unrelated tracks). Both are strictly smaller than A/B, and E in particular is a five-minute deletion that has been carrying a "TODO: Phase 9 follow-up" comment since Phase 9.
+4. **Why three admin-chrome / colour tracks joined a catalogs phase.** P76-D, P76-E, and P76-F are the whole of the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25)'s "reviewed and deliberately not changed" list that is code rather than test debt — the items needing a browser (D), a decision about a shipped surface (E), or a change to a stated behavioural guarantee (F), none of which a review pass should settle unilaterally. None shares a dependency with A/B/C; the phase is a container, not a theme. This repo has run mixed-domain phases before (Phase 72 landed seven unrelated tracks). All three are strictly smaller than A/B, and E in particular is a five-minute deletion that has been carrying a "TODO: Phase 9 follow-up" comment since Phase 9. The list's fourth item, a vacuous `theme-qa` test, went to [FUTURE_TASKS.md](FUTURE_TASKS.md#vacuous-e2e-test--theme-qa-changing-theme--persists-to-localstorage) instead — it needs an executable Playwright run rather than a scheduled slot.
 
 ## Key Decisions
 
@@ -37,6 +38,8 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 | E | Contributor handle vs. plugin slug | **Not necessarily the same string.** Plugin slug is already `mullion-gallery` (Phase 74 Decision C). The.org *user* can be `mullion`, `mulliongallery`, the existing account renamed, or whatever username we actually register. Confirm the live username at implementation time; do not bake a guess into this plan. |
 | F | P76-D: fix the CSS-var reach blind, or verify first? | **Verify first, as the track's own step 1.** P75-D's Implementation Notes state plainly that no visual check of either toggle state was run. Its acceptance criteria ("chrome always renders in the Mullion brand palette", "pixel-identical with the toggle on") are therefore unconfirmed, and the portal gap below is a *predicted* symptom derived from reading Mantine's source, not an observed one. Writing a fix before looking is how P75-E's spike found the designer's 8-theme list was measured against the wrong code. |
 | G | P76-E: delete the token bridge, or migrate the hardcoded rungs to `primaryFill` / `primaryStroke`? | **Delete.** The migration question is moot — a full grep of `src/` and `packages/` finds **zero** consumers of any `--color-*`, `--radius-*`, or `--shadow-*` alias, so the three hardcoded rungs are not painting anything. Rewriting dead declarations to use the correct token would be busywork that keeps a file whose own header has said "migrate, then delete this file" since Phase 9. Only `--z-header` has live consumers and only that survives. |
+| H | P76-F: stabilise the element tree, or read the *saved* `applyThemeEverywhere` instead of the live draft? | **Stabilise the tree.** Reading the saved value would also stop the remount — the panel reads the live draft today, which is exactly why the switch applies instantly — but it buys that by making the toggle *not* instantaneous, which is the behaviour worth keeping. Always rendering the nested provider keeps both properties. |
+| I | P76-F: what preserves P75-D's "pixel-identical with the toggle on" guarantee once a provider is always mounted? | **The theme override, plus the existing baselines as proof.** Follow mode feeds the nested provider the parent's own `MantineThemeOverride` from `useTheme()`, run through the same `CloseButton` merge `ThemedApp` applies — same input, same output. It is checkable rather than assertable: all six `display-settings-*` theme-QA baselines were captured with `applyThemeEverywhere: true`, so if they stay byte-identical, follow mode is unchanged. Treat a recapture requirement as a failure of this track, not a baseline refresh. |
 
 ## Execution Priority
 
@@ -44,7 +47,8 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 2. **P76-B** immediately after — the coverage gate will fail between A and B; do not merge A alone to `main` if CI runs `i18n:check:locales` on every PR (it does, via the existing i18n job). Land A+B as one PR, or land B in the same branch before the PR is reviewable.
 3. **P76-C** is independent of A/B (no i18n coupling) but is a **release gate**: it must land before the first WordPress.org upload (`svn-deploy.yml` / [GO_LIVE_PUNCH_LIST.md](guides/GO_LIVE_PUNCH_LIST.md)). The.org account can be created in parallel with A/B; the `readme.txt` edit waits on that account.
 4. **P76-E** is independent of everything and landable first if convenient — it is a deletion with no consumers, and it does not touch the theme engine, so it cannot collide with D.
-5. **P76-D** last of the code tracks, because its step 1 is a browser QA pass whose findings define the rest of the track. It should also absorb any theme-QA snapshot recapture the whole phase needs, rather than each track recapturing separately.
+5. **P76-F** before **P76-D**. Both touch `AdminChromeProvider`, and F changes the component tree that D's browser pass is supposed to be observing — running D first means QA-ing a structure F is about to replace. F is also the smaller, fully-specified one.
+6. **P76-D** last of the code tracks, because its step 1 is a browser QA pass whose findings define the rest of the track. It should also absorb every theme-QA snapshot change the phase needs — F's byte-identical check, D's own new default-state baseline, and the `borderStrong` coverage gap below — rather than each track recapturing separately.
 
 ---
 
@@ -192,13 +196,17 @@ Related and worth checking in the same pass: `packages/shared-ui/src/Lightbox.ts
 
 Prefer (a), plus (b) or (c) only if step 1 shows a variable-driven difference. Do not adopt (d) without a specific finding that requires it.
 
-**Step 3 — close the coverage hole.** Add at least one `theme-qa` state captured with `applyThemeEverywhere` **false** (the shipped default), so the brand lock has a baseline. Today every settings-dialog snapshot is a toggle-on capture.
+**Step 3 — close the coverage holes.** Two, both in the same suite and the same recapture:
+
+- Add at least one `theme-qa` state captured with `applyThemeEverywhere` **false** (the shipped default), so the brand lock has a baseline. Today every settings-dialog snapshot is a toggle-on capture.
+- Extend the snapshot matrix to exercise a **`borderStrong` outline**. P75-G proved by controlled experiment that reverting the dark `borderStrong` to the defective `#577577` produced *byte-identical* `display-settings-default-dark` and `theme-selector-open-default-dark` captures: the token is painted on Input / Select / Checkbox / Switch outlines (`adapter.ts` ×9) but no snapshot state renders one. `uiContrastAudit` is currently the only gate covering that token. A dialog state with a focused text input and an unchecked checkbox visible would close it.
 
 ### Acceptance criteria
 
 - Each of P75-D's four acceptance criteria is confirmed against a rendered browser, not a unit test, and the result is recorded in this document — including "confirmed, no change needed" if that is the answer.
 - Portaled Settings Panel chrome resolves the brand palette in the locked state with no dependence on which mount mode (shadow / light DOM) the app is in.
 - At least one `theme-qa` baseline exercises `applyThemeEverywhere: false`.
+- Reverting `default-dark`'s `borderStrong` to `#577577` makes at least one `theme-qa` snapshot fail — the controlled test P75-G ran and that nothing currently catches.
 - The `Lightbox.tsx` `getRootElement` comment is either corrected or the behaviour it describes is restored.
 - With the toggle on, the panel remains visually identical to the pre-P75-D capture — the existing toggle-on baselines must not need recapture for an unrelated reason.
 
@@ -256,6 +264,68 @@ There is no user-facing risk. The aliases are *definitions*, never *reads*, so a
 
 ---
 
+## Track P76-F - Make the `applyThemeEverywhere` toggle instantaneous
+
+### Problem
+
+`AdminChromeProvider` returns two structurally different trees:
+
+```tsx
+if (applyThemeEverywhere) {
+  return children;                       // passthrough
+}
+return (
+  <>
+    <div className={ADMIN_CHROME_CLASS} … />
+    <MantineProvider …>{children}</MantineProvider>
+  </>
+);
+```
+
+`SettingsPanel` reads the flag off the **live draft** (`settings.applyThemeEverywhere`), so flipping the Switch changes that tree mid-session. `children` moves from directly under the component to two levels down, React sees different element types at each position, and it unmounts and remounts the entire Drawer subtree.
+
+The draft settings and the active tab live *above* the provider in `SettingsPanel`, so they survive. Everything below it does not: accordion sections collapse, scroll position resets, and — the reason this is worth a track rather than a note — **keyboard focus is dropped from the Switch the user just operated**. Toggling a setting should not eject a keyboard user from the control they are using.
+
+This falls directly out of P75-D's own decision that the toggle-on path be "a passthrough (no extra MantineProvider) so chrome is pixel-identical to today". The guarantee is worth keeping; implementing it as *structural absence* is what costs the remount.
+
+### Fix
+
+Always render the nested provider, and change what it is fed rather than whether it exists:
+
+```tsx
+const { mantineTheme, colorScheme } = useTheme();
+const source = applyThemeEverywhere
+  ? { theme: mantineTheme,   scheme: colorScheme }
+  : { theme: brand.mantine,  scheme: brand.meta.colorScheme };
+```
+
+then run `source.theme` through the same `mergeThemeOverrides(…, { CloseButton: { defaultProps: { 'aria-label': … } } })` the component already applies — which is also what `ThemedApp` applies — so follow mode receives byte-for-byte the theme override its parent would have used. The element tree is now identical in both states, so React preserves the subtree and the switch is instant.
+
+Three things that could have made this costly were checked and do not apply:
+
+- **`forceColorScheme` is free.** A grep of `src/` and `packages/*/src` finds **zero** callers of `useMantineColorScheme` or `setColorScheme`, so forcing the scheme in follow mode disables nothing.
+- **The nested CSS-variable block is inert in follow mode.** `adminChromeClassNames(true)` already returns `{}`, so `.mullion-admin-chrome` is applied to no Drawer/Modal part and the extra variable block matches nothing. (It is a few hundred bytes of unmatched CSS; if that is judged wasteful, `withCssVariables={!applyThemeEverywhere}` removes it.)
+- **The scope sentinel is harmless in both states.** It is `hidden` + `aria-hidden` and carries only the colour-scheme attribute that the P75 branch review's R1 fix already points `getRootElement` at.
+
+Apply the same change at both call sites — `SettingsPanel` and `LayoutBuilderModal` pass through the same provider.
+
+### Acceptance criteria
+
+- Flipping `applyThemeEverywhere` in an open Settings Panel does **not** remount the Drawer: a child mounted before the flip is the same instance after it.
+- Focus stays on the Switch across the toggle, in both directions.
+- The chrome palette still changes on the flip — the point of the toggle is not lost to the stabilised tree.
+- With the toggle on, the panel is unchanged from today (see Key Decision I).
+- `LayoutBuilderModal` behaves the same way; its Dockview `colorScheme` still follows the chrome theme.
+
+### Validation
+
+- **New Vitest**: render `AdminChromeProvider` with a child that increments a counter in a mount effect; rerender with the flag flipped; assert the counter is still 1. That test fails against the current implementation, which is what makes it a regression test rather than a description of the new code.
+- Existing focused Vitest: `AdminChromeProvider` (including the R1 shadow-root case), `chromeTheme`, `useBuilderShellColors`, `SettingsPanel`.
+- **`npx playwright test theme-qa` — the six `display-settings-*` baselines must be byte-identical**, since all of them were captured with `applyThemeEverywhere: true`. A recapture requirement means follow mode changed and the track has not met Key Decision I.
+- Manual: open the panel over a `tokyo-night` gallery, tab to the Switch, toggle both ways with the keyboard, confirm focus never leaves it and an expanded accordion section stays expanded.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -265,8 +335,8 @@ There is no user-facing risk. The aliases are *definitions*, never *reads*, so a
 
 ## Implementation Notes
 
-Not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D/E were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
+Not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D/E/F were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
 
 ## Outcome
 
-**Planned.** Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D/E are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E is a deletion.
+**Planned.** Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D/E/F are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E is a deletion, F is an a11y/UX fix to a toggle that already works.
