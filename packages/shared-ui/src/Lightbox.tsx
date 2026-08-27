@@ -5,8 +5,21 @@
  * bypassing any Mantine Modal nesting/z-index stacking issues that occur
  * when a Modal is opened inside another fullScreen Modal (e.g. CampaignViewer).
  *
- * The Portal inherits getRootElement() from the nearest MantineProvider, so
- * it correctly targets the shadow DOM mount point in WP plugin mode.
+ * P76-D correction: the previous note here claimed "the Portal inherits
+ * getRootElement() from the nearest MantineProvider, so it correctly targets
+ * the shadow DOM mount point in WP plugin mode". Mantine's Portal never reads
+ * getRootElement — grep `@mantine/core/esm/components/Portal/Portal.mjs`, it
+ * has no reference to it. With no explicit `target`, `reuseTargetNode` (on by
+ * default) appends a shared node to `document.body`, so in a shadow mount this
+ * lightbox renders in the *light* DOM, not the shadow root.
+ *
+ * That is fine as-is and is deliberately left alone: the colours come from
+ * Mantine's per-component styles, which travel through React context and so
+ * cross the portal. The known consequence is the one shared with the admin
+ * chrome — CSS custom properties defined at `:host` inside the shadow root do
+ * not reach this subtree. Do not "fix" this by targeting the shadow root
+ * without re-checking z-index stacking against wp-admin; escaping that
+ * stacking context is the reason this component uses a Portal at all.
  */
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';

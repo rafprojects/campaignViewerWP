@@ -1,8 +1,8 @@
 # Phase 76 - Post-rebrand catalogs + Phase 75 colour-system follow-ons
 
-**Status:** In progress — P76-A, P76-E, P76-F, P76-G landed
+**Status:** In progress — P76-A, P76-E, P76-F, P76-G landed; P76-D mostly done
 **Created:** 2026-08-25
-**Last updated:** 2026-08-27 (P76-F toggle stabilisation complete)
+**Last updated:** 2026-08-27 (P76-D browser pass + attribute fix + coverage)
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P76-A | Run a real `wp i18n make-pot` harvest, `msgmerge` into the 5 reference locales, compile `.mo` / `.l10n.php` | **Done** (2026-08-26) | Medium |
 | P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | Planned | Medium |
 | P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
-| P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | Planned | Medium |
+| P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | **Mostly done** (2026-08-27) — 2 decisions outstanding | Medium |
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | **Done** (2026-08-26) | Small |
 | P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | **Done** (2026-08-27) | Small |
 | P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | **Done** (2026-08-26) | Small |
@@ -285,6 +285,80 @@ Prefer (a), plus (b) or (c) only if step 1 shows a variable-driven difference. D
 - Focused Vitest on `AdminChromeProvider`, `chromeTheme`, `useBuilderShellColors` — unchanged expectations unless the mechanism changes the component tree.
 - Manual: open the Settings Panel over a `tokyo-night` gallery, toggle the switch both ways, confirm the chrome swaps and the gallery behind it does not.
 
+### Implementation Notes (2026-08-27)
+
+Step 1 was run as a real browser pass (Playwright against the dev server, `tokyo-night` gallery, all four combinations of `applyThemeEverywhere` × shadow / `?shadow=0`), probing the rendered DOM rather than eyeballing screenshots. It **changed the track**: two of P75-D's criteria are confirmed, the predicted gap is real but its *root cause is not portals*, and the plan's own preferred mechanism was dismissed for the wrong reason.
+
+**A false start worth recording.** The first probe reported identical colours in all four states, which read as "the brand lock does nothing". It was the probe that was wrong: `theme-qa`'s fixture seeds `localStorage['mullion-theme-id']` as well as the settings payload, and without that the gallery never left the default theme — so "gallery" and "brand" were the same palette and nothing could discriminate. Fixed the fixture, re-ran, and the real picture appeared. Anything measuring a lock-vs-follow difference must put the gallery on a *non-default* theme first.
+
+**P75-D criteria 1 and 2: CONFIRMED, no change needed.** With the gallery on `tokyo-night` (`background #1a1b26`, `surface #24283b`, `text #d4dbf8`) and the brand on `default-dark` (`surface #102530`, `text #eef8fb`), the Drawer content paints:
+
+| State | Drawer `background-color` | Drawer `color` | Verdict |
+|-------|---------------------------|----------------|---------|
+| toggle **off** (shipped default) | `rgb(16,37,48)` = `#102530` | `rgb(238,248,251)` = `#eef8fb` | **brand** ✓ |
+| toggle **on** | `rgb(36,40,59)` = `#24283b` | `rgb(212,219,248)` = `#d4dbf8` | **gallery** ✓ |
+
+Identical in shadow and light-DOM mounts. The gallery shell behind stayed `#1a1b26` in every state, so criterion 3 (public gallery unaffected) holds too. This also re-confirms P76-F did not disturb follow mode.
+
+**Root cause of the variable gap — not what the plan predicted.** Mantine does not emit its colour variables under the bare `cssVariablesSelector`. It emits three rules:
+
+```
+.mullion-admin-chrome                                     /* static: z-index, scale, cursor  */
+.mullion-admin-chrome[data-mantine-color-scheme="dark"]   /* every colour variable           */
+.mullion-admin-chrome[data-mantine-color-scheme="light"]  /* every colour variable           */
+```
+
+`adminChromeClassNames()` put the **class** on `inner`/`content`; nothing ever put the **attribute** there. So those parts matched only the static rule, and every colour variable fell through to the gallery root by inheritance — chrome labelled brand-scoped while resolving gallery values. Measured on the locked light-DOM panel: `--mantine-color-body` was `#1e212f` and `--mantine-primary-color-filled` `#2f509e` (both Tokyo Night) on the Drawer content, while the provider's own sentinel — which *does* carry the attribute — correctly read `#0d1c24` / `#007870` (brand).
+
+**This means the gap was never shadow-specific.** The plan derived it from Mantine's `Portal` source and scoped it to shadow mounts. It bites light-DOM mounts too, where no portal or shadow boundary is involved at all — the attribute is simply missing.
+
+**The plan dismissed the right fix for the wrong reason.** Key Decision option (a) is listed as *"Smallest change; does not help CSS variables."* It is precisely what makes the CSS variables resolve, because Mantine gates them on that attribute. Verified by simulating (a) in-page before writing any code — setting `data-mantine-color-scheme` on `inner`/`content` flipped the locked light-DOM panel from `#1e212f`/`#2f509e` to `#0d1c24`/`#007870`.
+
+**Implemented (a).** New `adminChromeAttributes()` in `chromeTheme.ts`, mirroring `adminChromeClassNames()` part-for-part (a unit test asserts the two return the same keys, so they cannot drift), wired into the `Drawer` in `SettingsPanel` and the `Modal` in `LayoutBuilderModal` via Mantine 9.3.1's `attributes` styles-API prop. Follow mode returns `{}` for the same reason `adminChromeClassNames()` does — there the chrome is *meant* to inherit the gallery root, and does.
+
+**What (a) does not fix, and why it is a separate decision.** In a shadow mount the variables stay `(unset)` even with the attribute, because the rule block is rendered inside the shadow root while the Drawer is portaled to `document.body`. Confirmed in the browser both by simulation and after the real fix. Mantine's `getTargetNode` (`@mantine/core/esm/components/Portal/Portal.mjs:17-32`) honours only an explicit `target`; otherwise `reuseTargetNode` (default `true`) appends a shared node to `document.body`.
+
+**The shadow-mode remainder is measurable, not theoretical.** Fingerprinting every painted colour on the first 400 elements inside the Drawer: the light-DOM panel renders **58** distinct `background/color/border/outline/fill` combinations, the shadow panel **55**. The three missing ones are the variable-driven surfaces — `#0d1c24` (`--mantine-color-body`) and `#0e1f29` among them. Small, but real.
+
+Choosing between the plan's remaining options (b) inline the variables, (c) move the provider inside the portal, (d) portal into the shadow root is a change to a shipped surface with genuine trade-offs — (d) alone moves z-index stacking against wp-admin, focus trapping, and click-outside. **Left for an explicit decision rather than settled here**; see Outstanding below.
+
+**Lightbox comment corrected** (acceptance criterion). `packages/shared-ui/src/Lightbox.tsx` claimed *"The Portal inherits `getRootElement()` from the nearest MantineProvider, so it correctly targets the shadow DOM mount point in WP plugin mode."* A grep of `Portal.mjs` finds **zero** references to `getRootElement`; the claim was never true. Replaced with what the component actually does, why it is acceptable (colours arrive via per-component styles through React context, which cross portals), and a warning not to retarget it at the shadow root without re-checking the z-index stacking the Portal exists to escape. Corrected rather than "restored" — the behaviour described never existed, and changing where the lightbox portals is a behavioural change nobody asked for.
+
+**Step 3 — coverage holes, and a finding that invalidates one of this track's own acceptance criteria.**
+
+Added the missing default-state baseline: `display settings dialog, chrome locked — tokyo-night gallery` (`applyThemeEverywhere: false`). Every prior settings-dialog snapshot was a toggle-**on** capture, so the shipped default had no visual coverage at all; a regression leaking the gallery palette into locked chrome now shows up as a whole-dialog diff. `installThemeSession` gained an `applyThemeEverywhere` option to make that expressible.
+
+The `borderStrong` criterion could not be met, and the reason is a product finding, not a testing one. This track assumed P75-G's byte-identical result meant "no snapshot state renders an outline". The first hypothesis on re-examination was tolerance — a handful of 1px borders is ~0.3 % of a 1280×900 page against `maxDiffPixelRatio: 0.1`. So a control-scoped, **zero-tolerance** snapshot was added, and the P75-G experiment re-run against it: revert `default-dark`'s `borderStrong` to the defective `#577577`, expect a failure. **Result: 20/20 still passed.**
+
+Measuring the controls directly explains why:
+
+| Element | computed `border-color` | computed `border-width` |
+|---------|------------------------|-------------------------|
+| `mantine-Select-input` | `rgb(87,117,119)` = the reverted `#577577` | **`0px`** |
+| `mantine-Switch-track` | `rgb(87,117,119)` | **`0px`** |
+| `mantine-NumberInput-input` | `rgb(87,117,119)` | **`0px`** |
+
+The token *is* flowing — the reverted value reached the DOM — onto elements with **zero border width**. `adapter.ts` sets `borderColor: rc.borderStrong` on Input / Select / TextInput / NumberInput / Checkbox / Switch (×9) but never a width, and Mantine's own Input styles compute to `border-width: 0` here. Contrast the same file's eight `border: \`1px solid ${rc.border}\`` declarations, which do paint.
+
+**So `borderStrong` never reaches a pixel, and no snapshot can cover it.** `uiContrastAudit` is auditing a token that is not rendered. That makes this track's criterion *"Reverting `default-dark`'s `borderStrong` to `#577577` makes at least one `theme-qa` snapshot fail"* unachievable as written — it needs a product decision first (give those controls a `borderWidth`, or retire the token), which is why it is not silently papered over with a passing test. Recorded as Outstanding.
+
+The zero-tolerance snapshot was kept but **renamed** to `themed control — tight tolerance`, with a comment stating plainly that it does not cover `borderStrong` and why. It still earns its place: it is the only tight-tolerance visual coverage of a themed control, and it catches fill/text/geometry changes that 115 k pixels of whole-page slack would swallow. Stable across four consecutive runs.
+
+**Validation**
+
+- Browser probe, four states, before and after the fix — the table and variable readings above.
+- `npx vitest run chromeTheme AdminChromeProvider SettingsPanel` — 79 passed / 4 files, including two new `adminChromeAttributes` cases.
+- `npx vitest run` — 3 885 passed / 258 files. `npx tsc -b` exit 0.
+- `npx playwright test theme-qa` — **20/20**, including the two new cases, with the 18 pre-existing baselines byte-identical and untouched (`git status` shows no modification under `-snapshots`, only the two new files). Confirms option (a) did not disturb follow mode, as expected: `adminChromeAttributes()` returns `{}` there.
+- Both new baselines re-run clean on repeat invocations before being committed; the zero-tolerance one across four runs.
+- All three throwaway probe specs were deleted after recording these findings; they are not permanent tests. `packages/theme-engine/src/definitions/default-dark.json` was restored after the controlled revert (verified by an empty `git diff --stat`).
+
+**Outstanding in this track**
+
+1. **Shadow-mode CSS variables** — needs a decision between (b), (c), and (d). Impact is bounded and known: 3 of 58 painted colour combinations, no effect on the primary palette, which travels through React context.
+2. **`borderStrong` is not painted.** Decide whether the affected controls should carry a `borderWidth` (making the token real, and `uiContrastAudit`'s coverage of it meaningful) or whether `borderStrong` should be retired from `adapter.ts` and the audit. Until then this track's `#577577` criterion cannot be satisfied by any test. This is the same class of finding as P75-G's — a token measured against code that does not render it.
+
+
 ---
 
 ## Track P76-E - Delete the dead legacy token bridge
@@ -532,15 +606,16 @@ Deleted `scripts/validate-adapter-settings-parity.mjs` and its `validate:adapter
 
 ## Implementation Notes
 
-**P76-A, P76-E, and P76-G landed 2026-08-26** — see their per-track notes above. P76-B, C, D, F not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D–G were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
+**P76-A, P76-E, P76-F, and P76-G landed; P76-D mostly done** — see their per-track notes above. P76-B and P76-C not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D–G were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
 
 Two durable lessons so far:
 
 - **From A: this plan's estimate of catalog staleness was off by two orders of magnitude** (+7/−13 msgids, not ~150), because the `.po` files had been hand-maintained ahead of the `.pot` for weeks. Size an i18n harvest by diffing msgid sets, not by counting phases since the last regen.
+- **From D: verify the fixture before believing the measurement, and verify the token reaches a pixel before testing it.** The first browser probe "showed" the brand lock doing nothing — because the fixture had left the gallery on the default theme, so lock and follow were the same palette. And the `borderStrong` criterion could not be met because the token is painted onto elements with `border-width: 0`; P75-G read that byte-identical result as a gap in snapshot *states*, when it was a gap in whether the token renders at all.
 - **From E and G: for a deletion, the decisive check is the *built artifact*, not the source grep.** E's proof that nothing read the bridge is that the freshly built `dist/` contains zero occurrences of any deleted alias in CSS *or* JS — which a source grep for `var(--…)` could not have established for a runtime-composed name. Both tracks also turned up one live reference the plan had not listed (E: `src/styles/README.md`; G: the tense of the `FUTURE_TASKS.md` precedent note), so re-run the reference sweep yourself before deleting.
 
 ## Outcome
 
-**In progress.** P76-A, P76-E, P76-G done. Remaining: B (15 strings), C (blocked on the WordPress.org account), D, F.
+**In progress.** P76-A, P76-E, P76-F, P76-G done. P76-D delivered its browser pass, the attribute fix, the missing default-state baseline, and the Lightbox correction, and left two explicit decisions open (shadow-mount CSS variables; whether `borderStrong` should be painted at all). Remaining: B (15 strings), C (blocked on the WordPress.org account), and P76-D's two decisions.
 
 **Originally:** Planned. Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D–G are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E and G are deletions, F is an a11y/UX fix to a toggle that already works.

@@ -45,9 +45,9 @@ const BASE_SETTINGS = {
 
 async function installThemeSession(
   page: Page,
-  opts: { themeId?: string; wpInjectedThemeId?: string } = {},
+  opts: { themeId?: string; wpInjectedThemeId?: string; applyThemeEverywhere?: boolean } = {},
 ) {
-  const { themeId, wpInjectedThemeId } = opts;
+  const { themeId, wpInjectedThemeId, applyThemeEverywhere } = opts;
 
   await page.addInitScript(
     ([storedTheme, wpTheme]: [string | undefined, string | undefined]) => {
@@ -79,6 +79,7 @@ async function installThemeSession(
   let currentSettings: Record<string, unknown> = {
     ...BASE_SETTINGS,
     ...(themeId ? { theme: themeId } : {}),
+    ...(applyThemeEverywhere === undefined ? {} : { applyThemeEverywhere }),
   };
 
   await page.route('**/wp-json/jwt-auth/v1/token/validate', (r) =>
@@ -255,6 +256,53 @@ test.describe('phase-1 visual snapshots', () => {
     const dialog = await openDisplaySettings(page);
     await dialog.getByRole('combobox', { name: 'Theme' }).click();
     await expect(page).toHaveScreenshot('theme-selector-open-default-dark.png', { maxDiffPixelRatio: 0.1 });
+  });
+
+  // P76-D: every snapshot above is a toggle-ON capture, so the *shipped default*
+  // (applyThemeEverywhere false — chrome locked to the Mullion brand while the
+  // gallery stays on its own theme) had no visual coverage at all. Tokyo Night
+  // is the established non-default fixture, so a regression that leaked the
+  // gallery palette into locked chrome shows up here as a whole-dialog diff.
+  test('display settings dialog, chrome locked — tokyo-night gallery', async ({ page }) => {
+    await installThemeSession(page, { themeId: 'tokyo-night', applyThemeEverywhere: false });
+    await page.goto('/');
+    await waitForShadowMount(page);
+    await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
+    await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
+    await openDisplaySettings(page);
+    await expect(page).toHaveScreenshot('display-settings-locked-chrome-tokyo-night.png', { maxDiffPixelRatio: 0.1 });
+  });
+
+  // P76-D: a tight-tolerance capture of a single themed control. The whole-page
+  // snapshots above run at maxDiffPixelRatio 0.1, which is ~115k pixels of slack
+  // on a 1280x900 page — enough to swallow any change confined to one control.
+  // This case is scoped to the control and runs at zero tolerance, so a change
+  // to its fill, text, or geometry fails.
+  //
+  // It deliberately does NOT claim to cover `borderStrong`. That token is set as
+  // `borderColor` on Input / Select / TextInput / NumberInput / Checkbox /
+  // Switch (adapter.ts x9) — but those elements compute to `border-width: 0px`,
+  // measured in a browser during P76-D, so the colour is never painted. That is
+  // why P75-G's controlled revert of the dark borderStrong to the defective
+  // #577577 produced byte-identical baselines, and re-running that revert during
+  // P76-D still produced 20/20 passes even at this zero tolerance. No snapshot
+  // can cover a colour that never reaches a pixel; see the P76-D notes in
+  // docs/PHASE76_REPORT.md for the open question that raises.
+  test('themed control — tight tolerance', async ({ page }) => {
+    await installThemeSession(page, { themeId: 'default-dark' });
+    await page.goto('/');
+    await waitForShadowMount(page);
+    await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
+    await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
+    const dialog = await openDisplaySettings(page);
+    const control = dialog.getByRole('combobox', { name: 'Theme' });
+    await expect(control).toBeVisible();
+    // Keep focus off it: a focused input swaps its colours for the primary
+    // stroke, which would make this capture a focus-ring test instead.
+    await expect(control).toHaveScreenshot('themed-control-tight-default-dark.png', {
+      maxDiffPixelRatio: 0,
+      maxDiffPixels: 0,
+    });
   });
 
   test('theme selector dropdown — default-light', async ({ page }) => {

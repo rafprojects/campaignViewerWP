@@ -55,7 +55,7 @@ import { SettingsSystemAdminTab } from '../Settings/tabs/SettingsSystemAdminTab'
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import { AdminChromeProvider } from '@/components/Admin/AdminChromeProvider';
-import { adminChromeClassNames } from '@/themes/chromeTheme';
+import { adminChromeAttributes, adminChromeClassNames } from '@/themes/chromeTheme';
 import { useRootId } from '@mullion/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
@@ -608,6 +608,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       opened={internalOpened}
       onClose={handleClose}
       classNames={adminChromeClassNames(applyThemeEverywhere)}
+      attributes={adminChromeAttributes(applyThemeEverywhere)}
       title={
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="sm">

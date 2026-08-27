@@ -30,7 +30,7 @@ import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
 import { useGetSettings } from '@/services/settingsQuery';
 import { AdminChromeProvider } from '@/components/Admin/AdminChromeProvider';
-import { adminChromeClassNames, resolveChromeThemeId } from '@/themes/chromeTheme';
+import { adminChromeAttributes, adminChromeClassNames, resolveChromeThemeId } from '@/themes/chromeTheme';
 import { getTheme } from '@/themes/index';
 import { useLatestRef } from '@mullion/shared-utils';
 import { DockviewReact, DockviewDefaultTab } from 'dockview';
@@ -477,6 +477,7 @@ export function LayoutBuilderModal({
       closeOnEscape={false}
       padding={0}
       classNames={adminChromeClassNames(applyThemeEverywhere)}
+      attributes={adminChromeAttributes(applyThemeEverywhere)}
       styles={{
         body: { height: '100vh', display: 'flex', flexDirection: 'column' },
         content: { overflow: 'hidden' },
