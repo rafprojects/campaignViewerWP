@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Table, Text, Stack, Tooltip, Badge, ActionIcon, Group, Select } from '@mantine/core';
+import { Table, Text, Stack, Tooltip, Badge, ActionIcon, Group } from '@mantine/core';
 import { modals } from '@mantine/modals';
 import { IconTrash } from '@tabler/icons-react';
 import { useTranslation } from 'react-i18next';
@@ -11,14 +11,9 @@ interface Options {
   accessEntries: CompanyAccessGrantType[];
   accessViewMode: AccessViewMode;
   onRevokeAccess: (entry: CompanyAccessGrantType) => Promise<void>;
-  // P51-H: change an existing grant's role via the inline dropdown.
-  onChangeRole: (entry: CompanyAccessGrantType, level: CampaignAccessLevel) => Promise<void>;
 }
 
-// P51-H: display order for the inline role Select / badge config.
-const ROLE_ORDER: CampaignAccessLevel[] = ['viewer', 'editor', 'owner'];
-
-export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, onChangeRole }: Options) {
+export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess }: Options) {
   const { t } = useTranslation('mullion');
   return useMemo(() => {
     // P33-D → P60-I: role label/tip localized at render time. These were a
@@ -28,17 +23,18 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
         label: t('admin_access_role_viewer', '👁 Viewer'),
         tip: t('accessrow_tip_viewer', 'Can read campaign content only'),
       },
+      // P53-D → P75-I: editor/owner can no longer be granted. These labels only
+      // ever render for legacy grants stored before P53-D, which are treated as
+      // view-only — editing comes from the mullion_editor role, not the grant.
       editor: {
         label: t('accessrow_role_editor', '✏️ Editor'),
-        tip: t('accessrow_tip_editor', 'Can edit metadata and media; cannot manage access or builder'),
+        tip: t('accessrow_tip_editor_legacy', 'Legacy grant level — treated as view-only. Editing comes from the Mullion Editor role.'),
       },
       owner: {
         label: t('accessrow_role_owner', '👑 Owner'),
-        tip: t('accessrow_tip_owner', 'Full campaign control including access management and builder'),
+        tip: t('accessrow_tip_owner_legacy', 'Legacy grant level — treated as view-only. Editing comes from the Mullion Editor role.'),
       },
     };
-    // P51-H: ordered options for the inline role Select.
-    const roleSelectOptions = ROLE_ORDER.map((value) => ({ value, label: roleCfg[value].label }));
 
     // P64-B: revoke is destructive and — for a company-sourced grant — the
     // outcome differs by view (campaign view blocks THIS campaign only; company
@@ -123,25 +119,21 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
               )}
             </Stack>
           </Table.Td>
-          {/* P33-D role column → P51-H: editable role dropdown */}
+          {/* P33-D role column → P51-H editable dropdown → P75-I read-only badge.
+              Grants are viewer-only (P53-D), so there is nothing to pick: the
+              server's access_level enum is ['viewer'] and the levels are not
+              consulted by any gate. Legacy editor/owner grants stored before
+              P53-D still show their own level, tooltipped as view-only. */}
           <Table.Td>
             <Group gap="xs" wrap="nowrap">
               <Tooltip label={cfg.tip} withArrow>
-                <Select
-                  size="xs"
-                  variant="filled"
-                  w={150}
-                  data={roleSelectOptions}
-                  value={level}
-                  allowDeselect={false}
-                  comboboxProps={{ withinPortal: true }}
+                <Badge
+                  variant="light"
+                  color={level === 'viewer' ? 'gray' : 'yellow'}
                   aria-label={t('admin_space_role_for', 'Role for {{name}}', { name: a.user?.displayName ?? t('accessrow_user_short', 'user {{id}}', { id: a.userId }) })}
-                  onChange={(val) => {
-                    if (val && val !== level) {
-                      void onChangeRole(a, val as CampaignAccessLevel);
-                    }
-                  }}
-                />
+                >
+                  {cfg.label}
+                </Badge>
               </Tooltip>
             </Group>
           </Table.Td>
@@ -167,5 +159,5 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess, o
         </Table.Tr>
       );
     });
-  }, [accessEntries, accessViewMode, onRevokeAccess, onChangeRole, t]);
+  }, [accessEntries, accessViewMode, onRevokeAccess, t]);
 }

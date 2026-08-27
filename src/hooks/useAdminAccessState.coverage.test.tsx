@@ -1,6 +1,6 @@
 /**
  * Branch-coverage tests for useAdminAccessState (hand-authored).
- * Covers the grant/revoke/role-change/archive/quick-add handler branches.
+ * Covers the grant/revoke/archive/quick-add handler branches.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
@@ -133,35 +133,13 @@ describe('handleRevokeAccess', () => {
   });
 });
 
-describe('handleChangeRole', () => {
-  it('no-ops when the level is unchanged', async () => {
-    const { hook, api } = setup();
-    await act(async () => { await hook.result.current.handleChangeRole({ userId: 4, source: 'campaign', access_level: 'viewer' } as never, 'viewer'); });
-    expect(api.post).not.toHaveBeenCalled();
-  });
-
-  it('changes a campaign-mode role and preserves expiry', async () => {
-    const { hook, api } = setup();
-    await act(async () => {
-      await hook.result.current.handleChangeRole(
-        { userId: 4, source: 'campaign', access_level: 'viewer', expires_at: '2031-01-01' } as never,
-        'editor',
-      );
-    });
-    expect(api.post).toHaveBeenCalledWith(
-      '/wp-json/mullion-gallery/v1/campaigns/5/access',
-      expect.objectContaining({ userId: 4, access_level: 'editor', expires_at: '2031-01-01' }),
-    );
-  });
-
-  it('changes a company-source role in company mode and reports errors', async () => {
-    const { hook, api } = setup({ accessViewMode: 'company', selectedCompanyId: '3' });
-    await act(async () => { await hook.result.current.handleChangeRole({ userId: 4, source: 'company', access_level: 'viewer' } as never, 'owner'); });
-    expect(api.post).toHaveBeenCalledWith('/wp-json/mullion-gallery/v1/companies/3/access', expect.objectContaining({ access_level: 'owner' }));
-
-    const err = setup({ api: makeApi({ post: vi.fn().mockRejectedValue(new Error('x')) }) });
-    await act(async () => { await err.hook.result.current.handleChangeRole({ userId: 4, source: 'campaign', access_level: 'viewer' } as never, 'editor'); });
-    expect(err.onNotify).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+// P75-I: handleChangeRole (P51-H's inline role dropdown) is gone. Every level it
+// could send other than the grant's current one was rejected by the server's
+// ['viewer'] enum, so the hook no longer exposes it at all.
+describe('handleChangeRole removal (P75-I)', () => {
+  it('is not exposed by the hook', () => {
+    const { hook } = setup();
+    expect('handleChangeRole' in hook.result.current).toBe(false);
   });
 });
 

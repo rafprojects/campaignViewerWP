@@ -216,7 +216,12 @@ describe('SpaceManagementView — Library tab', () => {
   });
 });
 
-describe('SpaceManagementView — Access tab role dropdown (P51-H)', () => {
+// P75-I: space grants are viewer-only (P53-D reduced the endpoint's access_level
+// enum to ['viewer']). This suite used to assert the P51-H dropdown POSTing
+// `access_level: 'owner'` — the exact payload the server answers with
+// "Invalid parameter(s): access_level". The role is a read-only badge now, and
+// the grant form can only ever send 'viewer'.
+describe('SpaceManagementView — Access tab role display (P75-I)', () => {
   const GRANT = {
     userId: 42,
     user: { displayName: 'Dana', email: 'dana@example.com' },
@@ -224,10 +229,11 @@ describe('SpaceManagementView — Access tab role dropdown (P51-H)', () => {
     grantedAt: '2025-01-01',
   };
 
-  function clientWithGrants() {
+  function clientWithGrants(grant: Record<string, unknown> = GRANT) {
     return createMockApiClient({
       get: vi.fn().mockImplementation((url: string) => {
-        if (/\/spaces\/\d+\/access/.test(url)) return Promise.resolve([GRANT]);
+        if (/\/spaces\/\d+\/resolve-user/.test(url)) return Promise.resolve({ found: true, id: 42 });
+        if (/\/spaces\/\d+\/access/.test(url)) return Promise.resolve([grant]);
         if (/\/spaces($|\?)/.test(url) || url.endsWith('/spaces')) return Promise.resolve([DELEGATED_SPACE]);
         return Promise.resolve([]);
       }),
@@ -236,45 +242,50 @@ describe('SpaceManagementView — Access tab role dropdown (P51-H)', () => {
 
   beforeEach(() => vi.clearAllMocks());
 
-  it('renders the grant role as an editable dropdown reflecting the current level', async () => {
-    const apiClient = clientWithGrants();
-    renderView(apiClient);
+  it('renders the grant role as a read-only badge reflecting the current level', async () => {
+    renderView(clientWithGrants());
     await selectSpace('Delegated Space');
     await clickTab('Access');
 
-    const input = await screen.findByLabelText('Role for Dana', { selector: 'input' });
-    expect((input as HTMLInputElement).value).toMatch(/viewer/i);
+    const badge = await screen.findByLabelText('Role for Dana');
+    expect(badge).toHaveTextContent(/viewer/i);
+    expect(screen.queryByRole('option')).not.toBeInTheDocument();
   });
 
-  it('POSTs the new access_level to the space /access endpoint on change', async () => {
+  it('still shows a legacy owner-level grant at its stored level', async () => {
+    renderView(clientWithGrants({ ...GRANT, access_level: 'owner' }));
+    await selectSpace('Delegated Space');
+    await clickTab('Access');
+
+    expect(await screen.findByLabelText('Role for Dana')).toHaveTextContent(/owner/i);
+  });
+
+  it('grants at the viewer level — the only one the server accepts', async () => {
     const apiClient = clientWithGrants();
     renderView(apiClient);
     await selectSpace('Delegated Space');
     await clickTab('Access');
 
-    const input = await screen.findByLabelText('Role for Dana', { selector: 'input' });
-    fireEvent.click(input);
-    fireEvent.click(screen.getByRole('option', { name: 'Owner' }));
+    fireEvent.change(await screen.findByLabelText('User email'), { target: { value: 'dana@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Grant' }));
 
     await waitFor(() => {
       expect(apiClient.post).toHaveBeenCalledWith(
         '/wp-json/mullion-gallery/v1/spaces/10/access',
-        { userId: 42, access_level: 'owner' },
+        { userId: 42, access_level: 'viewer' },
       );
     });
   });
 
-  it('does not POST when the same role is re-selected', async () => {
-    const apiClient = clientWithGrants();
-    renderView(apiClient);
+  it('offers no grantable role other than viewer', async () => {
+    renderView(clientWithGrants());
     await selectSpace('Delegated Space');
     await clickTab('Access');
 
-    const input = await screen.findByLabelText('Role for Dana', { selector: 'input' });
-    fireEvent.click(input);
-    fireEvent.click(screen.getByRole('option', { name: 'Viewer' }));
-
-    expect(apiClient.post).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByLabelText('Role', { selector: 'input' }));
+    expect(screen.getByRole('option', { name: 'Viewer' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Editor' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'Owner' })).not.toBeInTheDocument();
   });
 });
 

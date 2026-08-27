@@ -6,6 +6,9 @@ if (!defined('ABSPATH')) {
 
 class Mullion_Space_Controller extends Mullion_REST_Base {
 
+    /** P75-J: width of the `name` column in the spaces table (varchar(255)). */
+    private const SPACE_NAME_MAX = 255;
+
     public static function register_routes(): void {
         register_rest_route('mullion-gallery/v1', '/spaces', [
             [
@@ -202,10 +205,44 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         if ($name === '') {
             return new WP_Error('mullion_invalid_name', 'Space name is required', ['status' => 400]);
         }
+        // P75-J: `name` is varchar(255) and sanitize_text_field() does not
+        // truncate. Unlike the slug (derived, so clamped below), the name is what
+        // the user typed and can see — say it is too long rather than silently
+        // shortening it, and never let it reach the INSERT as a generic 500.
+        if (mb_strlen($name) > self::SPACE_NAME_MAX) {
+            return new WP_Error(
+                'mullion_space_name_too_long',
+                sprintf('Space name must be %d characters or fewer.', self::SPACE_NAME_MAX),
+                ['status' => 400, 'max' => self::SPACE_NAME_MAX]
+            );
+        }
 
         $slug_raw = sanitize_text_field($request->get_param('slug') ?? '');
         $slug     = $slug_raw !== '' ? sanitize_title($slug_raw) : sanitize_title($name);
         $iso_mode = sanitize_text_field($request->get_param('isolation_mode') ?: 'open');
+
+        // P75-J: resolve the slug before inserting rather than letting the
+        // UNIQUE KEY decide. `slug` is varchar(100) and sanitize_title() does not
+        // truncate, so clamp first; a name that sanitises to nothing (e.g. all
+        // punctuation, or a script the sanitiser strips) still needs a slug.
+        $slug = Mullion_DB::clamp_space_slug($slug);
+
+        $existing = Mullion_DB::get_space_by_slug($slug);
+        if ($existing && !intval($existing->archived)) {
+            return new WP_Error(
+                'mullion_space_slug_exists',
+                sprintf('A space with the slug "%s" already exists ("%s"). Choose a different name or slug.', $slug, $existing->name),
+                ['status' => 409, 'slug' => $slug, 'existingSpaceId' => intval($existing->id)]
+            );
+        }
+        if ($existing) {
+            // The holder is archived: invisible in the Spaces table and with no
+            // restore path in the UI, so failing here would name a space the user
+            // cannot see. Suffix the new slug instead and leave the archived row
+            // alone — Mullion_Embed addresses spaces by slug (space="…"), so
+            // rewriting a stored slug is not ours to do.
+            $slug = Mullion_DB::unique_space_slug($slug);
+        }
 
         $id = Mullion_DB::insert_space([
             'name'           => $name,
@@ -214,7 +251,15 @@ class Mullion_Space_Controller extends Mullion_REST_Base {
         ]);
 
         if (!$id) {
-            return new WP_Error('mullion_create_failed', 'Failed to create space', ['status' => 500]);
+            global $wpdb;
+            $db_error = $wpdb->last_error;
+            return new WP_Error(
+                'mullion_create_failed',
+                $db_error !== ''
+                    ? sprintf('Failed to create space (database error: %s)', $db_error)
+                    : 'Failed to create space',
+                ['status' => 500]
+            );
         }
 
         self::add_audit_entry(0, 'space.created', ['spaceName' => $name, 'isolationMode' => $iso_mode], [

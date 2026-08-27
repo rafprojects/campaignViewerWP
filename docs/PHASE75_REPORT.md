@@ -1,8 +1,8 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** Complete — all 8 tracks landed + branch review
+**Status:** Complete — 10 tracks landed + branch review (P75-I / P75-J absorbed from the first hands-on QA pass; manual QA pending)
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (branch review: 6 fixes — see [Branch Review](#branch-review-2026-08-25))
+**Last updated:** 2026-08-26 (P75-I / P75-J added — see [Hands-on QA follow-on](#hands-on-qa-follow-on-2026-08-26))
 
 ### Tracks
 
@@ -16,6 +16,8 @@
 | P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Done | Small-Medium |
 | P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Done | Medium |
 | P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Done | Small |
+| P75-I | **Fix:** granting access fails with `Invalid parameter(s): access_level` — three grant UIs still offer the `editor` / `owner` levels P53-D removed from the server enums | Done | Small-Medium |
+| P75-J | **Fix:** re-creating a space with the name of a deleted one fails with an ambiguous `Failed to create space` — the archived row still holds the `UNIQUE KEY slug` | Done | Small |
 
 ---
 
@@ -534,6 +536,132 @@ Independent of P75-F: `borderStrong` is a surface-relative derived token, not a 
 
 ---
 
+## Hands-on QA follow-on (2026-08-26)
+
+The first hands-on pass over the plugin since the rebrand — run against a **fresh** install, on the WP-admin **Mullion › Spaces** screen — surfaced two user-visible failures that neither the eight tracks nor the [branch review](#branch-review-2026-08-25) touched. They are absorbed here as **P75-I** and **P75-J** rather than opened as a new phase: they were found during this phase's own QA, they are fixed on this branch, and [Phase 76](PHASE76_REPORT.md) / [Phase 77](PHASE77_REPORT.md) have not started — filing a Phase 78 ahead of two unstarted phases would put the queue out of order for no gain.
+
+Both are pre-existing defects rather than regressions from this phase's tracks: P75-I dates to Phase 53, P75-J to Phase 47. What this phase contributed is the fresh install that made them reachable — no legacy grants, no legacy spaces, every path walked for the first time.
+
+## Track P75-I - Space and campaign access grants rejected by the server
+
+### Problem
+
+In **Mullion › Spaces › Access**, filling in a user email and clicking **Grant** fails with:
+
+> Invalid parameter(s): access_level
+
+That is WordPress core's `rest_invalid_param`, raised before the handler runs.
+
+### Root cause
+
+[P53-D](archive/phases/PHASE53_REPORT.md#track-p53-d---access-grant-model-simplification-decided-2026-06-15-viewer-only) reduced every grant endpoint's `access_level` enum to `['viewer']`, because editing/managing now comes from the `mullion_editor` role plus space access rather than from a per-grant level:
+
+- `class-mullion-space-controller.php` (space grants), `class-mullion-access-controller.php` ×3 (campaign / approve-request / company grants).
+
+P53-D3 updated exactly one UI surface — the grant-form dropdown in `AccessTab.tsx`. Three others still offered all three levels:
+
+| Surface | What it sent | Result |
+|---|---|---|
+| `SpaceManagementView.tsx` — space grant form: `spaceRoleOptions` **and** a `grantRole` state that **defaulted to `'editor'`** | `access_level: 'editor'` on every default grant | **Always failed.** The reported bug: it needs no interaction with the dropdown at all. |
+| `SpaceManagementView.tsx` — inline role `Select` on the space grants table (P51-H) | `access_level: 'editor'\|'owner'` | Failed on any change away from `viewer`. |
+| `useAccessRows.tsx` — inline role `Select` on the campaign/company grants table (P51-H) | `access_level: 'editor'\|'owner'` | Same failure on the campaign **Access** tab. Not reported, same defect. |
+
+P51-H (Phase 51) added the two inline role dropdowns *before* P53-D (Phase 53) collapsed the model, and P53-D3's frontend sweep only covered the grant form it was looking at.
+
+The frontend tests did not catch it because they assert against a mocked `apiClient`, and one asserted the **broken** payload as expected behaviour — `SpaceManagementView.test.tsx` picked the `Owner` option and expected `{ userId: 42, access_level: 'owner' }` to be POSTed. The PHP side has the matching assertion in the other direction (`Mullion_P53D_Grant_Model_Test`: the endpoint rejects non-viewer levels); nothing tested the two against each other.
+
+### Decision
+
+**Narrow the UI, do not re-widen the enum.** P53-D deliberately collapsed grants to viewer-only, and no gate consults the level any more; re-widening would restore a dropdown whose values change nothing. Within that: the grants **tables** get a read-only badge (a dropdown that can only be re-set to its current value is noise, and the P51-H feature it belongs to has no meaning under P53-D), while the two grant **forms** keep their single-option `Select` — that is what P53-D3 shipped in `AccessTab`, and it states the level being granted at the moment of granting. Legacy `editor`/`owner` grants stored before P53-D still **display** their level, tooltipped as view-only, rather than being silently relabelled `viewer`.
+
+### Fix
+
+1. `SpaceManagementView.tsx` — `spaceRoleOptions` → `viewer` only; `grantRole` initial state and `onChange` fallback → `'viewer'`; grants-table role `Select` → read-only `Badge`; delete `handleChangeRole` / `roleSavingUserId`.
+2. `useAccessRows.tsx` — role `Select` → read-only `Badge` with the same label + tooltip; drop `ROLE_ORDER` / `roleSelectOptions` / the `onChangeRole` option.
+3. `AccessPanel.tsx` — drop the `onChangeRole` wiring; `useAdminAccessState.ts` — delete `handleChangeRole` and its export.
+4. Tests updated to assert the new contract, including the payload assertion that locked in the bug.
+
+### Acceptance criteria
+
+- On a fresh install, **Spaces › Access › Grant** with a valid user email returns 200 and the user appears in the grants table. No `Invalid parameter(s)` error.
+- No grant surface can emit an `access_level` other than `viewer`.
+- A stored grant with a legacy `editor` / `owner` level still shows that level in both grants tables.
+- The campaign/company **Access** tab no longer offers a role dropdown per row.
+
+### Validation
+
+- Vitest: `SpaceManagementView.test.tsx`, `useAccessRows.test.tsx`, `useAdminAccessState.coverage.test.tsx`, `AccessTab.test.tsx`.
+- PHPUnit (unchanged server side, must stay green): `Mullion_P53D_Grant_Model_Test`, `Mullion_P33B_Access_Level_Test`, `Mullion_P64A_Grants_Helper_Test`.
+- `npm run i18n:generate` after the string changes, then `npm run i18n:check`.
+- Manual QA: grant, then revoke, a space grant on the live instance.
+
+### Implementation Notes (2026-08-26)
+
+- **Confirmed the enum against the routes, not the plan.** All four grant endpoints declare `'enum' => ['viewer']`; `Mullion_Grants::validate_access_level()` still accepts all three levels, but it never runs for a rejected request — `rest_invalid_param` fires in the route-args validation ahead of the handler, which is why the error names the parameter and nothing else.
+- **Three UI surfaces fixed, one of them unreported.** `SpaceManagementView`'s grant form (the reported one — its `grantRole` state defaulted to `'editor'`, so the failure needed no interaction at all), `SpaceManagementView`'s grants-table dropdown, and `useAccessRows`'s campaign/company grants-table dropdown. The two tables now render a read-only `Badge`; both grant forms keep a single-option `Select`, matching what P53-D3 shipped in `AccessTab`.
+- **Legacy levels still display.** A grant stored before P53-D renders its own `editor` / `owner` label in a yellow badge, tooltipped "Legacy grant level — treated as view-only", rather than being relabelled `viewer`. Four i18n keys changed accordingly (`accessrow_tip_editor` / `accessrow_tip_owner` → `…_legacy`, plus `admin_space_role_viewer_tip` / `admin_space_role_legacy_tip`); `admin_space_role_updated` and `admin_space_role_fail` were deleted with the handler that used them.
+- **Dead plumbing removed with the control:** `handleChangeRole` (`useAdminAccessState`), its `AccessPanel` wiring, the `onChangeRole` option on `useAccessRows`, and `roleSavingUserId` in `SpaceManagementView`.
+- **The test that locked in the bug is gone.** `SpaceManagementView.test.tsx` asserted `{ userId: 42, access_level: 'owner' }` as the expected POST body — the exact payload the server rejects. It is replaced by a test that the grant form POSTs `access_level: 'viewer'`, plus assertions that Editor/Owner are not offered and the table role has no combobox.
+- **Validation.** `npx tsc --noEmit` clean; `npx eslint` clean on the seven changed files; `npm run i18n:check` up to date; full Vitest **258 files / 3879 tests, 0 failures**. PHPUnit `Mullion_P53D_Grant_Model_Test` (9), `Mullion_P33B_Access_Level_Test` (9), `Mullion_P64A_Grants_Helper_Test` (20) all green — the server side needed no change. Manual QA on the live instance still pending.
+
+## Track P75-J - Re-creating a space with a deleted space's name fails ambiguously
+
+### Problem
+
+Create a space, delete it with the row's trash button, then create a space with the same name again:
+
+> Failed to create space
+
+No indication of what is wrong or what to do about it.
+
+### Root cause
+
+Two independent facts compose into the failure:
+
+1. **The trash button archives; it does not delete.** `delete_space_item()` only hard-deletes when `force=true` *and* the space has no campaigns; the UI's `handleArchiveSpace` sends a bare `DELETE`, so the row survives with `archived = 1` — correct soft-delete behaviour, and the button is even tooltipped "Archive space". But the Spaces table filters archived rows out and there is no restore UI, so from the user's seat the space is gone.
+2. **The archived row still owns the slug.** `wp_mullion_spaces` declares `UNIQUE KEY slug (slug)`, and the create form derives the slug from the name. Re-creating "Test" re-derives `test`, `$wpdb->insert()` fails on the duplicate key, `insert_space()` returns `0`, and `create_space()` maps that to a bare `Failed to create space` 500 that never mentions the slug.
+
+The same generic 500 also swallowed an over-long slug (`slug` is `varchar(100)`; `sanitize_title()` does not truncate).
+
+### Decisions
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| a | How should a collision with an **archived** space resolve? | **Uniquify the new slug (`test` → `test-2`).** Rejected: rewriting the archived row's slug to free it (`Mullion_Embed` addresses spaces by slug via the `space="…"` shortcode attribute — archived slugs are not ours to rewrite), and a hard 409 (archived spaces are filtered out of the table and there is **no restore UI**, so the error would name a space the user cannot see or act on). Uniquifying matches WordPress's own behaviour for post slugs and mutates nothing that already exists. |
+| b | Should an **active** collision uniquify too? | **No — hard 409.** An active space with that slug is visible one row above the create form. Silently creating `test-2` beside a visible `test` hides a user mistake; naming the conflicting space lets them fix it. |
+| c | Is the ambiguous message worth fixing separately from the collision? | **No — same track.** The collision is the reported symptom; the reason it was reported as *ambiguous* is that `create_space()` maps every `$wpdb->insert()` failure to one generic 500. Fixing only the collision leaves the next DB-level failure equally unreadable. |
+
+### Fix
+
+In `create_space()`, resolve the slug before inserting instead of letting the unique key decide:
+
+1. Clamp the derived slug to the column width, falling back to `space` if sanitisation empties it (`Mullion_DB::clamp_space_slug()`).
+2. Look the slug up with `Mullion_DB::get_space_by_slug()`: an **active** holder → `409 mullion_space_slug_exists` naming the existing space; an **archived** holder → uniquify via `Mullion_DB::unique_space_slug()` and proceed, leaving the archived row untouched.
+3. If the insert still fails, surface `$wpdb->last_error` in the message. The endpoint is system-admin only (`spaces.create`), so the DB detail is not leaking to an untrusted audience.
+
+### Acceptance criteria
+
+- Create → delete → create with the same name succeeds; the new space appears with a `-2` suffixed slug.
+- Colliding with a **visible** space returns 409 naming that space, shown verbatim in the admin notification.
+- A name whose derived slug would exceed `varchar(100)` creates successfully with a clamped slug instead of failing.
+- A name past the `name` column's own `varchar(255)` returns a readable 400, not a 500.
+- Any remaining insert failure reports the database error rather than `Failed to create space`.
+
+### Validation
+
+- New PHPUnit file `Mullion_P75J_Space_Slug_Reuse_Test.php`: archived-collision → 201 + `-2` slug; repeated archive/re-create → `-3`; active-collision → 409 `mullion_space_slug_exists`; explicit colliding slug → 409; long name → 201 with a ≤100-char slug; over-long name → 400 `mullion_space_name_too_long`; name that sanitises to nothing → 201; archived row unchanged after the re-create; helper-level checks on `clamp_space_slug` / `unique_space_slug`.
+- PHPUnit regression: `Mullion_P47_Spaces_*`, `Mullion_P53D_Grant_Model_Test`, `Mullion_P50B_Space_Library_Test`.
+- Manual QA: the exact reported sequence on the live instance.
+
+### Implementation Notes (2026-08-26)
+
+- **Both halves of the root cause verified in code, not inferred.** `delete_space_item()` hard-deletes only on `force=true` with no campaigns, and the UI sends a bare `DELETE`; `wp_mullion_spaces` carries `UNIQUE KEY slug`. Together those make the archived row an invisible squatter on the name.
+- **Fix as planned:** `Mullion_DB::clamp_space_slug()` (fit `varchar(100)`, fall back to `space` when sanitisation empties the slug) and `Mullion_DB::unique_space_slug()` (first free `-N`, with the suffix accounted for in the width clamp) — `create_space()` 409s on an active holder and suffixes past an archived one. The archived row is never rewritten: `Mullion_Embed` resolves `space="…"` by slug.
+- **The test found a second overflow the plan missed.** `test_an_over_long_name_creates_with_a_clamped_slug` failed 500 even with the slug clamped — because the `name` column is `varchar(255)` and a 280-character name overflows *it*, not the slug. Slug and name are handled differently and deliberately: the slug is derived, so it is clamped silently; the name is the user's own text, so an over-long one now returns `400 mullion_space_name_too_long` naming the limit rather than being truncated behind their back. The test split into the two cases.
+- **Validation.** `php -l` clean on all three files. `Mullion_P75J_Space_Slug_Reuse_Test` — **11 tests, 39 assertions, 0 failures**. Regression filters green: `Mullion_P47_Spaces_(Isolation|Migration|Settings)_Test` (36), `Mullion_P53D_Grant_Model_Test` (9), `Mullion_P50B_Space_Library_Test` (6). Full suite **1323 tests / 13737 assertions**, the single failure being the pre-existing `Mullion_Package_Edition_Test::test_defaults_premium_without_marker_file`, which fails on a gitignored `assets/mullion-edition.json` left in the working tree by an earlier local `build:wp` — the test says so in its own assertion message, and it is unrelated to this track. Manual QA on the live instance still pending.
+
+---
+
 ## Verification (phase-wide)
 
 Proving both ZIPs come out correct end-to-end without running the real GitHub Actions workflow:
@@ -552,6 +680,8 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 | Adopt the official **"Deploy on Freemius" GitHub Action** to auto-upload premium builds on release | Named as an optional CI enhancement in P62-I; still optional and still blocked on having a real Freemius product to deploy to (M1). Nothing in this phase precludes adding it later — `release.yml`'s premium build+zip steps are untouched. |
 | Automated markdown link-checking / `actionlint` for the workflow YAML | No such tooling exists anywhere in this repo today; adding it is a repo-wide tooling decision, not scoped to this phase's docs/CI touch points. **`actionlint` is now [PHASE77_REPORT.md](PHASE77_REPORT.md) track P77-B**; the link checker stays deferred there, as a separate tool with a much worse signal-to-noise profile against the archived phase reports. |
 | Removing the `Mullion_License::get_config()` / `mullion_fs()` default-bag duplication (already flagged, refuted-as-a-defect in Phase 62 PR Review #2, F3) | Still forced by bootstrap ordering (`mullion_fs()` is defined before `class-mullion-license.php` loads); fixing it would mean reordering `require_once`s in `mullion-gallery.php`, out of scope for a package-identity fix. |
+| **Restore / manage archived spaces in the UI** (from P75-J) | `list_spaces` already accepts `include_archived` and `format_space` already returns `archived`, but the admin has no way to see or restore an archived space — the reason P75-J's decision (a) could not send the user to the archived original. That is a feature (a filter toggle plus an unarchive endpoint), not a bug fix, and it is what makes the `-2` slug suffix a workaround rather than a resolution. The Spaces table's trash button belongs with it: it is tooltipped "Archive space" and notifies "archived", accurately, but the row then vanishes with no archive to visit. |
+| **A contract test between the frontend grant payloads and the REST `access_level` enums** (from P75-I) | P75-I survived two phases because the Vitest suite asserts against a mock and the PHPUnit suite asserts against the route args, with nothing comparing them. A real fix means generating or asserting the enum from one source — too large to bolt onto a bug fix, and worth scoping against the other route-arg enums (`isolation_mode`, `source`, `action`) at the same time. |
 
 ## Implementation Notes
 
@@ -649,5 +779,7 @@ fi
 **The design collaboration is closed on the colour system.** The designer supplied the light 11-role spec, which landed in P75-G along with the dark `borderStrong` defect they found while cross-checking it. Their only remaining external gate is trademark clearance for "Mullion"; nothing in the colour system is waiting on either side.
 
 A branch-wide self-review followed the eight tracks and fixed six defects none of the existing gates caught — see [Branch Review](#branch-review-2026-08-25) for each finding and its rationale.
+
+**P75-I and P75-J landed after that**, from the first hands-on pass on a fresh install (see [Hands-on QA follow-on](#hands-on-qa-follow-on-2026-08-26)). Both were pre-existing defects — a Phase 53 model change that three grant UIs never caught up with, and a Phase 47 unique-slug collision with soft-deleted spaces — reachable only because a fresh install walks every path for the first time. That is the gap worth noting for future phases: the automated suites passed throughout, because the Vitest side asserts against mocks and the PHPUnit side against route args, with nothing comparing the two (now a Follow-On Candidate). Manual QA of both fixes on the live instance is the one piece still outstanding.
 
 This phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

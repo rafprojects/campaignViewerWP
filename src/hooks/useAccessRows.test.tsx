@@ -4,25 +4,21 @@ import { render, screen, fireEvent } from '../test/test-utils';
 import { Table } from '@mantine/core';
 import { useAccessRows } from './useAccessRows';
 import type { CompanyAccessGrant } from '@/services/adminQuery';
-import type { CampaignAccessLevel } from '@/types';
 
 // Helper component that renders the hook output inside a Table.
 function TestRows({
   entries,
   viewMode = 'campaign',
-  onChangeRole = vi.fn(),
   onRevokeAccess = vi.fn(),
 }: {
   entries: CompanyAccessGrant[];
   viewMode?: 'campaign' | 'company' | 'all';
-  onChangeRole?: (entry: CompanyAccessGrant, level: CampaignAccessLevel) => Promise<void>;
   onRevokeAccess?: (entry: CompanyAccessGrant) => Promise<void>;
 }) {
   const rows = useAccessRows({
     accessEntries: entries,
     accessViewMode: viewMode,
     onRevokeAccess,
-    onChangeRole,
   });
   return (
     <Table>
@@ -47,56 +43,47 @@ const baseEntry: CompanyAccessGrant = {
   user: { displayName: 'Alice', email: 'alice@example.com' },
 };
 
-const roleInput = (name = 'Alice') =>
-  screen.getByLabelText(`Role for ${name}`, { selector: 'input' }) as HTMLInputElement;
+const roleBadge = (name = 'Alice') => screen.getByLabelText(`Role for ${name}`);
 
-describe('useAccessRows — P51-H role dropdown', () => {
-  it('renders the current role in the dropdown for a viewer-level grant', () => {
+// P75-I: the role column is a read-only badge. P51-H shipped an editable
+// dropdown here, but P53-D had already reduced every grant endpoint's
+// access_level enum to ['viewer'] — so picking Editor or Owner POSTed a level
+// the server rejects with "Invalid parameter(s): access_level".
+describe('useAccessRows — P75-I read-only role badge', () => {
+  it('renders the current role for a viewer-level grant', () => {
     render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />);
-    expect(roleInput().value).toMatch(/viewer/i);
+    expect(roleBadge()).toHaveTextContent(/viewer/i);
   });
 
-  it('renders the current role in the dropdown for an editor-level grant', () => {
+  it('still shows a legacy editor-level grant at its stored level', () => {
     render(<TestRows entries={[{ ...baseEntry, access_level: 'editor' }]} />);
-    expect(roleInput().value).toMatch(/editor/i);
+    expect(roleBadge()).toHaveTextContent(/editor/i);
   });
 
-  it('renders the current role in the dropdown for an owner-level grant', () => {
+  it('still shows a legacy owner-level grant at its stored level', () => {
     render(<TestRows entries={[{ ...baseEntry, access_level: 'owner' }]} />);
-    expect(roleInput().value).toMatch(/owner/i);
+    expect(roleBadge()).toHaveTextContent(/owner/i);
   });
 
   it('defaults to viewer when access_level is absent (legacy grant)', () => {
     const legacyEntry: CompanyAccessGrant = { ...baseEntry };
     delete legacyEntry.access_level;
     render(<TestRows entries={[legacyEntry]} />);
-    expect(roleInput().value).toMatch(/viewer/i);
+    expect(roleBadge()).toHaveTextContent(/viewer/i);
   });
 
   it('exposes an accessible label per row', () => {
     render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />);
-    expect(roleInput()).toBeInTheDocument();
+    expect(roleBadge()).toBeInTheDocument();
   });
 
-  it('calls onChangeRole with the new level when a different option is picked', () => {
-    const onChangeRole = vi.fn().mockResolvedValue(undefined);
-    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} onChangeRole={onChangeRole} />);
+  it('offers no role control to change — the level is not selectable', () => {
+    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} />);
 
-    fireEvent.click(roleInput());
-    fireEvent.click(screen.getByRole('option', { name: /owner/i }));
-
-    expect(onChangeRole).toHaveBeenCalledTimes(1);
-    expect(onChangeRole).toHaveBeenCalledWith(expect.objectContaining({ userId: 1 }), 'owner');
-  });
-
-  it('does not call onChangeRole when the same role is re-selected', () => {
-    const onChangeRole = vi.fn().mockResolvedValue(undefined);
-    render(<TestRows entries={[{ ...baseEntry, access_level: 'viewer' }]} onChangeRole={onChangeRole} />);
-
-    fireEvent.click(roleInput());
-    fireEvent.click(screen.getByRole('option', { name: /viewer/i }));
-
-    expect(onChangeRole).not.toHaveBeenCalled();
+    expect(screen.queryByRole('textbox', { name: /role for/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('combobox', { name: /role for/i })).not.toBeInTheDocument();
+    fireEvent.click(roleBadge());
+    expect(screen.queryByRole('option')).not.toBeInTheDocument();
   });
 
   it('renders a row with company source badge', () => {
@@ -125,7 +112,7 @@ describe('useAccessRows — P51-H role dropdown', () => {
     expect(screen.getByText(/expired/i)).toBeInTheDocument();
   });
 
-  it('renders distinct role dropdowns across multiple rows', () => {
+  it('renders distinct role badges across multiple rows', () => {
     render(
       <TestRows
         entries={[
@@ -135,9 +122,9 @@ describe('useAccessRows — P51-H role dropdown', () => {
         ]}
       />,
     );
-    expect(roleInput('Alice').value).toMatch(/viewer/i);
-    expect(roleInput('Bob').value).toMatch(/editor/i);
-    expect(roleInput('Carol').value).toMatch(/owner/i);
+    expect(roleBadge('Alice')).toHaveTextContent(/viewer/i);
+    expect(roleBadge('Bob')).toHaveTextContent(/editor/i);
+    expect(roleBadge('Carol')).toHaveTextContent(/owner/i);
   });
 });
 
