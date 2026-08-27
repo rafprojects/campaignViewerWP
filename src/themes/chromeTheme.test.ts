@@ -31,29 +31,37 @@ describe('chromeTheme', () => {
     });
   });
 
-  // P76-D: the class alone was never enough. Mantine emits its colour
-  // variables under `.mullion-admin-chrome[data-mantine-color-scheme="…"]`, so
-  // a part carrying only the class matched the static rule and inherited every
-  // colour from the gallery root instead. Verified in a browser: with the
-  // attribute the locked chrome resolves --mantine-color-body to the brand
-  // #0d1c24; without it, to the gallery's #1e212f.
-  it('returns the color-scheme attribute for the same parts that get the class', () => {
-    expect(adminChromeAttributes(true)).toEqual({});
-
-    const attrs = adminChromeAttributes(false);
+  // The three helpers deliberately have three different shapes, because they do
+  // three different jobs. Asserted here so nobody "harmonises" them:
+  //   classNames  — lock only. Scopes the provider's own variable block.
+  //   attributes  — both modes. Mantine keys its per-variant input rules on
+  //                 [data-mantine-color-scheme]; without it --input-bd is
+  //                 undefined and `border: 1px solid var(--input-bd)`
+  //                 collapses, so inputs render with no border at all.
+  //   styles      — both modes. Portal-proof delivery of the variables.
+  it('applies the color-scheme attribute to both parts, in both modes', () => {
     const brandScheme = getTheme(BRAND_THEME_ID).meta.colorScheme;
-    expect(attrs).toEqual({
+    expect(adminChromeAttributes(false, 'tokyo-night')).toEqual({
       inner: { 'data-mantine-color-scheme': brandScheme },
       content: { 'data-mantine-color-scheme': brandScheme },
     });
+
+    // Follow mode carries the *gallery's* scheme, not the brand's.
+    const lightGallery = adminChromeAttributes(true, 'github-light');
+    expect(lightGallery.content['data-mantine-color-scheme']).toBe('light');
+    expect(brandScheme).not.toBe('light');
   });
 
-  it('attributes and classNames cover exactly the same parts', () => {
-    for (const locked of [true, false]) {
-      expect(Object.keys(adminChromeAttributes(locked)).sort()).toEqual(
-        Object.keys(adminChromeClassNames(locked)).sort(),
-      );
-    }
+  it('scopes the class to lock mode only, while the attribute covers both', () => {
+    expect(adminChromeClassNames(true)).toEqual({});
+    expect(Object.keys(adminChromeAttributes(true, 'tokyo-night')).sort()).toEqual([
+      'content',
+      'inner',
+    ]);
+    // In lock mode the two do line up, part for part.
+    expect(Object.keys(adminChromeAttributes(false, 'tokyo-night')).sort()).toEqual(
+      Object.keys(adminChromeClassNames(false)).sort(),
+    );
   });
 
   // P76-H: unlike the class and the attribute, this returns a value in BOTH
@@ -92,16 +100,15 @@ describe('chromeTheme', () => {
       );
     });
 
-    it('returns both parts in both modes — deliberately unlike the class and attribute', () => {
+    it('returns both parts in both modes', () => {
       for (const locked of [true, false]) {
         expect(Object.keys(adminChromeStyles(locked, 'tokyo-night')).sort()).toEqual([
           'content',
           'inner',
         ]);
       }
-      // The other two intentionally go empty in follow mode.
+      // Only the class stays lock-only; see the shape note above.
       expect(adminChromeClassNames(true)).toEqual({});
-      expect(adminChromeAttributes(true)).toEqual({});
     });
   });
 

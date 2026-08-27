@@ -16,7 +16,7 @@
 | P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | **Done** (2026-08-27) | Small |
 | P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | **Done** (2026-08-26) | Small |
 | P76-H | Reach theme CSS variables into portaled admin chrome — P76-D fixed light-DOM mounts; shadow (the shipped default) still resolves nothing | **Done** (2026-08-27) — widened mid-track to cover both toggle states | Small-Medium |
-| P76-I | `borderStrong` is audited on 23 themes at 3.18–4.92:1 and painted on none of them — make the audit measure the rendered boundary, then decide the boundary | Planned — I-2 is a design decision | Medium |
+| P76-I | The contrast audit measures tokens the product does not paint — the real focus ring is `primaryFill`, failing 3:1 on 11 of 23 themes, and inputs have no focus indicator at all | Planned — **premise corrected 2026-08-27**, see notes | Medium |
 
 ---
 
@@ -744,6 +744,67 @@ Two separable pieces. **Do the first regardless; the second is a design decision
 - **(d) Paint it everywhere.** Add `borderWidth: 1, borderStyle: 'solid'` at the nine sites. Reaches 3.18–4.92:1 on every theme with the colours the engine already derives. Rendered comparison captured 2026-08-27 (`default-dark` Settings Panel, before/after) shows a thin definition line rather than a boxy form — subtler than the description suggests, but a real change to every control in 24 themes.
 
 **Ruled out: raising `surface2` contrast to 3:1.** Going from ~1.1:1 to 3:1 on the control fill turns the fields into obvious blocks — a far larger visual change than a hairline, and the *least* minimal option available. It is the intuitive answer and it is the wrong one.
+
+### Correction to this track's premise (2026-08-27)
+
+**`borderStrong` is painted. This track's central claim was wrong, and so was the P75-G reading it inherited.** The error is worth recording in full, because the same trap is still sitting in the test fixture.
+
+**What was actually wrong.** Every measurement behind "the token never reaches a pixel" — P76-D's browser probes, the 23-theme contrast sweep's interpretation, the before/after border screenshots — was taken with `applyThemeEverywhere: **true**`. That is what `theme-qa`'s `BASE_SETTINGS` defaults to, and the probes were built by copying that fixture. Nobody ever measured the shipped default.
+
+Measured properly, on the same `default-dark` Settings Panel:
+
+| Mode | `--input-bd` | Rendered border |
+|------|--------------|-----------------|
+| `applyThemeEverywhere: false` — **the shipped default** | `#263944` | **`1px solid #648284`** — borderStrong, painted |
+| `applyThemeEverywhere: true` | `(unset)` | `0px none` — nothing |
+
+**The mechanism.** Mantine keys its per-variant input rules on an ancestor attribute:
+
+```css
+[data-mantine-color-scheme='dark'] .…[data-variant='default'] { --input-bd: …; }
+```
+
+P76-D added `data-mantine-color-scheme` to the Drawer parts **in lock mode only**, on the same "follow mode inherits the gallery root" reasoning that P76-H later had to retract for the inline variables. With no ancestor carrying the attribute, `--input-bd` is never defined, Mantine's own `border: 1px solid var(--input-bd)` collapses to nothing, and the border disappears — taking `adapter.ts`'s `borderColor: rc.borderStrong` with it, since a colour with no width paints nothing. The adapter was never missing a width. Mantine supplies width and style; the adapter supplies the colour. That contract worked, and follow mode silently broke it.
+
+**This also fully explains P75-G's puzzle**, which needed no tolerance theory at all. Reverting `default-dark`'s `borderStrong` to `#577577` left every baseline byte-identical because **every `theme-qa` snapshot is a follow-mode capture** — there was no border in any of them to change colour. The same is true of P76-D's re-run of that experiment against a zero-tolerance snapshot: that case also inherits `BASE_SETTINGS`, so it too was photographing a borderless control.
+
+**Fixed as part of P76-H** (the same defect, the same cause): `adminChromeAttributes()` now applies in both modes, carrying whichever scheme the chrome resolves to. Both modes now render `1px solid #648284`. The `themed control — tight tolerance` baseline was replaced again to record the restored border — and once again the six `display-settings-*` captures did not move, which remains a real finding about their tolerance even though it is no longer the explanation for `borderStrong`.
+
+### What survives the correction
+
+Two of the three findings stand, and one is worse than first written:
+
+1. **`borderStrong` on Switch is still unpainted.** `--input-bd` is `(unset)` on `.mantine-Switch-track` in both modes — the Switch does not use Mantine's input-variant block — so `borderColor: rc.borderStrong` there paints nothing. Narrower than "nine sites", still real.
+2. **The audit measures the wrong token for focus, and the painted one fails.** `uiContrastAudit`'s three `primaryStroke` checks pass on all 23 themes. But the focus ring Mantine actually draws is `.mantine-focus-auto:focus-visible { outline: 2px solid var(--mantine-primary-color-filled) }` — **`primaryFill`, not `primaryStroke`**. The adapter's `&:focus { borderColor: stroke }` was the intended mechanism and it is overridden by that outline. Measured by tabbing through the panel: every button ring renders `2px solid #007870`, which is `primaryFill`.
+
+   | | under 3:1 |
+   |---|---|
+   | `primaryFill` on `surface` — **what is painted** | **11 of 23 themes** |
+   | `primaryStroke` on `surface` — what is audited | 0 of 23 |
+
+   Worst case `darcula` at **1.08:1**; also failing: `default-dark` (2.95), `material-dark`, `nord`, `solarized-dark`, `catppuccin-mocha`, `tokyo-night`, `gruvbox-dark`, `cyberpunk`, `synthwave`, `halloween`. All dark themes. P75-E's entire point was that UI affordances use the contrast-selected `primaryStroke` rung; the focus ring never got wired to it.
+
+3. **Text inputs and selects have no focus indicator at all — WCAG 2.4.7, and the most serious thing in this track.** Measured on the *same element*, resting versus focused (`document.activeElement` confirmed), in the shipped default mode:
+
+   | | border | outline |
+   |---|---|---|
+   | resting | `1px rgb(100,130,132)` | `none` |
+   | **focused** | `1px rgb(100,130,132)` | `none` |
+
+   Byte-identical. A keyboard user tabbing into a text field gets no visual feedback whatsoever. The Switch fares little better — only the browser default `1px auto rgb(16,16,16)`, near-invisible on a dark panel. Buttons are fine (`2px solid`, the `mantine-focus-auto` ring).
+
+   **Suspected mechanism, not yet confirmed:** `adapter.ts` expresses focus as `styles: () => ({ input: { '&:focus': { borderColor: stroke } } })`. Mantine's `styles` prop emits **inline styles**, and an inline style cannot carry a pseudo-class. If that is right, every `&:focus`, `&:checked`, and `&::placeholder` in `adapter.ts` is being silently dropped — which would make this a much wider defect than the focus ring alone. Confirming that, and auditing every pseudo-selector in the adapter, is the first thing I-1 should do.
+
+### Revised scope
+
+**I-1** is no longer "re-point the `borderStrong` checks". It is: make `uiContrastAudit` measure the tokens the product actually paints — `primaryFill` for the focus ring, and `borderStrong` only where a width exists. **Expect it to go red on 11 of 23 themes.** That is the finding, not a regression.
+
+**I-2** is no longer "should form controls have borders at all". They do, in the shipped default; the borderless appearance was the follow-mode bug, now fixed. The real question is narrower and more concrete:
+
+- Point the focus ring at `primaryStroke` (restoring P75-E's intent), or raise `primaryFill`'s contrast, or accept 11 themes below 3:1?
+- Give text inputs and selects a visible focus indicator — required regardless of the above, since they currently have none. If the pseudo-selector suspicion holds, the fix is structural (move those rules to `classNames` + CSS) rather than a token change, and it lands the `&:checked` / `&::placeholder` rules with it.
+- Decide whether the Switch track should carry a real border.
+
 
 ### Interaction with the gallery's own border settings (checked 2026-08-27)
 

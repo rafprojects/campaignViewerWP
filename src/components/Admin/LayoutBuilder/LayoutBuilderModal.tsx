@@ -477,7 +477,7 @@ export function LayoutBuilderModal({
       closeOnEscape={false}
       padding={0}
       classNames={adminChromeClassNames(applyThemeEverywhere)}
-      attributes={adminChromeAttributes(applyThemeEverywhere)}
+      attributes={adminChromeAttributes(applyThemeEverywhere, themeId)}
       styles={(() => {
         // Merge rather than replace: the chrome variables and this modal's own
         // layout styles both target `content`.

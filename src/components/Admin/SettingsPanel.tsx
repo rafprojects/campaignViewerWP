@@ -608,7 +608,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       opened={internalOpened}
       onClose={handleClose}
       classNames={adminChromeClassNames(applyThemeEverywhere)}
-      attributes={adminChromeAttributes(applyThemeEverywhere)}
+      attributes={adminChromeAttributes(applyThemeEverywhere, themeId)}
       title={
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="sm">

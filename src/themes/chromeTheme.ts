@@ -60,17 +60,28 @@ export function adminChromeClassNames(
  * rendered browser in both mount modes, then confirmed fixed by adding exactly
  * this attribute; see the P76-D notes in docs/PHASE76_REPORT.md.
  *
- * Follow mode returns `{}` for the same reason `adminChromeClassNames()` does:
- * the chrome is meant to inherit the gallery root, which it already does.
+ * P76-H follow-up: this now applies in **both** modes, carrying whichever
+ * scheme the chrome resolves to. It originally returned `{}` in follow mode on
+ * the same "it inherits the gallery root" reasoning that proved wrong for the
+ * inline variables — and the cost was larger than a few tokens. Mantine keys
+ * its per-variant input rules on this attribute:
+ *
+ *   [data-mantine-color-scheme='dark'] .…[data-variant='default'] { --input-bd: … }
+ *
+ * With no ancestor carrying it, `--input-bd` is never defined, Mantine's own
+ * `border: 1px solid var(--input-bd)` collapses to nothing, and every text
+ * input and select in follow mode renders with **no border at all** — measured
+ * `0px none` against lock mode's `1px solid`. That is also why the resting
+ * outline appeared to be unpainted product-wide: every measurement had been
+ * taken in follow mode.
  */
 export function adminChromeAttributes(
   applyThemeEverywhere: boolean,
-): { inner?: Record<string, string>; content?: Record<string, string> } {
-  if (applyThemeEverywhere) {
-    return {};
-  }
+  galleryThemeId: string,
+): { inner: Record<string, string>; content: Record<string, string> } {
   const attrs = {
-    'data-mantine-color-scheme': getTheme(BRAND_THEME_ID).meta.colorScheme,
+    'data-mantine-color-scheme': resolveChromeTheme(applyThemeEverywhere, galleryThemeId).meta
+      .colorScheme,
   };
   return { inner: attrs, content: attrs };
 }
