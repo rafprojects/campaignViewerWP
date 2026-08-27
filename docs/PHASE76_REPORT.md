@@ -1,14 +1,14 @@
 # Phase 76 - Post-rebrand catalogs + Phase 75 colour-system follow-ons
 
-**Status:** Planned — no code yet
+**Status:** In progress — P76-A landed
 **Created:** 2026-08-25
-**Last updated:** 2026-08-25 (P76-D–G added from the Phase 75 branch review)
+**Last updated:** 2026-08-26 (P76-A harvest + merge + compile complete)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P76-A | Run a real `wp i18n make-pot` harvest, `msgmerge` into the 5 reference locales, compile `.mo` / `.l10n.php` | Planned | Medium |
+| P76-A | Run a real `wp i18n make-pot` harvest, `msgmerge` into the 5 reference locales, compile `.mo` / `.l10n.php` | **Done** (2026-08-26) | Medium |
 | P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | Planned | Medium |
 | P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
 | P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | Planned | Medium |
@@ -47,6 +47,7 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 
 1. **P76-A** first — without a current `.pot`, P76-B is translating against a stale template.
 2. **P76-B** immediately after — the coverage gate will fail between A and B; do not merge A alone to `main` if CI runs `i18n:check:locales` on every PR (it does, via the existing i18n job). Land A+B as one PR, or land B in the same branch before the PR is reviewable.
+   > **Superseded by what P76-A actually found (2026-08-26).** The gate stays **green** after A — all three remaining gaps are PHP-only strings, which `check-i18n-locales.mjs` does not cover. A is safe to merge alone. See [P76-A Implementation Notes](#implementation-notes-2026-08-26).
 3. **P76-C** is independent of A/B (no i18n coupling) but is a **release gate**: it must land before the first WordPress.org upload (`svn-deploy.yml` / [GO_LIVE_PUNCH_LIST.md](guides/GO_LIVE_PUNCH_LIST.md)). The.org account can be created in parallel with A/B; the `readme.txt` edit waits on that account.
 4. **P76-E** is independent of everything and landable first if convenient — it is a deletion with no consumers, and it does not touch the theme engine, so it cannot collide with D.
 5. **P76-F** before **P76-D**. Both touch `AdminChromeProvider`, and F changes the component tree that D's browser pass is supposed to be observing — running D first means QA-ing a structure F is about to replace. F is also the smaller, fully-specified one.
@@ -95,9 +96,72 @@ Do **not** hand-edit `class-mullion-frontend-strings.php`. Do **not** translate 
 - `git diff --stat` on `languages/` reviewed: header + msgid list + `#:` comments, no accidental binary-only change.
 - `npm run i18n:check:locales` is **expected to fail** after A until B lands — that failure list *is* P76-B's punch-list. Capture it in this report under P76-A Implementation Notes.
 
+### Implementation Notes (2026-08-26)
+
+Ran the real toolchain end to end through wp-env (WP-CLI 2.12.0, WordPress 7.0), then verified the result against the tree rather than against this plan's predictions. **Three of the plan's premises turned out to be stale — they are corrected below and they shrink P76-B substantially.**
+
+**What was run**
+
+1. `npm run i18n:generate` — no-op, the manifest was already current (`i18n:check` green before the harvest).
+2. `wp i18n make-pot . languages/mullion-gallery.pot --domain=mullion-gallery --exclude=node_modules,vendor,tests,build --skip-js`
+3. `wp i18n update-po mullion-gallery.pot .` (all 5 locales in one pass)
+4. `wp i18n make-mo languages languages` + `wp i18n make-php languages languages`
+
+**Deviations from the plan's command list, and why**
+
+- **`--skip-js` was required, not optional.** The plan's exact command dies: `PHP Fatal error: Allowed memory size of 134217728 bytes exhausted in .../Peast/Syntax/CommentsRegistry.php`. `make-pot` parses JS by default and the plugin ships 5.1 MB of minified Vite bundles (`admin/build/assets/`, `assets/assets/`), which the Peast parser cannot hold. `--skip-js` is also *correct* independent of the OOM: a grep of `package.json`, `src/`, and `packages/` finds **zero** `@wordpress/i18n` usage — the React side goes through the P60-G manifest bridge, not `wp.i18n` — and the pre-existing POT likewise carried no JS source references. Bumping the PHP memory limit instead would have made the POT depend on build state, which is worse. **This flag belongs in [TRANSLATING.md](guides/TRANSLATING.md); filed as a doc follow-up below.**
+- **`wp i18n update-po`, not GNU `msgmerge`.** `msgmerge` is not installed on the WSL host and the WP-CLI container is Alpine without `gettext`. The plan explicitly allowed either. Behavioural difference worth recording: WP-CLI's `update-po` **drops** obsolete entries outright rather than preserving them as `#~` comments, and does **no** fuzzy similarity matching. Net effect here is benign — Key Decision C says not to ship fuzzies anyway, and the dropped entries are all confirmed rebrand orphans (list below) whose translations remain recoverable from git history.
+- **`POT-Creation-Date` in the five `.po` headers was synced by hand** to the new template's `2026-08-27T02:59:44+00:00`. GNU `msgmerge` does this; WP-CLI's `update-po` leaves the stale value (they still read `2026-07-18`). `PO-Revision-Date` was deliberately left alone — that is the translator timestamp and belongs to P76-B. The `.mo` / `.l10n.php` were recompiled after the edit so the binaries carry the corrected header.
+
+**Corrections to this track's Problem statement**
+
+- **"~150 strings added after 2026-07-23 were never harvested" is wrong.** The true delta is **+7 / −13 msgids** in the POT. The catalogs were never actually 5 weeks stale: later phases hand-maintained the `.po` files ahead of the POT (most recently `ba72659f`, the P75-I harvest). Four of the seven "new" POT msgids were *already translated in all five locales* before this track ran.
+- **"The POT still has msgid `#7c9ef8`" is wrong.** The pre-harvest POT already carried `#1ad1c4`; that P74-O follow-on had been closed earlier.
+- **Four of the thirteen dropped msgids are not rebrand orphans.** `Role updated`, `Failed to update role`, `Can edit metadata and media; cannot manage access or builder`, and `Full campaign control including access management and builder` no longer exist anywhere in source — stale POT entries from a removed feature, correctly dropped. The other nine are the expected rebrand/theme-rename orphans: `WP Super Gallery`, `https://github.com/rafprojects/wp-super-gallery`, `Super Gallery Settings`, `WP Super Gallery — Access Requests`, `WP Super Gallery — Audit Log`, the two long WP-Super-Gallery-branded strings, `Default Dark`, `Default Light`.
+
+**Regression check on the merge (the part worth proving)**
+
+The `.po` diffs are whole-file rewrites (~6,100 lines each, entry order changed), so a diff read proves nothing. Parsed both revisions into `(msgctxt, msgid, msgid_plural) → msgstr[]` maps instead and compared:
+
+| Locale | Common entries | `msgstr` changed | Dropped | Added |
+|--------|---------------:|-----------------:|--------:|------:|
+| de_DE / es_ES / fr_FR / ru_RU / zh_CN | 2 522 | **0** | 9 | 3 |
+
+Zero translations mutated. Arithmetic reconciles exactly: 2 531 − 9 + 3 = 2 525 entries per locale, matching the new POT. Plural-Forms headers (including ru_RU's 3-form rule) and all non-ASCII payloads survived intact. Zero fuzzies, zero `#~` obsoletes, zero conflict markers.
+
+**P76-B's punch list — 15 strings, not ~750**
+
+Every locale is missing exactly the same three msgids, and `npm run i18n:check:locales` **stays green** (contradicting this track's Validation note, which expected it to fail):
+
+| msgid | Source | Note |
+|-------|--------|------|
+| `Mullion Settings` | `class-mullion-settings-*` | rebrand of `Super Gallery Settings` |
+| `Mullion Light` | `theme-catalog.json` via the PHP theme picker | P75-G rename of `Default Light` |
+| `https://github.com/rafprojects/mullion-gallery` | Plugin URI / Author URI | identity translation, as the old URI had |
+
+The gate stays green because all three are **PHP-only** strings and `check-i18n-locales.mjs` only asserts coverage of `src/i18n-strings.en.json` — the blind spot this phase's own Follow-On Candidates table already names. So the "do not merge A alone" warning in Execution Priority does not apply: CI is green on A by itself. `P75-G`'s `Default Dark` → the plugin-name msgid `Mullion` needed no new entry, since `theme-catalog.json` names the default dark theme just `Mullion`.
+
+**Validation**
+
+- `npm run i18n:check` — green (manifest unchanged by this track).
+- `npm run i18n:check:locales` — **green**, 2 380/2 380 in all five locales, unchanged from the pre-harvest baseline.
+- POT acceptance: Plugin Name msgid is `Mullion`; Plugin URI msgid is `https://github.com/rafprojects/mullion-gallery`; **zero** `wpsg` / `wp-super-gallery` occurrences anywhere in the file (was 3 041 + 4); `X-Domain: mullion-gallery` and `Report-Msgid-Bugs-To` preserved; `Copyright (C) 2026 WP Super Gallery` → `Copyright (C) 2026 Mullion`. Source-reference dirs are exactly `mullion-gallery.php`, `includes/`, `includes/i18n/`, `includes/settings/` — no `admin/` or `assets/` leakage from the JS skip.
+- Zero `WP Super Gallery` / `wp-super-gallery` / `Super Gallery` in any `.po` **msgstr** — P76-B's second acceptance criterion is already met.
+- Runtime load, all five locales, both compiled formats (`wp eval-file` in the cli container): `load_textdomain()` (which prefers the `.l10n.php` fast format) and a direct `MO::import_from_file()` each return the same translation for a probe string — e.g. `Asset Library` → `Asset-Bibliothek` / `Biblioteca de recursos` / `Bibliothèque de ressources` / `Библиотека ресурсов` / `素材库`. Each `.mo` carries 2 522 entries (2 525 minus the three untranslated, which `make-mo` omits) and the correct `Language:` header. `Mullion Settings` correctly falls through to English — the expected end-of-A state.
+- `php -l` clean on all five `.l10n.php`.
+- PHPUnit (via a Haiku runner on the `/php-testing` skill): **1 323 tests, 13 737 assertions, 1 failure, 2 skipped.** The single failure is `Mullion_Package_Edition_Test::test_defaults_premium_without_marker_file`, which asserts the gitignored build marker `assets/mullion-edition.json` is absent. That file was written by a local build at `02:16` today, before this track's first command at `02:59`, and this track touched only `languages/` — **pre-existing local-environment state, unrelated.** Delete the marker to re-green it locally; CI never sees it.
+
+**Docs touched by this track**
+
+- **[TRANSLATING.md](guides/TRANSLATING.md) "Regenerate the template" — fixed in this track.** The documented `make-pot` command omitted `--skip-js` and therefore OOMs on any built checkout. Added the flag plus a callout explaining why skipping JS loses nothing. This is in scope because this track's Fix section is "follow TRANSLATING.md", and the instruction it points at did not work.
+- **[PHASE72_MANUAL_QA_RUNBOOK.md](PHASE72_MANUAL_QA_RUNBOOK.md) line ~328 is now obsolete** — its "Pitfall" tells the reader *not* to run a bare `wp i18n make-pot` because it "will drop the hand-maintained `class-mullion-frontend-strings.php` reference block style". The canonical regen has now been run and the structural comparison above shows **zero** translations lost. Left as-is (historical QA runbook, not a live guide), but flagged here so nobody re-derives that advice.
+
+
 ---
 
 ## Track P76-B - Restore locale coverage
+
+> **Scope correction after P76-A ran (2026-08-26).** The two populations below did not materialise. The real punch list is **3 msgids × 5 locales = 15 strings** — `Mullion Settings`, `Mullion Light`, and the Plugin/Author URI — all identity or near-identity swaps, all PHP-only. `npm run i18n:check:locales` is already green and stays green; population 2 (the "~150-string harvest backlog") does not exist, because later phases hand-maintained the `.po` files ahead of the POT. Zero old-brand strings remain in any `msgstr`, so this track's second acceptance criterion is already met. Read the [P76-A Implementation Notes](#implementation-notes-2026-08-26) before starting. The remainder of this section is the original plan, kept for provenance.
 
 ### Problem
 
@@ -382,8 +446,12 @@ Do **not** repair the script by retargeting it at `src/data/adapterSettingGroups
 
 ## Implementation Notes
 
-Not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D–G were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
+**P76-A landed 2026-08-26** — see its per-track notes above. P76-B/C–G not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D–G were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
+
+The one durable lesson from A: **this plan's estimate of catalog staleness was off by two orders of magnitude** (+7/−13 msgids, not ~150), because the `.po` files had been hand-maintained ahead of the `.pot` for weeks. Size an i18n harvest by diffing msgid sets, not by counting phases since the last regen.
 
 ## Outcome
 
-**Planned.** Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D–G are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E and G are deletions, F is an a11y/UX fix to a toggle that already works.
+**In progress.** P76-A done.
+
+**Originally:** Planned. Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D–G are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E and G are deletions, F is an a11y/UX fix to a toggle that already works.
