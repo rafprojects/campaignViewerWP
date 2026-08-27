@@ -10654,3 +10654,16 @@ msgstr ""
 #: includes/class-wpsg-embed.php:519
 msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr ""
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr ""
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr ""
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr ""

@@ -10646,3 +10646,16 @@ msgstr "日期"
 #: includes/class-wpsg-embed.php:519
 msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr "Mullion：无法解析此简码引用 (%s)——将改为显示默认空间。只有站点管理员才能看到此提示。"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr "可以查看此空间"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr "旧版授权级别 — 按仅查看处理。管理权限来自“图库编辑者”角色。"
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr "旧版授权级别 — 按仅查看处理。编辑权限来自“图库编辑者”角色。"

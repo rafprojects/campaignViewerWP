@@ -456,7 +456,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                         <Tooltip
                           label={(grant.access_level ?? 'viewer') === 'viewer'
                             ? t('admin_space_role_viewer_tip', 'Can view this space')
-                            : t('admin_space_role_legacy_tip', 'Legacy grant level — treated as view-only. Managing comes from the Mullion Editor role.')}
+                            : t('admin_space_role_legacy_tip', 'Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role.')}
                           withArrow
                         >
                           <Badge

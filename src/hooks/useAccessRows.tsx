@@ -28,11 +28,11 @@ export function useAccessRows({ accessEntries, accessViewMode, onRevokeAccess }:
       // view-only — editing comes from the mullion_editor role, not the grant.
       editor: {
         label: t('accessrow_role_editor', '✏️ Editor'),
-        tip: t('accessrow_tip_editor_legacy', 'Legacy grant level — treated as view-only. Editing comes from the Mullion Editor role.'),
+        tip: t('accessrow_tip_editor_legacy', 'Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role.'),
       },
       owner: {
         label: t('accessrow_role_owner', '👑 Owner'),
-        tip: t('accessrow_tip_owner_legacy', 'Legacy grant level — treated as view-only. Editing comes from the Mullion Editor role.'),
+        tip: t('accessrow_tip_owner_legacy', 'Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role.'),
       },
     };
 

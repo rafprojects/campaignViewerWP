@@ -10646,3 +10646,16 @@ msgstr "Дата"
 #: includes/class-wpsg-embed.php:519
 msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr "Mullion: не удалось разрешить эту ссылку шорткода (%s) — вместо этого показано пространство по умолчанию. Это уведомление видят только администраторы сайта."
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr "Может просматривать это пространство"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr "Устаревший уровень доступа — работает только на просмотр. Управление определяется ролью «Редактор галереи»."
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr "Устаревший уровень доступа — работает только на просмотр. Редактирование определяется ролью «Редактор галереи»."

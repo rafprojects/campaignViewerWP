@@ -10646,3 +10646,16 @@ msgstr "Date"
 #: includes/class-wpsg-embed.php:519
 msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr "Mullion : cette référence du shortcode n'a pas pu être résolue (%s) — l'espace par défaut est affiché à la place. Seuls les administrateurs du site voient cet avis."
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr "Peut consulter cet espace"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr "Niveau d’autorisation hérité — traité en lecture seule. La gestion provient du rôle Éditeur de galerie."
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr "Niveau d’autorisation hérité — traité en lecture seule. La modification provient du rôle Éditeur de galerie."

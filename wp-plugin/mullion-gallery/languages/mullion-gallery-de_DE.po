@@ -10646,3 +10646,16 @@ msgstr "Datum"
 #: includes/class-wpsg-embed.php:519
 msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr "Mullion: Diese Shortcode-Referenz konnte nicht aufgelöst werden (%s) — stattdessen wird der Standardbereich angezeigt. Nur Website-Administratoren sehen diesen Hinweis."
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr "Kann diesen Bereich ansehen"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr "Veraltete Berechtigungsstufe — wird als reiner Lesezugriff behandelt. Die Verwaltung ergibt sich aus der Rolle „Galerie-Editor“."
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr "Veraltete Berechtigungsstufe — wird als reiner Lesezugriff behandelt. Die Bearbeitung ergibt sich aus der Rolle „Galerie-Editor“."
