@@ -6,6 +6,13 @@
  * The public gallery theme is resolved separately via ThemeProvider / useTheme().
  */
 
+import type { CSSProperties } from 'react';
+import {
+  DEFAULT_THEME,
+  defaultCssVariablesResolver,
+  mergeMantineTheme,
+} from '@mantine/core';
+
 import { DEFAULT_THEME_ID, getTheme, type ThemeEntry } from './index';
 
 /** CSS class that scopes nested Mantine CSS variables to admin chrome surfaces. */
@@ -66,4 +73,60 @@ export function adminChromeAttributes(
     'data-mantine-color-scheme': getTheme(BRAND_THEME_ID).meta.colorScheme,
   };
   return { inner: attrs, content: attrs };
+}
+
+/**
+ * Inline CSS custom properties for the parts `adminChromeClassNames()` labels.
+ *
+ * P76-H: `adminChromeAttributes()` makes Mantine's scoped variable *rules*
+ * match, which is enough in a light-DOM mount. It is not enough in a shadow
+ * mount — the shipped default — because those rules render in a `<style>`
+ * inside the shadow root while `Drawer`/`Modal` portal to `document.body`
+ * (Mantine `Portal`, `reuseTargetNode` default true). A `<style>` in a shadow
+ * root only styles that shadow tree, so the rules and the elements they target
+ * end up in different trees. Inline styles have no such problem: they travel
+ * with the element wherever it is portaled, so this one mechanism covers both
+ * mount modes.
+ *
+ * Mantine's variable generation is public API — `defaultCssVariablesResolver`
+ * returns `{ variables, dark, light }` — so nothing is reproduced here. The
+ * resolver wants a fully resolved `MantineTheme` rather than the override we
+ * pass around, hence the `mergeMantineTheme` call.
+ *
+ * Unlike `adminChromeClassNames()` / `adminChromeAttributes()`, this returns a
+ * value in **both** modes, and that asymmetry is the point. Those two return
+ * `{}` in follow mode because the chrome is meant to inherit the gallery root —
+ * which it does in a light-DOM mount, and cannot in a shadow mount, for exactly
+ * the reason above: the gallery's own variables are injected at `:host` inside
+ * the shadow root, and the portaled chrome is outside it. Verified in a browser
+ * (2026-08-27): follow mode in a shadow mount rendered `Cancel` and `Save
+ * Changes` with no button surface at all. So follow mode is handed the gallery
+ * theme's variables inline — the same values inheritance would have supplied
+ * had the boundary not been in the way.
+ */
+const chromeVarCache = new Map<string, CSSProperties>();
+
+function chromeVars(themeId: string): CSSProperties {
+  const cached = chromeVarCache.get(themeId);
+  if (cached) return cached;
+
+  const entry = getTheme(themeId);
+  const resolved = mergeMantineTheme(DEFAULT_THEME, entry.mantine);
+  const { variables, dark, light } = defaultCssVariablesResolver(resolved);
+  // The nested provider runs `forceColorScheme`, so exactly one of the two
+  // scheme blocks can ever apply — pick it here rather than emitting both and
+  // letting the later key win by accident.
+  const scheme = entry.meta.colorScheme === 'dark' ? dark : light;
+  const vars = { ...variables, ...scheme } as CSSProperties;
+
+  chromeVarCache.set(themeId, vars);
+  return vars;
+}
+
+export function adminChromeStyles(
+  applyThemeEverywhere: boolean,
+  galleryThemeId: string,
+): { inner: CSSProperties; content: CSSProperties } {
+  const vars = chromeVars(resolveChromeThemeId(applyThemeEverywhere, galleryThemeId));
+  return { inner: vars, content: vars };
 }

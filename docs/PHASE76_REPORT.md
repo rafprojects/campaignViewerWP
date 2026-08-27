@@ -1,8 +1,8 @@
 # Phase 76 - Post-rebrand catalogs + Phase 75 colour-system follow-ons
 
-**Status:** In progress — P76-A, P76-E, P76-F, P76-G landed; P76-D mostly done
+**Status:** In progress — P76-A, P76-D, P76-E, P76-F, P76-G, P76-H landed
 **Created:** 2026-08-25
-**Last updated:** 2026-08-27 (P76-H and P76-I added — P76-D's two open decisions, taken and scoped)
+**Last updated:** 2026-08-27 (P76-H complete — both toggle states now themed in both mount modes)
 
 ### Tracks
 
@@ -15,7 +15,7 @@
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | **Done** (2026-08-26) | Small |
 | P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | **Done** (2026-08-27) | Small |
 | P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | **Done** (2026-08-26) | Small |
-| P76-H | Reach theme CSS variables into portaled admin chrome — P76-D fixed light-DOM mounts; shadow (the shipped default) still resolves nothing | Planned | Small-Medium |
+| P76-H | Reach theme CSS variables into portaled admin chrome — P76-D fixed light-DOM mounts; shadow (the shipped default) still resolves nothing | **Done** (2026-08-27) — widened mid-track to cover both toggle states | Small-Medium |
 | P76-I | `borderStrong` is audited on 23 themes at 3.18–4.92:1 and painted on none of them — make the audit measure the rendered boundary, then decide the boundary | Planned — I-2 is a design decision | Medium |
 
 ---
@@ -641,14 +641,63 @@ Once this lands, consider whether `useBuilderShellColors` + the `--mullion-build
 
 - On the locked Settings Panel in a **shadow** mount, `getComputedStyle(drawerContent).getPropertyValue('--mantine-color-body')` resolves to the brand value (`#0d1c24` for `default-dark`), not `(unset)`.
 - The paint fingerprint of the shadow panel matches the light-DOM panel — **58** distinct colour combinations in both, closing P76-D's measured 55-vs-58 gap.
-- Follow mode is untouched: `adminChromeStyles(true)` returns `{}`, and the chrome keeps inheriting the gallery root.
+- ~~Follow mode is untouched: `adminChromeStyles(true)` returns `{}`, and the chrome keeps inheriting the gallery root.~~ **Wrong — corrected 2026-08-27.** Inheriting the gallery root works in a light-DOM mount and yields nothing in a shadow one. Replaced by: follow mode inlines the *gallery* palette, and `adminChromeClassNames()` / `adminChromeAttributes()` keep returning `{}` there. See Implementation Notes.
 - `LayoutBuilderModal` gets the same treatment and its Dockview shell is unchanged.
 
 ### Validation
 
 - Re-run P76-D's probe methodology (four states: Settings Panel × toggle × shadow/`?shadow=0`), comparing variable resolution and the paint fingerprint before and after.
-- `npx playwright test theme-qa` — all baselines **byte-identical**. Follow-mode captures cannot move (`{}` in that state), and lock-mode captures run in a shadow mount where this adds variables that were previously unset but were not being painted by anything. A diff here means something *was* reading a variable and rendering differently, which is worth understanding before accepting.
+- ~~`npx playwright test theme-qa` — all baselines **byte-identical**.~~ **Superseded by the widened scope.** One baseline (`themed control — tight tolerance`) moved and was replaced deliberately, with the old and new inspected first; the other 19 are byte-identical. The six `display-settings-*` captures did *not* move, which is itself a finding — see Implementation Notes.
 - Focused Vitest on `chromeTheme` — extend the existing "attributes and classNames cover exactly the same parts" guard to the third function so all three cannot drift.
+
+### Implementation Notes (2026-08-27)
+
+Landed option (b) as planned, then **widened the track mid-implementation** after verification found the plan's own scope was wrong. Both changes are below; the second was taken to the user rather than decided here, because it touched a snapshot baseline.
+
+**The fix.** New `adminChromeStyles(applyThemeEverywhere, galleryThemeId)` in `chromeTheme.ts`, joining `adminChromeClassNames()` and `adminChromeAttributes()` and taking the same `(flag, galleryThemeId)` shape `resolveChromeThemeId()` already uses. It returns Mantine's resolved variable block — 371 properties — as an inline style for the Drawer/Modal `inner` and `content` parts. Inline styles travel with the element wherever it is portaled, so one mechanism covers both mount modes. Memoized in a module-level `Map` keyed by resolved theme id, so the 371-property object is built once per theme rather than per render.
+
+**The plan's claim that this needs Mantine's generator reproduced was wrong**, as suspected at planning time and now confirmed: `defaultCssVariablesResolver(theme)` returns `{ variables, dark, light }` and is public API. The only real cost is that it wants a resolved `MantineTheme` rather than the override we pass around, hence `mergeMantineTheme(DEFAULT_THEME, entry.mantine)`. Only one of the `dark` / `light` blocks is merged — the nested provider runs `forceColorScheme`, so exactly one can ever apply, and emitting both would leave the winner to key order.
+
+Both call sites already had a `styles` prop (`SettingsPanel` sets `body` plus the space-accent rail on `content`; `LayoutBuilderModal` sets `body` and `content`), so the chrome block is **merged into** those rather than replacing them.
+
+#### The track's own acceptance criteria were wrong, and verification caught it
+
+This track was written to fix **lock mode only**, on the reasoning that follow mode should inherit the gallery root — with an explicit criterion that "follow mode is untouched: `adminChromeStyles(true)` returns `{}`". That reasoning holds in a light-DOM mount and **fails in a shadow mount**, which is the shipped path, for precisely the reason lock mode failed: the gallery's own variables are injected at `:host` inside the shadow root, and the portaled chrome is outside it. Inheriting from a root you cannot see yields nothing.
+
+Measured in a browser (Tokyo Night gallery, toggle **on**, shadow mount): `--mantine-color-body` and `--mantine-primary-color-filled` both `(unset)`, and the paint fingerprint at **51** distinct colour combinations against light-DOM's 58. Visually, `Cancel` and `Save Changes` rendered as bare text with no button surface at all, the number stepper lost its border and divider, and the switch knob and select chevrons were off-tone. Pre-existing, and shipped.
+
+Taken to the user rather than decided here, because the fix implied replacing snapshot baselines and P76-F had just established byte-identical baselines as a pass condition. **Approved 2026-08-27: fix both modes as part of H.**
+
+So `adminChromeStyles` now returns a value in both modes — the brand palette when locked, the gallery palette when following — while `adminChromeClassNames()` and `adminChromeAttributes()` still return `{}` in follow mode. That asymmetry is deliberate and a unit test asserts it, so nobody "fixes" the inconsistency later.
+
+#### A prediction that was wrong, and what it means
+
+I told the user this would recapture **six** `display-settings-*` baselines. **One** moved.
+
+The six did not move because they run at `maxDiffPixelRatio: 0.1` — roughly 115 000 pixels of slack on a 1280×900 page. Restoring two button surfaces, a stepper border, and a divider does not come close. The only case that caught it was `themed control — tight tolerance`, the control-scoped zero-tolerance snapshot P76-D added, and the diff is exactly one thing: the select chevron moving from a Mantine fallback to the theme's own tone — matching what the unsealed mount already rendered. Baseline replaced deliberately; old and new inspected side by side first.
+
+**This is the same tolerance blind spot P76-I documents, now demonstrated on a second, unrelated defect.** A real visual regression in the shipped configuration passed six whole-page snapshots untouched. That is worth more than the fix itself: it means the `display-settings-*` captures cannot be relied on to catch anything smaller than a palette swap, and the tight-tolerance pattern deserves extending rather than staying a single case. Recorded as a follow-on below rather than expanded here.
+
+**Validation**
+
+- Browser probe, all four states (Settings Panel × toggle × shadow / `?shadow=0`), before and after:
+
+| State | `--mantine-color-body` before | after | distinct colours before → after |
+|-------|------------------------------|-------|--------------------------------|
+| shadow / locked | `(unset)` | **`#0d1c24`** (brand) | 55 → **59** |
+| shadow / follow | `(unset)` | **`#1e212f`** (gallery) | 51 → **57** |
+| light-DOM / locked | `#0d1c24` | `#0d1c24` | 58 → 58 |
+| light-DOM / follow | `#1e212f` | `#1e212f` | 58 → 58 |
+
+  Both shadow states now resolve the right palette; light-DOM is unchanged, as it should be — P76-D had already fixed it.
+- Visual confirmation that the fixed shadow/follow panel matches the light-DOM rendering: buttons, stepper, and switch knob all restored.
+- `npx playwright test theme-qa` — 20/20, one baseline deliberately replaced (above), the other 19 byte-identical.
+- Focused Vitest on `chromeTheme` — 9 passed, including three new `adminChromeStyles` cases. Note the trap they had to avoid: `--mantine-color-body` is `var(--mantine-color-dark-7)` in *every* theme, so asserting on it proves nothing. The tests compare the resolved ramp literals instead. A first draft asserted on the indirection, passed vacuously in one direction and failed confusingly in the other.
+
+**Follow-on this track surfaced**
+
+- The `display-settings-*` snapshots are too loose to catch anything below a palette-level change — demonstrated twice now (P75-G/P76-I's `borderStrong`, and this track's button surfaces). Worth either tightening them or extending the control-scoped zero-tolerance pattern to more of the panel. Not done here: it is a test-strategy change, not part of this fix.
+
 
 ---
 
