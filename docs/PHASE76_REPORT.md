@@ -2,7 +2,7 @@
 
 **Status:** In progress — P76-A, P76-E, P76-F, P76-G landed; P76-D mostly done
 **Created:** 2026-08-25
-**Last updated:** 2026-08-27 (P76-D browser pass + attribute fix + coverage)
+**Last updated:** 2026-08-27 (P76-H and P76-I added — P76-D's two open decisions, taken and scoped)
 
 ### Tracks
 
@@ -11,10 +11,12 @@
 | P76-A | Run a real `wp i18n make-pot` harvest, `msgmerge` into the 5 reference locales, compile `.mo` / `.l10n.php` | **Done** (2026-08-26) | Medium |
 | P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | Planned | Medium |
 | P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
-| P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | **Mostly done** (2026-08-27) — 2 decisions outstanding | Medium |
+| P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | **Done** (2026-08-27) — remainder split into H and I | Medium |
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | **Done** (2026-08-26) | Small |
 | P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | **Done** (2026-08-27) | Small |
 | P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | **Done** (2026-08-26) | Small |
+| P76-H | Reach theme CSS variables into portaled admin chrome — P76-D fixed light-DOM mounts; shadow (the shipped default) still resolves nothing | Planned | Small-Medium |
+| P76-I | `borderStrong` is audited on 23 themes at 3.18–4.92:1 and painted on none of them — make the audit measure the rendered boundary, then decide the boundary | Planned — I-2 is a design decision | Medium |
 
 ---
 
@@ -353,7 +355,9 @@ The zero-tolerance snapshot was kept but **renamed** to `themed control — tigh
 - Both new baselines re-run clean on repeat invocations before being committed; the zero-tolerance one across four runs.
 - All three throwaway probe specs were deleted after recording these findings; they are not permanent tests. `packages/theme-engine/src/definitions/default-dark.json` was restored after the controlled revert (verified by an empty `git diff --stat`).
 
-**Outstanding in this track**
+**Outstanding — both now have homes (2026-08-27)**
+
+Neither was settled unilaterally, both were taken to a decision, and both are now tracks in this phase rather than loose ends: **[P76-H](#track-p76-h---reach-theme-css-variables-into-portaled-admin-chrome)** (option (b) chosen; (c) ruled out, (d) deferred with reasons) and **[P76-I](#track-p76-i---borderstrong-is-audited-but-never-painted)** (split into an audit-correctness half and a design half, since the borderless look is deliberate). The original statements:
 
 1. **Shadow-mode CSS variables** — needs a decision between (b), (c), and (d). Impact is bounded and known: 3 of 58 painted colour combinations, no effect on the primary palette, which travels through React context.
 2. **`borderStrong` is not painted.** Decide whether the affected controls should carry a `borderWidth` (making the token real, and `uiContrastAudit`'s coverage of it meaningful) or whether `borderStrong` should be retired from `adapter.ts` and the audit. Until then this track's `#577577` criterion cannot be satisfied by any test. This is the same class of finding as P75-G's — a token measured against code that does not render it.
@@ -597,6 +601,119 @@ Deleted `scripts/validate-adapter-settings-parity.mjs` and its `validate:adapter
 
 ---
 
+## Track P76-H - Reach theme CSS variables into portaled admin chrome
+
+### Problem
+
+P76-D fixed half of this. Mantine emits the chrome's colour variables as `.mullion-admin-chrome[data-mantine-color-scheme="…"]`, and P76-D's `adminChromeAttributes()` put that attribute on the parts that already carried the class — which makes the variables resolve **in a light-DOM mount**. In a **shadow mount they still do not**, and shadow is the shipped path (`main.tsx:30`: `useShadowDom = windowFlag ?? query.get('shadow') !== '0'`, i.e. default on).
+
+The reason is structural, and P76-D confirmed it in a browser rather than deriving it: the `<style>` carrying those rules renders inside the React tree, which lives in the shadow root, while Mantine's `Portal` (`Portal.mjs:17-32`, `reuseTargetNode` default `true`) appends its target to `document.body`. A `<style>` inside a shadow root only styles that shadow tree. Rules and elements end up in different trees. The same split hits `ThemeContext`'s `--mullion-color-*`, which are injected at `:host`.
+
+Measured exposure, from P76-D's paint fingerprint of the first 400 elements inside the Drawer: the light-DOM panel renders **58** distinct `background/color/border/outline/fill` combinations, the shadow panel **55**. The primary palette is unaffected in both, because `adaptTheme`'s per-component `styles` travel through React context and cross portals. What is missing is the variable-driven surfaces, `--mantine-color-body` (`#0d1c24`) among them.
+
+**This is not hypothetical debt — the codebase has already paid for it once.** `src/styles/builder.css` themes Dockview through **22** `--mullion-builder-*` custom properties. Those cannot reach it across the portal, so `LayoutBuilderModal` computes them via `useBuilderShellColors` (a hook deriving 14 colours) and writes them as **inline styles** on a div inside the Modal. That entire apparatus — hook, derived palette, inline style object, and a CSS file of `--dv-*` mappings — exists solely to smuggle theme values across this boundary. The next third-party component themed by CSS variables (an editor, a chart library, a date picker) needs its own copy unless this is solved generically.
+
+### Fix
+
+Take the plan-of-record's **option (b)** — inline the chrome's CSS variables onto the Drawer/Modal parts via the styles API. Inline styles travel with the element wherever it is portaled, so one mechanism covers both mount modes.
+
+P76-D's framing of this option said it means "either reproducing [Mantine's variable generation] or limiting it to the `--mullion-color-*` block". **That is not the case** — Mantine exports the machinery publicly:
+
+```ts
+import { defaultCssVariablesResolver, mergeMantineTheme, DEFAULT_THEME } from '@mantine/core';
+// defaultCssVariablesResolver(theme) → { variables, dark, light }, each Record<string,string>
+```
+
+so the block is `styles={{ content: { ...variables, ...dark } }}` with no reproduction. Add a `adminChromeStyles()` companion to `chromeTheme.ts` alongside `adminChromeClassNames()` / `adminChromeAttributes()`, returning `{}` in follow mode exactly as the other two do.
+
+The one real implementation cost: `defaultCssVariablesResolver` wants a fully resolved `MantineTheme`, not the `MantineThemeOverride` we pass around, so it needs `mergeMantineTheme(DEFAULT_THEME, override)` (or a `useMantineTheme()` read from inside the nested provider). Memoize on the override identity — `getTheme` returns from a module-level `Map`, so that is stable.
+
+Once this lands, consider whether `useBuilderShellColors` + the `--mullion-builder-*` inline bridge can be folded into the same mechanism. **Do not do that in this track** — it is a second, larger change and the Builder works today.
+
+### Key Decisions
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| A | (b) inline the variables, (c) move the provider inside the portal, (d) portal into the shadow root, or (e) hoist the block to `document.head`? | **(b).** (c) is out: wrapping the Drawer's *children* leaves its header, title, close button, and overlay outside the provider, so locked chrome would render brand in the body and gallery in the header — a visible split worse than the bug. (e) is equivalent to (b) in cost but mutates `document.head` from a component, so it buys nothing and adds lifecycle and de-duplication concerns. (d) is deferred, see B. |
+| B | Why not (d), which removes the boundary rather than working around it? | **Risk lands in someone else's environment.** The Drawer portals to `document.body` specifically to escape the host page's stacking context; moving it inside the shadow root changes z-index behaviour against wp-admin and whatever plugins a customer has installed, plus focus trapping and click-outside. That is a support-ticket regression, not a CI one. (b) is also the pattern this codebase already uses successfully (the Builder bridge). Crucially (b) does not foreclose (d) — it makes it *easier*, by turning "get theme values onto portaled chrome" from one ad-hoc solution into one central one. Revisit (d) as its own project if the variable-consuming surface grows. |
+
+### Acceptance criteria
+
+- On the locked Settings Panel in a **shadow** mount, `getComputedStyle(drawerContent).getPropertyValue('--mantine-color-body')` resolves to the brand value (`#0d1c24` for `default-dark`), not `(unset)`.
+- The paint fingerprint of the shadow panel matches the light-DOM panel — **58** distinct colour combinations in both, closing P76-D's measured 55-vs-58 gap.
+- Follow mode is untouched: `adminChromeStyles(true)` returns `{}`, and the chrome keeps inheriting the gallery root.
+- `LayoutBuilderModal` gets the same treatment and its Dockview shell is unchanged.
+
+### Validation
+
+- Re-run P76-D's probe methodology (four states: Settings Panel × toggle × shadow/`?shadow=0`), comparing variable resolution and the paint fingerprint before and after.
+- `npx playwright test theme-qa` — all baselines **byte-identical**. Follow-mode captures cannot move (`{}` in that state), and lock-mode captures run in a shadow mount where this adds variables that were previously unset but were not being painted by anything. A diff here means something *was* reading a variable and rendering differently, which is worth understanding before accepting.
+- Focused Vitest on `chromeTheme` — extend the existing "attributes and classNames cover exactly the same parts" guard to the third function so all three cannot drift.
+
+---
+
+## Track P76-I - `borderStrong` is audited but never painted
+
+### Problem
+
+The theme engine does real work to guarantee WCAG 1.4.11 (non-text contrast, 3:1) on form controls, and none of it reaches a pixel.
+
+- `colorGen.ts:383` derives `borderStrong` for the 22 of 24 themes that do not author one, with a comment stating the derivation must satisfy the audit.
+- `uiContrastAudit.ts` runs **three** `borderStrong` checks — on `surface`, `surface2`, and `surfaceRaised` — labelled "input outline, checkbox, switch".
+- `cssVariables.ts:62` emits `--mullion-color-border-strong`.
+- `adapter.ts` sets `borderColor: rc.borderStrong` on Input / Select / TextInput / NumberInput / Checkbox / Switch — **nine sites**.
+
+Measured in a browser during P76-D, on the `default-dark` Settings Panel: those elements compute `border-style: none` and `border-width: 0px`, with `border-color` correctly carrying the token. `outline-style` is `none` too. The colour is declared and never drawn. Contrast the same file's eight `border: 1px solid ${rc.border}` declarations on containers, which do paint.
+
+The consequence is that the control's only visual boundary is its fill, and that boundary is nowhere near 3:1. Across all 23 registered themes:
+
+| Boundary | Range |
+|----------|-------|
+| control fill (`surface2`) vs panel (`surface`) — **what is painted** | **1.02 – 1.63 : 1** |
+| `borderStrong` vs `surface` — **what is audited** | **3.18 – 4.92 : 1** |
+
+So `uiContrastAudit` is green on every theme while the rendered boundary fails 1.4.11 on every theme. This is the same class of finding as P75-G's: a token measured against code that does not render it. P75-G's controlled revert of the dark `borderStrong` to the defective `#577577` produced byte-identical baselines, and re-running that experiment in P76-D against a **zero-tolerance** control-scoped snapshot still produced 20/20 passes — because no snapshot can catch a colour that never reaches a pixel.
+
+**The borderless look is deliberate** — a minimalist design choice, confirmed 2026-08-27 — so this is not simply a bug to fix. What is not defensible is the current state, where a passing audit reports compliance the product does not have.
+
+### Fix
+
+Two separable pieces. **Do the first regardless; the second is a design decision.**
+
+**I-1 — make the audit measure the rendered boundary.** No visual change, no design decision.
+
+- Remove the nine inert `borderColor: rc.borderStrong` declarations from `adapter.ts`, or give them a width — whichever I-2 decides. Until then they are dead declarations that make the code read as though a border exists.
+- Re-point `uiContrastAudit`'s three `borderStrong` checks at whatever actually delineates the control. Today that is `surface2` on `surface` / `surfaceRaised`.
+- Expect the audit to **go red on all 23 themes** at 1.02–1.63:1. That is the point: the gate should reflect reality. Land it with whatever I-2 chooses, or land it with a documented, explicitly-approved threshold exception so the number is visible rather than hidden.
+- Keep `deriveBorderStrong` and the `--mullion-color-border-strong` variable if I-2 keeps the token; delete them if it does not.
+
+**I-2 — decide the boundary.** Options, in order of how much they preserve the current look:
+
+- **(a) Accept and document.** Keep borderless, record the 1.4.11 position explicitly, and stop asserting compliance. Cheapest; leaves the gap.
+- **(b) `prefers-contrast: more` opt-in.** Default stays minimal; users who ask their OS for more contrast get the compliant border. Not strict conformance — WCAG is assessed on the default presentation — but a real improvement for the people affected.
+- **(c) Scope the border to admin chrome.** Settings Panel and Layout Builder are dense operator tools where boundaries earn their keep; the public gallery stays borderless as the brand surface. Caveat: the login and auth-bar forms live in the gallery and would stay non-compliant.
+- **(d) Paint it everywhere.** Add `borderWidth: 1, borderStyle: 'solid'` at the nine sites. Reaches 3.18–4.92:1 on every theme with the colours the engine already derives. Rendered comparison captured 2026-08-27 (`default-dark` Settings Panel, before/after) shows a thin definition line rather than a boxy form — subtler than the description suggests, but a real change to every control in 24 themes.
+
+**Ruled out: raising `surface2` contrast to 3:1.** Going from ~1.1:1 to 3:1 on the control fill turns the fields into obvious blocks — a far larger visual change than a hairline, and the *least* minimal option available. It is the intuitive answer and it is the wrong one.
+
+### Acceptance criteria
+
+- `uiContrastAudit` measures a boundary the product actually renders. No check references a colour with no painted surface.
+- `adapter.ts` contains no declaration that sets a border colour without a border.
+- Whatever I-2 chooses is recorded here with its rationale, including if the answer is "accept the gap".
+- If I-2 picks (c) or (d): the `theme-qa` baselines are recaptured **deliberately**, noted as intentional in this document. This is the one place in Phase 76 where a baseline recapture is not a failure signal — contrast P76-F's Key Decision I, where it was.
+- A regression test that would fail if the boundary silently loses contrast again — which, unlike P75-G's and P76-D's attempts, requires the boundary to be painted first.
+
+### Validation
+
+- Re-run the contrast sweep across all 23 themes and record the after values, as the table above records the before.
+- `npx vitest run uiContrastAudit` — the audit's own suite, against the corrected checks.
+- If a border is painted: `npx playwright test theme-qa`, with the diff reviewed rather than auto-accepted, plus the `themed control — tight tolerance` case P76-D added, which is scoped and zero-tolerance and will catch it.
+- Re-run P75-G's controlled experiment as the real regression proof: revert `default-dark`'s `borderStrong` to `#577577` and confirm something now **fails**. That has been the intended check since P75-G and has never once been satisfiable.
+
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -616,6 +733,8 @@ Two durable lessons so far:
 
 ## Outcome
 
-**In progress.** P76-A, P76-E, P76-F, P76-G done. P76-D delivered its browser pass, the attribute fix, the missing default-state baseline, and the Lightbox correction, and left two explicit decisions open (shadow-mount CSS variables; whether `borderStrong` should be painted at all). Remaining: B (15 strings), C (blocked on the WordPress.org account), and P76-D's two decisions.
+**In progress.** P76-A, P76-E, P76-F, P76-G done. P76-D delivered its browser pass, the attribute fix, the missing default-state baseline, and the Lightbox correction; its two open decisions were taken on 2026-08-27 and became **P76-H** and **P76-I**. Remaining: B (15 strings), C (blocked on the WordPress.org account), H, I.
+
+P76-I is the one to read first if picking this phase back up cold. It is not a styling nit: the contrast sweep says every one of the 23 themes renders its form controls with a **1.02–1.63:1** boundary while a green audit reports **3.18–4.92:1**, and the gap has now survived three separate attempts to catch it with a test (P75-G's revert, P76-D's zero-tolerance snapshot, P76-D's re-run of the revert). No test can catch it, because the audited colour is never drawn.
 
 **Originally:** Planned. Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D–G are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E and G are deletions, F is an a11y/UX fix to a toggle that already works.
