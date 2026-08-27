@@ -524,6 +524,28 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ---
 
+### Opt-In "Mirror the Theme" Mode for Gallery Content Styling
+
+**Origin:** Raised while scoping [PHASE76_REPORT.md](PHASE76_REPORT.md) **P76-I** (2026-08-27), from the observation that the gallery's border settings are user-controlled *by design* — "as much control over how your gallery looks as possible" is the point of the product, so wiring those settings to the theme system automatically would be a mistake.
+
+**Context:** There is currently **no** path from the theme system to gallery *content* styling, in either direction. The theme engine's tokens (`border`, `borderStrong`, `surface`, `primaryFill`, …) reach Mantine chrome via `adapter.ts` and the gallery shell via `--mullion-color-*`, but campaign cards, tiles, media, nav arrows, and the viewer are styled entirely from user settings with fixed defaults — `card_border_color` defaults to `#1ad1c4`, `tile_border_color` to `#ffffff`, and so on.
+
+The nearest existing thing is not a precedent. `cardBorderMode` already selects a colour *source* — `'auto'` (the campaign's company `brandColor`), `'single'` (`settings.cardBorderColor`), `'individual'` (`campaign.borderColor`) — but none of the three consults the theme. `ResetLink` in the settings sections is a different axis entirely: it clears a responsive **breakpoint override** back to the desktop value, not to any theme.
+
+So a site owner who picks a theme they like has no way to say "and make the gallery follow it" short of hand-copying hex values out of the theme and into a dozen settings, where they immediately go stale the moment the theme changes.
+
+**What to implement:** An opt-in mode, per setting or per group, that *sources* the value from the active theme instead of from a stored constant. `cardBorderMode` shows the shape to copy: add a fourth mode (e.g. `'theme'`) alongside `auto` / `single` / `individual`, and generalise the same idea to the other content-styling colours.
+
+**The design decision that matters: mirror, not copy.** A one-shot "Reset to theme" button that writes current theme values into the settings is the obvious implementation and the wrong one — the values are stale the instant the user switches theme, and nothing records that they were ever meant to track it. A *live* mode keeps the link, so changing theme restyles the gallery, and the user can drop back to a fixed colour whenever they want. It also keeps this compatible with the product's premise: mirroring is a choice the user makes and can revoke, not a default that quietly removes control.
+
+Worth deciding at planning time: whether the granularity is per-field, per-group (all card colours), or a single global "gallery follows theme" switch; and which theme token each setting maps to (`card_border_color` → `primaryStroke`? `border`? `borderStrong`?), which is a design question per setting, not a mechanical one.
+
+**Dependencies / risk:** Touches the settings schema (a new enum value or a companion "source" field per setting), the sanitizer, the PHP defaults, the adapter-fields schema, and the settings UI. The `adapterSettingsParity` guard will need the new keys. Space-level overrides and breakpoint overrides both already layer on these settings, so the resolution order — theme → setting → space override → breakpoint override — needs stating explicitly before implementation, not discovered during it. No accessibility coupling: **P76-I** deliberately does not depend on this, and its audit scope is theme-derived chrome only.
+
+**Effort:** Medium-Large | **Impact:** Medium-High — it is the missing half of the theme feature. Themes currently restyle the admin and the gallery shell but stop at the content the user actually came to look at.
+
+---
+
 ## Integration
 
 ### Third-Party OAuth Providers
