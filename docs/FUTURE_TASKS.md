@@ -215,6 +215,33 @@ Net effect: a green test asserting nothing, sitting in the suite that is suppose
 
 ---
 
+### Contract Tests — Frontend Request Payloads vs. REST Route-Arg Enums
+
+**Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-I** (2026-08-26).
+
+**Context:** P75-I was a two-phase-old, always-reproducible bug — every space access grant failed with `Invalid parameter(s): access_level` — that **both** test suites were green through, because neither suite can see the other side:
+
+- **Vitest** asserts frontend payloads against a mocked `apiClient`. Whatever the component POSTs is "correct" by construction. `SpaceManagementView.test.tsx` did not merely miss the bug, it *asserted* it: `expect(apiClient.post).toHaveBeenCalledWith(…, { userId: 42, access_level: 'owner' })` — the exact body the server answers with `rest_invalid_param`.
+- **PHPUnit** asserts the route args (`Mullion_P53D_Grant_Model_Test`: "the grant endpoint rejects non-viewer levels"). Correct, and blind to what the UI actually sends.
+
+The failure mode is structural, not specific to `access_level`: whenever a `register_rest_route` `'enum'` narrows, nothing tells the TypeScript that sends those literals. There are currently **24 enum declarations across 6 controllers** — `access_level` (`['viewer']` ×4), `isolation_mode` (`['open','delegated']` ×2), `source` (`['company','campaign']`), `action` (`['grant','deny']`), `assetType` (`['asset','font']` ×2), `visibility`, `status`, campaign bulk `action` (`['archive','restore','delete']`), media `sort` / `type` / `source`, alert `scope` / `severity`, analytics event type, and the user-create `role` (`['subscriber','mullion_editor']`, itself renamed during the Phase 74 rebrand). Each is a live instance of the same trap.
+
+**What to implement:** One shared, machine-checked source of truth for request-parameter enums, asserted from **both** sides. The likely shape:
+
+1. A checked-in manifest (e.g. `docs/api/rest-enums.json`, or a TS module under `src/types/`) listing route → parameter → allowed values.
+2. A **PHPUnit** test that walks the registered routes (`rest_get_server()->get_routes()`, already available in the test bootstrap — no new harness) and asserts every `'enum'` in the route args matches the manifest. This fails the moment a controller narrows or widens an enum without updating the manifest.
+3. A **Vitest** guard (or a lint rule) that the frontend's literals for those parameters come from the manifest — importing the TS constants rather than typing `'owner'` inline. Making the values importable is most of the fix on its own: `spaceRoleOptions` built from a shared constant could not have drifted.
+
+Scope decision worth settling first: whether the manifest is **hand-maintained and asserted** (simplest, catches drift at PR time, requires the PHP test to be the gate) or **generated** from the PHP routes at build time (no dual maintenance, but adds a PHP-run step to the frontend build). Hand-maintained-and-asserted is the smaller first move and does not couple the builds.
+
+**Files:** `wp-plugin/mullion-gallery/tests/` (new route-enum test), `src/types/` (shared constants), `src/components/Admin/SpaceManagementView.tsx` + `src/components/Admin/AccessTab.tsx` + `src/hooks/useAdminAccessState.ts` (consume rather than inline), plus the other call sites for whichever enums are covered.
+
+**Dependencies / risk:** Cross-artifact parity checks rot if they are not wired into CI — this repo has the precedent: `scripts/validate-adapter-settings-parity.mjs` broke silently in a refactor and is being deleted in [PHASE76_REPORT.md](PHASE76_REPORT.md) **P76-G**, superseded by a Vitest guard that says so in its own header. So the check belongs in the existing PHPUnit + Vitest runs, not in a standalone script nobody runs. Start with the four `access_level` routes (the ones with a demonstrated failure) and widen from there rather than manifesting all 24 in one pass.
+
+**Effort:** Medium | **Impact:** Medium-High — this is the class of bug that reaches users through a fully green pipeline, and P75-I proved it can survive two phases of active development on adjacent code.
+
+---
+
 ## Internationalization
 
 ### ~~Full Admin-Panel i18n Migration~~ — ✅ RESOLVED (Phase 60-I + Phase 61)
@@ -448,7 +475,36 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ## Settings & Admin UI
 
-Nothing yet. Both prior entries — "Admin Notice on Unresolved Shortcode Space Reference" and "Unify settings-write authorization behavior (space-panel silent drop vs. explicit 403)" — were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) tracks **P72-D** and **P72-C** (2026-07-23) and removed from this backlog.
+> Two prior entries — "Admin Notice on Unresolved Shortcode Space Reference" and "Unify settings-write authorization behavior (space-panel silent drop vs. explicit 403)" — were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) tracks **P72-D** and **P72-C** (2026-07-23) and removed from this backlog.
+
+### Spaces Admin — UX Pass, Including Restore-Archived-Spaces
+
+**Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-J** (2026-08-26). The restore gap is what forced P75-J's decision (a) — a slug collision with an archived space had to be resolved by suffixing (`test` → `test-2`) rather than by pointing the user at the archived original, because there is no way to see or restore one. Widened to a full UX pass at the user's direction after manual QA of P75-I/J: *"currently it's a bit cumbersome, for one selecting a space, then switching tabs to change its configuration."*
+
+**Context:** `SpaceManagementView` (rendered both in the admin-panel modal and standalone on the WP-admin **Spaces** page) is a four-tab surface — Spaces / Settings / Access / Library — where three of the four tabs are `disabled` until a space is selected, and selection happens only by clicking a row in the Spaces tab's table. Every configuration action therefore costs a tab round-trip. The specific frictions, in the order a user meets them:
+
+1. **Select-then-switch-tabs.** The table row is the only way to choose a space, and the row offers no entry point of its own — no per-row "Settings" / "Access" / "Library" action, no expandable detail. Configuring a space is always: Spaces tab → click row → click a different tab. Doing two spaces in a row means going back to Spaces and repeating.
+2. **The Settings tab holds a single button.** Its whole body is one `Configure display settings` button that opens the `SettingsPanel` **Drawer**. A tab whose only content is a button that opens another surface is a level of indirection with nothing in it — three interactions (tab, button, drawer) to reach a setting.
+3. **Row selection is a bare `<tr onClick>`.** No `role`, no `tabIndex`, no keyboard path, and the only selected-state affordance is a background tint (`--mantine-color-blue-light`) plus `cursor: pointer`. This is an a11y gap as much as a UX one — the primary control of the screen cannot be reached from the keyboard.
+4. **Archived spaces are invisible and unrecoverable.** The table filters `!s.archived`, and no filter, toggle, or restore action exists. `Mullion_Space_Controller::list_spaces` already accepts `include_archived` and `format_space` already returns `archived`, so the data side is done; there is no unarchive endpoint and no UI.
+5. **The archive affordance misdescribes its outcome.** The trash icon is tooltipped "Archive space" and notifies `Space "…" archived` — both accurate — but the row then disappears with no archive to visit, which reads as a delete. P75-J's ambiguous "Failed to create space" was surprising precisely because of this: the user believed the space was gone.
+6. **The create form is always-expanded at the bottom of the table** (for system admins), so the list and the creation flow compete for the same scroll position, and the form grows further when Delegated mode is switched on (it adds an `Alert`).
+7. **Data already fetched is not shown.** `format_space` returns `grantCount` and the requesting user's `effectiveLevel` per space; the table shows neither, so "which spaces have grants?" needs a per-space tab visit.
+
+**What to implement:** Treat this as a redesign pass, not a patch list — the items above mostly follow from one decision (list-plus-tabs vs. list-plus-detail), so settle that first:
+
+- **Pick the navigation model.** The likely shape is a master/detail: the Spaces list stays the left/primary column, and selecting a space opens a detail region that carries Settings / Access / Library as *its* tabs, so selection and configuration are not separated by a tab switch. Per-row quick actions (a menu, or icon buttons) that jump straight to a specific detail tab would remove the round-trip for the common case.
+- **Collapse the Settings indirection** — either inline the settings form into the detail region, or drop the tab and make it a row action that opens the Drawer directly.
+- **Restore-archived-spaces.** Add an "Archived" filter/toggle to the list (the `include_archived` query param exists), show archived rows visibly distinct, and add an unarchive path: a `POST /spaces/{id}/restore` (or a `PUT` accepting `archived: false`) gated on `space.update`, plus the mutation and cache-bust wiring. Decide what a restore does when the slug has since been claimed by a suffixed successor — the most likely answer is restore-under-a-new-slug with the same message P75-J's 409 uses, but it must be decided rather than discovered.
+- **Rename the archive affordance** to match what it does now that an archive exists to visit (or keep "Archive" and let the archived view be the thing that makes it true).
+- **Keyboard/a11y for row selection** — a real control (radio, button, or `role="row"` + `tabIndex` + key handling) with a visible focus ring, not a tinted `<tr>`.
+- **Surface `grantCount` / `effectiveLevel`** in the list columns.
+
+**Files:** `src/components/Admin/SpaceManagementView.tsx` (the whole surface), `src/components/Admin/SpaceManagementModal.tsx`, `src/components/Admin/SpaceAssetLibrary.tsx`, `src/services/adminQuery.ts` (`useSpaces`), `wp-plugin/mullion-gallery/includes/rest/class-mullion-space-controller.php` (restore endpoint), `wp-plugin/mullion-gallery/includes/class-mullion-permissions.php` (gate for it).
+
+**Dependencies / risk:** The component has two mount points (admin-panel modal and the standalone WP-admin page) with different widths — a master/detail layout has to work in both, which is the main design constraint and the reason this is a pass rather than a quick fix. `SpaceManagementView.test.tsx` drives the current tab structure directly (`clickTab('Access')`, `selectSpace(name)`), so the suite will need rewriting alongside, not after. The restore endpoint is additive and independently shippable — it can land before the layout work if the UX decision stalls.
+
+**Effort:** Medium-Large (Medium for the restore endpoint + archived filter alone) | **Impact:** Medium-High — Spaces is the top-level organizing concept of the plugin and its admin surface is the most-used multi-step flow; the archived-space gap is also a correctness-adjacent hole users can fall into (P75-J).
 
 ---
 
