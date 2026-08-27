@@ -242,6 +242,22 @@ Scope decision worth settling first: whether the manifest is **hand-maintained a
 
 ---
 
+### Portal Admin Chrome Into the Shadow Root (remove the CSS-variable boundary)
+
+**Origin:** Deferred from [PHASE76_REPORT.md](PHASE76_REPORT.md) **P76-H** Key Decision B (2026-08-27). P76-H ships option (b) — inlining the variables — and explicitly keeps this option open rather than rejecting it.
+
+**Context:** The Settings Panel `Drawer` and Layout Builder `Modal` are portaled by Mantine to `document.body` (`Portal.mjs:17-32`, `reuseTargetNode` default `true`). In a shadow mount — the shipped default (`main.tsx:30`) — that puts the chrome in the light DOM while every stylesheet that should theme it lives in the shadow root. A `<style>` inside a shadow root only styles that shadow tree, so nothing scoped there reaches the chrome: not Mantine's `.mullion-admin-chrome[data-mantine-color-scheme="…"]` block, and not `ThemeContext`'s `--mullion-color-*` at `:host`.
+
+The codebase works around this per-consumer rather than structurally, and has already paid for it once: `src/styles/builder.css` themes Dockview through 22 `--mullion-builder-*` properties, so `LayoutBuilderModal` derives them via `useBuilderShellColors` and writes them as **inline styles** on a div inside the Modal. P76-H generalises that workaround; it does not remove the boundary. Each future component themed by CSS variables — an editor, a chart library, a date picker — keeps paying a smaller version of the same tax.
+
+**What to implement:** Give the Drawer/Modal `portalProps={{ target }}` pointing at a node inside the shadow root, so chrome and stylesheets share a tree. `SettingsPanel` already resolves the shadow root for its badge sentinel (`shadowSentinelRef` → `shadowHost`), but that is the *host* element for reading computed variables, not a portal target — this needs new wiring, not a hookup. On success, `useBuilderShellColors` and the `--mullion-builder-*` inline bridge become deletable, and P76-H's `adminChromeStyles()` likely does too.
+
+**Dependencies / risk:** This is the reason it was deferred rather than taken. The Drawer portals to `document.body` specifically to escape the host page's stacking context, so moving it inside the shadow root changes **z-index behaviour against wp-admin** — including against whatever plugins a given customer has installed — plus **focus trapping** and **click-outside** detection. That failure mode surfaces in support tickets, not in CI, which is a poor trade for closing a gap P76-D measured at 3 of 58 painted colour combinations. Re-evaluate when the variable-consuming surface grows enough to justify it; P76-H makes that cheaper, not harder, by centralising the mechanism it would replace.
+
+**Effort:** Medium-Large (small diff, large validation surface — needs real wp-admin testing across plugin combinations) | **Impact:** Medium — architectural cleanup that removes a recurring tax, not a user-visible fix.
+
+---
+
 ## Internationalization
 
 ### ~~Full Admin-Panel i18n Migration~~ — ✅ RESOLVED (Phase 60-I + Phase 61)

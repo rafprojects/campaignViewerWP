@@ -635,7 +635,7 @@ Once this lands, consider whether `useBuilderShellColors` + the `--mullion-build
 | # | Decision | Resolution |
 |---|----------|------------|
 | A | (b) inline the variables, (c) move the provider inside the portal, (d) portal into the shadow root, or (e) hoist the block to `document.head`? | **(b).** (c) is out: wrapping the Drawer's *children* leaves its header, title, close button, and overlay outside the provider, so locked chrome would render brand in the body and gallery in the header — a visible split worse than the bug. (e) is equivalent to (b) in cost but mutates `document.head` from a component, so it buys nothing and adds lifecycle and de-duplication concerns. (d) is deferred, see B. |
-| B | Why not (d), which removes the boundary rather than working around it? | **Risk lands in someone else's environment.** The Drawer portals to `document.body` specifically to escape the host page's stacking context; moving it inside the shadow root changes z-index behaviour against wp-admin and whatever plugins a customer has installed, plus focus trapping and click-outside. That is a support-ticket regression, not a CI one. (b) is also the pattern this codebase already uses successfully (the Builder bridge). Crucially (b) does not foreclose (d) — it makes it *easier*, by turning "get theme values onto portaled chrome" from one ad-hoc solution into one central one. Revisit (d) as its own project if the variable-consuming surface grows. |
+| B | Why not (d), which removes the boundary rather than working around it? | **Deferred, not rejected — filed as [FUTURE_TASKS.md](FUTURE_TASKS.md) "Portal Admin Chrome Into the Shadow Root" (2026-08-27).** Risk lands in someone else's environment. The Drawer portals to `document.body` specifically to escape the host page's stacking context; moving it inside the shadow root changes z-index behaviour against wp-admin and whatever plugins a customer has installed, plus focus trapping and click-outside. That is a support-ticket regression, not a CI one. (b) is also the pattern this codebase already uses successfully (the Builder bridge). Crucially (b) does not foreclose (d) — it makes it *easier*, by turning "get theme values onto portaled chrome" from one ad-hoc solution into one central one. Revisit (d) as its own project if the variable-consuming surface grows. |
 
 ### Acceptance criteria
 
@@ -696,9 +696,27 @@ Two separable pieces. **Do the first regardless; the second is a design decision
 
 **Ruled out: raising `surface2` contrast to 3:1.** Going from ~1.1:1 to 3:1 on the control fill turns the fields into obvious blocks — a far larger visual change than a hairline, and the *least* minimal option available. It is the intuitive answer and it is the wrong one.
 
+### Interaction with the gallery's own border settings (checked 2026-08-27)
+
+Raised during scoping: the public gallery already exposes border controls — does I conflict with them?
+
+**No direct conflict — the surfaces are disjoint.** The settings registry carries `card_border_width` / `card_border_mode` / `card_border_color` / `show_card_border`, `tile_border_width` / `tile_border_color`, `image_border_radius`, `video_border_radius`, `nav_arrow_border_width`, and `show_viewer_border`. Every one targets gallery **content** — campaign cards, tiles, media, nav arrows, the viewer. P76-I's nine sites are Mantine **form controls** (Input / Select / TextInput / NumberInput / Checkbox / Switch). Nothing overlaps.
+
+Confirmed `borderStrong` specifically is not reachable from any of them: a grep of `src/` and `packages/` finds it in `adapter.ts` only — the nine control sites plus `theme.other.colors.borderStrong` at line 540, which has **zero consumers**. Cards resolve their border from `cardBorderColor` / `campaign.borderColor`, never from the theme's border tokens. So the "never reaches a pixel" finding holds without qualification.
+
+Three things the question did surface, all of which belong in this track:
+
+**1. The design-language argument cuts the other way.** The gallery ships `show_card_border: true` with `card_border_width: 4` by default. The product is therefore *not* uniformly borderless — it is borderless for form controls and deliberately, prominently bordered for cards. That materially weakens "a 1px hairline on form controls breaks the minimalist language": the language already uses borders where they carry meaning, at four times the width under discussion. Input for **I-2**, not a decision.
+
+**2. I-1's guarantee has a hard ceiling, and the track must say so.** `uiContrastAudit` operates on **theme tokens**. `card_border_color` is an arbitrary user hex (`sanitize_hex_color`, default `#1ad1c4`) and `card_border_width` is user-set. A site owner can configure a card border at any contrast against any surface and no theme-level audit can see it. So I-1 can honestly claim contrast for *theme-derived* chrome only. Do not let the corrected audit imply more than that.
+
+**3. That ceiling is itself a candidate for follow-on work.** Guaranteeing contrast on user-chosen colours means a runtime check where the colour is chosen — a contrast warning beside the colour picker in the settings UI, in the same spirit as the existing `uiContrastAudit` but at configure time rather than build time. Deliberately **out of scope here**: it is a settings-UX feature, not a theme-engine correction, and it should not gate I-1's much simpler fix. Worth a FUTURE_TASKS entry if I-2 lands on any option that treats 3:1 as a real product commitment.
+
+
 ### Acceptance criteria
 
 - `uiContrastAudit` measures a boundary the product actually renders. No check references a colour with no painted surface.
+- The audit's scope is stated where a reader will see it: it covers theme-derived chrome, **not** user-configured gallery borders (`card_border_color` is a free hex), so it must not read as a blanket 3:1 guarantee.
 - `adapter.ts` contains no declaration that sets a border colour without a border.
 - Whatever I-2 chooses is recorded here with its rationale, including if the answer is "accept the gap".
 - If I-2 picks (c) or (d): the `theme-qa` baselines are recaptured **deliberately**, noted as intentional in this document. This is the one place in Phase 76 where a baseline recapture is not a failure signal — contrast P76-F's Key Decision I, where it was.
