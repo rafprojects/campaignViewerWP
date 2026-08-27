@@ -1,8 +1,8 @@
 # Phase 76 - Post-rebrand catalogs + Phase 75 colour-system follow-ons
 
-**Status:** In progress — P76-A, P76-E, P76-G landed
+**Status:** In progress — P76-A, P76-E, P76-F, P76-G landed
 **Created:** 2026-08-25
-**Last updated:** 2026-08-26 (P76-E and P76-G deletions complete)
+**Last updated:** 2026-08-27 (P76-F toggle stabilisation complete)
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
 | P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | Planned | Medium |
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | **Done** (2026-08-26) | Small |
-| P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | Planned | Small |
+| P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | **Done** (2026-08-27) | Small |
 | P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | **Done** (2026-08-26) | Small |
 
 ---
@@ -426,6 +426,37 @@ Apply the same change at both call sites — `SettingsPanel` and `LayoutBuilderM
 - Existing focused Vitest: `AdminChromeProvider` (including the R1 shadow-root case), `chromeTheme`, `useBuilderShellColors`, `SettingsPanel`.
 - **`npx playwright test theme-qa` — the six `display-settings-*` baselines must be byte-identical**, since all of them were captured with `applyThemeEverywhere: true`. A recapture requirement means follow mode changed and the track has not met Key Decision I.
 - Manual: open the panel over a `tokyo-night` gallery, tab to the Switch, toggle both ways with the keyboard, confirm focus never leaves it and an expanded accordion section stays expanded.
+
+### Implementation Notes (2026-08-27)
+
+Implemented exactly as planned — always render the nested provider, change only its inputs — after reproducing the remount first. All three of the plan's "checked and do not apply" claims were independently re-verified and hold.
+
+**Reproduced before fixing.** Wrote the regression tests against the *unchanged* implementation and confirmed they fail: `expected 2 to be 1` on the mount counter, in **both** directions (on→off and off→on). The plan only predicted the flip in one direction; it costs a remount either way, because the passthrough and wrapped trees differ structurally regardless of which one you start from.
+
+**What changed.** `AdminChromeProvider` no longer early-returns `children`. Both states render the same element tree; only `theme` and `forceColorScheme` differ:
+
+- Lock mode: `brand.mantine` / `brand.meta.colorScheme` — unchanged from P75-D.
+- Follow mode: `mantineTheme` / `colorScheme` straight off `useTheme()`, i.e. the parent's own values, run through the identical `mergeThemeOverrides(…, { CloseButton: { defaultProps: { 'aria-label': … } } })` that `ThemedApp` applies at `main.tsx:97`. Same input, same transform, same output.
+
+`getTheme` reads a module-level `Map`, so both branches hand `useMemo` a stable object identity and the memo does not thrash.
+
+**Re-verified the plan's three risk dismissals**
+
+- **`forceColorScheme` is free** — a grep of `src/` and `packages/` for `useMantineColorScheme`, `useComputedColorScheme`, and `setColorScheme` returns **zero** hits. Forcing the scheme in follow mode disables nothing, because nothing reads it.
+- **The nested CSS-variable block is inert in follow mode** — `adminChromeClassNames(true)` returns `{}`, so no Drawer/Modal part carries `ADMIN_CHROME_CLASS`. The only node that does is the provider's own hidden sentinel, which is `hidden` + `aria-hidden`. Left `withCssVariables` at its default rather than taking the plan's optional `withCssVariables={!applyThemeEverywhere}`: in follow mode the block now carries the *gallery* values, so painting the sentinel with them is correct rather than merely harmless, and not toggling a prop keeps the tree that much more stable.
+- **`LayoutBuilderModal` needs no edit.** The plan says to "apply the same change at both call sites", but the change is entirely inside the shared provider, so both call sites inherit it. Its Dockview `colorScheme` and `useBuilderShellColors` read `useTheme()` directly and emit **inline** `--mullion-builder-*` styles — no dependency on this provider at all, in either state.
+
+**One existing test had to change, deliberately.** `is a passthrough when applyThemeEverywhere is true` asserted `document.querySelector('.mullion-admin-chrome')` was `null` — a *structural* assertion that this track intentionally invalidates. Replaced with `follows the gallery theme when applyThemeEverywhere is true`, which asserts the property that actually matters and that the old test never checked: in follow mode the chrome resolves to the gallery palette, not the brand palette. It uses `github-light` against the dark brand theme so `colorScheme` discriminates between "followed the gallery" and "silently fell back to brand" — the old test would have passed either way.
+
+**Validation**
+
+- **New regression tests, proven to discriminate.** Restored the pre-P76-F provider from `HEAD` and re-ran: **5 of the 7 tests fail** (both mount-counter cases, both focus cases, and the rewritten follow-mode case), then pass again on the fix. A test that passes against the old code would not have been a regression test.
+- **Focus is asserted directly, not by proxy.** Beyond the mount counter, two `it.each` cases focus a control inside the provider, flip the flag, and assert both that `screen.getByTestId(…)` returns the *same DOM node* and that `document.activeElement` is still it. That is the acceptance criterion ("focus stays on the Switch across the toggle, in both directions") rather than a mechanism that implies it.
+- **`npx playwright test theme-qa` — 18/18 passed, zero snapshot mismatches, and `git status` shows no modified file under any `-snapshots` path.** This is Key Decision I discharged: all six `display-settings-*` baselines were captured with `applyThemeEverywhere: true`, so byte-identical output is positive evidence that follow mode is unchanged. No recapture was needed, which the plan defines as the pass condition.
+- Focused Vitest — `AdminChromeProvider`, `chromeTheme`, `useBuilderShellColors`, `SettingsPanel`: 75 passed / 4 files.
+- Full `npx vitest run` — **3 883 passed / 258 files** (3 879 before this track: +4 new cases, 1 rewritten in place). `npx tsc -b` exit 0. `eslint --max-warnings 0` clean on both changed files.
+- **Not run:** a manual keyboard pass in a real browser. The remount was the sole mechanism by which focus could be lost, it is now asserted absent in jsdom in both directions, and the byte-identical snapshots show the rendered result did not move. P76-D's browser pass covers this surface next and can confirm it live.
+
 
 ---
 
