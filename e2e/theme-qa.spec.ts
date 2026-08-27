@@ -279,15 +279,23 @@ test.describe('phase-1 visual snapshots', () => {
   // This case is scoped to the control and runs at zero tolerance, so a change
   // to its fill, text, or geometry fails.
   //
-  // It deliberately does NOT claim to cover `borderStrong`. That token is set as
-  // `borderColor` on Input / Select / TextInput / NumberInput / Checkbox /
-  // Switch (adapter.ts x9) — but those elements compute to `border-width: 0px`,
-  // measured in a browser during P76-D, so the colour is never painted. That is
-  // why P75-G's controlled revert of the dark borderStrong to the defective
-  // #577577 produced byte-identical baselines, and re-running that revert during
-  // P76-D still produced 20/20 passes even at this zero tolerance. No snapshot
-  // can cover a colour that never reaches a pixel; see the P76-D notes in
-  // docs/PHASE76_REPORT.md for the open question that raises.
+  // RETRACTED (P76-H): this comment used to say the capture could not cover
+  // `borderStrong` because the controls computed to `border-width: 0px`. That
+  // measurement was taken in follow mode only — BASE_SETTINGS below sets
+  // `applyThemeEverywhere: true`, the opposite of the shipped default — and
+  // follow mode was itself the bug. In the shipped default the border is
+  // painted (`1px solid #648284`), and this capture does cover it.
+  //
+  // The tolerance point above still stands, and is why this case exists: the
+  // six whole-page `display-settings-*` captures did not move when the border
+  // was restored.
+  //
+  // P76-I: the control is captured at REST. Focus state is not covered by any
+  // snapshot — which is how text inputs and selects came to have no focus
+  // indicator at all without a baseline noticing. That is guarded by unit
+  // tests in src/themes/__tests__/adapter.test.ts instead, because the fix
+  // lives in `vars` (CSS custom properties) where a config-level assertion can
+  // actually see it.
   test('themed control — tight tolerance', async ({ page }) => {
     await installThemeSession(page, { themeId: 'default-dark' });
     await page.goto('/');

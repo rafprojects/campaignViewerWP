@@ -47,7 +47,6 @@ function generateComponentOverrides(
   rc: ResolvedColors,
 ): NonNullable<MantineThemeOverride['components']> {
   const fill = rc.primaryFill;
-  const fillHover = rc.primary[Math.max(0, rc.primaryFillIndex - 1)] ?? fill;
   const stroke = rc.primaryStroke;
   const onFill = rc.primaryOnFill;
 
@@ -81,40 +80,43 @@ function generateComponentOverrides(
       }),
     },
 
+    // Mantine renders every input-family control through `Input`, calling
+    // useStyles({ name: ['Input', __staticSelector] }) — so this single entry
+    // reaches Input / TextInput / PasswordInput / Select / NumberInput /
+    // ColorInput at once.
+    //
+    // These MUST be `vars` (CSS custom properties on the wrapper), never
+    // `styles`. Mantine's `styles` prop becomes React's inline `style` object,
+    // and an inline `border-color` outranks the stylesheet rule
+    // `border: 1px solid var(--input-bd)` — which is precisely how Mantine
+    // signals focus:
+    //
+    //   .m_8fb7ebe7:focus { outline: none; --input-bd: var(--input-bd-focus); }
+    //
+    // Writing the colour flat pinned the border and silently destroyed the
+    // focus indicator: measured in a browser, `--input-bd` flipped correctly
+    // on focus while the painted border never moved. Writing it as a variable
+    // lets the focus rule win. See P76-I.
     Input: {
-      styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: stroke },
+      vars: () => ({
+        wrapper: {
+          '--input-bd': rc.borderStrong,
+          '--input-bd-focus': stroke,
+          '--input-bg': rc.surface2,
+          '--input-color': rc.text,
+          '--input-placeholder-color': rc.textMuted2,
         },
       }),
     },
 
     TextInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
       }),
     },
 
     PasswordInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         innerInput: { color: rc.text },
         visibilityToggle: { color: rc.textMuted },
@@ -179,9 +181,6 @@ function generateComponentOverrides(
         tab: {
           color: rc.textMuted,
           fontWeight: FONT_WEIGHT_MEDIUM,
-          '&:hover': {
-            backgroundColor: withAlpha(rc.surface2, 0.5),
-          },
         },
         panel: { color: rc.text },
       }),
@@ -200,7 +199,6 @@ function generateComponentOverrides(
         },
         tr: {
           borderBottom: `1px solid ${withAlpha(rc.border, 0.5)}`,
-          '&:hover': { backgroundColor: withAlpha(rc.surface2, 0.3) },
         },
         td: { color: rc.text },
       }),
@@ -237,7 +235,6 @@ function generateComponentOverrides(
         root: {
           backgroundColor: rc.surface,
           border: `1px solid ${rc.border}`,
-          '&::before': { backgroundColor: fill },
         },
         title: { color: rc.text },
         description: { color: rc.textMuted },
@@ -264,7 +261,6 @@ function generateComponentOverrides(
         },
         item: {
           color: rc.text,
-          '&:hover': { backgroundColor: rc.surface2 },
         },
         label: { color: rc.textMuted },
       }),
@@ -275,19 +271,12 @@ function generateComponentOverrides(
         option: SELECT_OPTION_CLASS,
       },
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&:focus': { borderColor: stroke },
-        },
         dropdown: {
           backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
         },
         option: {
           color: rc.text,
-          '&:hover': { backgroundColor: rc.surface2 },
         },
       }),
     },
@@ -296,10 +285,6 @@ function generateComponentOverrides(
       styles: () => ({
         input: {
           borderColor: rc.borderStrong,
-          '&:checked': {
-            backgroundColor: fill,
-            borderColor: fill,
-          },
         },
         label: { color: rc.text },
       }),
@@ -319,7 +304,6 @@ function generateComponentOverrides(
       styles: () => ({
         root: {
           color: fill,
-          '&:hover': { color: fillHover },
         },
       }),
     },
@@ -332,7 +316,6 @@ function generateComponentOverrides(
         },
         control: {
           color: rc.text,
-          '&:hover': { backgroundColor: rc.surface2 },
         },
         label: { color: rc.text },
         panel: { color: rc.text },
@@ -367,12 +350,6 @@ function generateComponentOverrides(
 
     NumberInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         control: { borderColor: rc.borderStrong, color: rc.text },
       }),
@@ -380,12 +357,6 @@ function generateComponentOverrides(
 
     ColorInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         dropdown: {
           backgroundColor: rc.surfaceRaised,
@@ -405,10 +376,6 @@ function generateComponentOverrides(
         label: {
           color: rc.text,
           borderColor: rc.border,
-          '&[data-checked]': {
-            backgroundColor: fill,
-            color: onFill,
-          },
         },
       }),
     },

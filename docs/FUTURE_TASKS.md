@@ -215,6 +215,29 @@ Net effect: a green test asserting nothing, sitting in the suite that is suppose
 
 ---
 
+### Three e2e specs fail on a clean tree (`mantine8-runtime-qa` x2, `accessibility` login modal)
+
+**Origin:** [PHASE76_REPORT.md](PHASE76_REPORT.md) § Track I, found while verifying **P76-I-1** (2026-08-27). Pre-existing — reproduced on a stashed, unmodified tree at `13598e13`, so nothing in Phase 76 caused them.
+
+**Context:** Three browser tests fail against the Vite dev server on a clean checkout, and none were tracked anywhere:
+
+1. `mantine8-runtime-qa.spec.ts:173` — *shadow DOM settings drawer and nested gallery editor remain usable*
+2. `mantine8-runtime-qa.spec.ts:230` — *campaign viewer nested overlays stay usable in shadow DOM*
+
+   Both wait on `[data-mullion-component="…"][data-mullion-slot="overlay"]` locators. Those attributes are **debug-gated**: `src/utils/mullionDebug.ts` only emits them when the debug-markers setting is on (see `AdvancedSettingsSection.tsx`, `set_adv_debug_markers_desc`). The tests assume they are always present, so they cannot pass unless the flag is enabled in the fixture. A selector/fixture problem, not a product defect — but as written these two specs have no chance of guarding the shadow-DOM behaviour they are named for.
+
+3. `accessibility.spec.ts:65` — *login modal has no critical/serious axe violations*, reporting ~187 `color-contrast` violations (e.g. ratio **1.23** on `#10242f`). Order-dependent: it fails when the spec runs alone and passed in one combined run, which suggests the modal is being sampled before its theme resolves rather than genuinely shipping 187 violations. Needs confirming before it is treated as a real contrast bug.
+
+Also observed: `accessibility.spec.ts:258` (*settings panel*) is **flaky** — it failed in one combined run and passed in the next with identical code. Worth stabilising alongside the above.
+
+**What to implement:** For (1)/(2), either enable the debug-marker flag in the e2e fixture or re-point the locators at stable roles/test ids. For (3), determine whether the violations are real or a timing artifact (wait for the themed mount before running axe), then fix or re-baseline. For the flake, identify the cross-spec interference — all four share one dev server via `reuseExistingServer`.
+
+**Dependencies / risk:** none blocking; needs a Playwright run. Low risk, but until it is done the e2e suite has a permanently red floor, which trains everyone to ignore failures — the reason this is filed rather than mentioned in passing.
+
+**Effort:** Small–Medium | **Impact:** Medium — three specs currently guard nothing, and a red baseline erodes the value of every other e2e test.
+
+---
+
 ### Contract Tests — Frontend Request Payloads vs. REST Route-Arg Enums
 
 **Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-I** (2026-08-26).
@@ -654,3 +677,5 @@ When promoting future tasks to an active phase:
 *Updated: July 18, 2026 (Phase 65 post-landing PR review) — Added three Campaign Management entries deferred from the [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass": "Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns" (legacy sideloaded media lacks `attachmentId`, narrow/consistent with an existing `media_orphans()` limitation), "Binary Campaign Export Downloads Non-File URLs for Embed/External Media" (a deeper, pre-existing gap surfaced while verifying the embedUrl/provider fix — video/embed items don't meaningfully round-trip through the ZIP transport), and "Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths" (four small reuse findings, no correctness bug). The two actual bugs found in that review (binary import dropping `embedUrl`/`provider`; multi-campaign batch export filename mismatch) were fixed on-branch, not deferred here.*
 
 *Updated: July 23, 2026 (Phase 72 planning) — Created [PHASE72_REPORT.md](PHASE72_REPORT.md) (Planned, 7 mixed-domain tracks). **Promoted and removed from this backlog:** "WordPress Core Privacy Integration (DSAR Export/Erase)" → P72-B, "Retention / Auto-Purge for Email & Audit-Log Tables" → P72-F, "Admin Notice on Unresolved Shortcode Space Reference" → P72-D, "Unify settings-write authorization behavior" → P72-C (Settings & Admin UI is now an empty placeholder), "`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns" → P72-E, and the `LayoutTemplateList`-fix half of "Structural a11y (axe) gate — grow coverage + fix found issues" → P72-G (the "extend coverage further" half stays here, retitled). **Backfilled** (Follow-On Candidates from Phases 68-70 that were never recorded here — found while verifying the backlog is current, cross-checked every archived phase report's Follow-On Candidates table against this doc): "Full Server-Driven `CardGallery` Host Pagination" (PHASE68_REPORT.md, under Campaign Management), "Google Fonts Self-Host Variant" (PHASE69_REPORT.md, under Privacy & Compliance), "`ApiClient` Facade → Namespaces" and "Promote Inline Sub-Components" (both PHASE70_REPORT.md, under Code Quality & Refactoring) — none of the four were promoted into Phase 72, since each is explicitly conditional/opportunistic in its own origin phase's deferral rationale, not bounded phase-shaped work.*
+
+*Updated: August 27, 2026 (P76-I-1) — Added Code Quality & Refactoring entry "Three e2e specs fail on a clean tree", found while verifying P76-I-1 and confirmed pre-existing against an unmodified tree. Not deferred work from Phase 76; filed so a permanently-red e2e floor has an owner.*

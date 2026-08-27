@@ -8,6 +8,32 @@
  *
  * Uses resolved `primaryStroke` (nearest rung that already passes, else
  * the authored fill) so a hardcoded `primary[5]` cannot silently return.
+ *
+ * P76-I: this audit is deliberately scoped to **theme-derived chrome**. It
+ * cannot speak for the gallery's own border settings — `card_border_color` is
+ * an arbitrary user hex (`sanitize_hex_color`) and `card_border_width` is
+ * user-set, so no theme-level check can see them. Read it as "the theme's own
+ * affordances clear 3:1", never as a blanket guarantee for a rendered page.
+ *
+ * P76-I also corrected what this measures. Two families of affordance exist,
+ * and only one of them was audited:
+ *
+ *   - Input borders resolve through `--input-bd` / `--input-bd-focus`, which
+ *     the adapter now sets from `borderStrong` / `primaryStroke`. Those are
+ *     the six original checks below, and they are now genuinely painted — the
+ *     adapter used to pin the border with an inline style, so the focus colour
+ *     never reached a pixel.
+ *   - Everything else (Button, ActionIcon, Checkbox, Switch, Chip,
+ *     SegmentedControl) takes Mantine's global focus ring:
+ *       .mantine-focus-auto:focus-visible {
+ *         outline: 2px solid var(--mantine-primary-color-filled);
+ *         outline-offset: 2px;
+ *       }
+ *     That is `primaryFill`, not `primaryStroke`, and it was never audited.
+ *     Because of the 2px offset the ring sits on the *container* surface, so
+ *     it is checked against `surface` / `surfaceRaised` and not `surface2`
+ *     (an input's own fill, where no outline ring is ever drawn — Mantine
+ *     sets `outline: none` on focused inputs).
  */
 import { resolveColors, UI_CONTRAST_MIN } from './colorGen';
 import { contrastRatio } from './validation';
@@ -48,6 +74,20 @@ export function intendedUiContrastChecks(
     {
       label: `primaryStroke on surfaceRaised (menus / drop targets)`,
       fg: rc.primaryStroke,
+      bg: rc.surfaceRaised,
+      minRatio,
+    },
+    // Mantine's global focus ring — see the header note. `primaryFill` is the
+    // painted colour here; `primaryStroke` above governs input borders only.
+    {
+      label: 'primaryFill on surface (Mantine focus ring: buttons, checkbox, switch, chip)',
+      fg: rc.primaryFill,
+      bg: rc.surface,
+      minRatio,
+    },
+    {
+      label: 'primaryFill on surfaceRaised (focus ring inside menus, modals, popovers)',
+      fg: rc.primaryFill,
       bg: rc.surfaceRaised,
       minRatio,
     },

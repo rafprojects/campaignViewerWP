@@ -123,38 +123,73 @@ describe('adaptTheme', () => {
     expect(colors['success']).toBe('#56b93e');
   });
 
-  it('uses borderStrong for input-outline roles including NumberInput, ColorInput, Checkbox, and Switch', () => {
+  // P76-I: this assertion set used to read `Input.styles().input.borderColor`
+  // and `...['&:focus'].borderColor`, and it passed while the product had NO
+  // focus indicator on any text input or select. Mantine's `styles` prop is
+  // inline styles: the flat colour outranked Mantine's own
+  // `border: 1px solid var(--input-bd)`, and the nested `'&:focus'` key was
+  // dropped on the floor. The test was green because it inspected the config
+  // object, never the mechanism that paints.
+  //
+  // The colours now travel as CSS custom properties on the Input *wrapper*,
+  // which is what Mantine's own rules read — including
+  // `:focus { --input-bd: var(--input-bd-focus) }`. Asserting on `vars` is
+  // therefore asserting on something that reaches a pixel; verified in a
+  // browser with transitions disabled (border moves #648284 -> #008e85).
+  it('routes input-family border and focus colours through CSS variables, not inline styles', () => {
     const def = makeThemeDef();
     const result = adaptTheme(def);
     const other = result.other as Record<string, unknown>;
     const colors = other['colors'] as Record<string, string>;
-    const componentBorder = (name: string, part: 'input' | 'track'): string | undefined => {
-      const comp = result.components?.[name] as
-        | { styles?: () => Record<string, { borderColor?: string }> }
-        | undefined;
-      return comp?.styles?.()[part]?.borderColor;
-    };
 
-    expect(componentBorder('Input', 'input')).toBe(colors['borderStrong']);
-    expect(componentBorder('TextInput', 'input')).toBe(colors['borderStrong']);
-    expect(componentBorder('PasswordInput', 'input')).toBe(colors['borderStrong']);
-    expect(componentBorder('NumberInput', 'input')).toBe(colors['borderStrong']);
-    expect(componentBorder('ColorInput', 'input')).toBe(colors['borderStrong']);
-    expect(componentBorder('Checkbox', 'input')).toBe(colors['borderStrong']);
-    expect(componentBorder('Switch', 'track')).toBe(colors['borderStrong']);
+    const inputVars = (
+      result.components?.Input as
+        | { vars?: () => { wrapper?: Record<string, string> } }
+        | undefined
+    )?.vars?.().wrapper;
+
+    expect(inputVars?.['--input-bd']).toBe(colors['borderStrong']);
+    expect(inputVars?.['--input-bd-focus']).toBe(colors['primaryStroke']);
     expect(colors['borderStrong']).not.toBe(colors['border']);
 
-    const checkbox = result.components?.Checkbox as
-      | { styles?: () => { input?: { '&:checked'?: { backgroundColor?: string; borderColor?: string } } } }
-      | undefined;
-    const checked = checkbox?.styles?.().input?.['&:checked'];
-    expect(checked?.backgroundColor).toBe(colors['primaryFill']);
-    expect(checked?.borderColor).toBe(colors['primaryFill']);
+    // A single `Input` entry is what reaches TextInput / PasswordInput /
+    // Select / NumberInput / ColorInput, because Mantine calls
+    // useStyles({ name: ['Input', __staticSelector] }) for all of them. Those
+    // components must therefore NOT re-declare the input part themselves —
+    // an inline colour there would pin the border again and re-break focus.
+    for (const name of ['TextInput', 'PasswordInput', 'Select', 'NumberInput', 'ColorInput']) {
+      const comp = result.components?.[name] as
+        | { styles?: () => Record<string, Record<string, unknown>> }
+        | undefined;
+      expect(comp?.styles?.()['input']).toBeUndefined();
+    }
 
-    const input = result.components?.Input as
-      | { styles?: () => { input?: { '&:focus'?: { borderColor?: string } } } }
-      | undefined;
-    expect(input?.styles?.().input?.['&:focus']?.borderColor).toBe(colors['primaryStroke']);
+    // Checkbox is not an Input-family control; its border is still a painted
+    // inline style.
+    const checkboxBorder = (
+      result.components?.Checkbox as
+        | { styles?: () => Record<string, { borderColor?: string }> }
+        | undefined
+    )?.styles?.()['input']?.borderColor;
+    expect(checkboxBorder).toBe(colors['borderStrong']);
+  });
+
+  // P76-I / Finding D: the Switch declares `borderColor: borderStrong` on its
+  // track, but the track computes to `border-width: 0px` — the Switch does not
+  // use Mantine's input-variant block, so `--input-bd` is never defined for it
+  // and the colour paints nothing. Measured in a browser in both chrome modes.
+  // This test pins the CURRENT, INERT state deliberately so that whichever way
+  // P76-I-2 decides it (give the track a real border, or drop the declaration)
+  // is a conscious edit rather than a silent drift.
+  it('declares a Switch track border colour that is currently not painted', () => {
+    const result = adaptTheme(makeThemeDef());
+    const colors = (result.other as Record<string, unknown>)['colors'] as Record<string, string>;
+    const track = (
+      result.components?.Switch as
+        | { styles?: () => Record<string, { borderColor?: string }> }
+        | undefined
+    )?.styles?.()['track']?.borderColor;
+    expect(track).toBe(colors['borderStrong']);
   });
 
   it('uses the authored primaryFill, not hardcoded primary[5], on a theme whose shade is not 5', () => {
@@ -170,10 +205,16 @@ describe('adaptTheme', () => {
     expect(fillIndex).not.toBe(5);
     expect(fillIndex).toBeGreaterThanOrEqual(0);
 
-    const checkbox = result.components?.Checkbox as
-      | { styles?: () => { input?: { '&:checked'?: { backgroundColor?: string } } } }
-      | undefined;
-    expect(checkbox?.styles?.().input?.['&:checked']?.backgroundColor).toBe(colors['primaryFill']);
+    // P76-I: this used to assert on `Checkbox.styles().input['&:checked']`,
+    // a nested key that Mantine silently dropped — the assertion could not
+    // have failed for the reason it claimed to test. Slider's bar is a flat,
+    // painted consumer of the same token.
+    const sliderBar = (
+      result.components?.Slider as
+        | { styles?: () => Record<string, { backgroundColor?: string }> }
+        | undefined
+    )?.styles?.()['bar']?.backgroundColor;
+    expect(sliderBar).toBe(colors['primaryFill']);
   });
 
   it('works with a light theme definition', () => {
@@ -201,4 +242,66 @@ describe('adaptTheme', () => {
     const props = button?.defaultProps as Record<string, unknown>;
     expect(props?.variant).toBe('outline');
   });
+});
+
+/**
+ * P76-I: Mantine's `styles` prop becomes React's inline `style` object.
+ * `getStyle()` in @mantine/core spreads the resolved object straight into
+ * `style`, and no `stylesTransform` (the @mantine/emotion escape hatch) is
+ * registered in this app — so a nested key like `'&:focus'` is handed to the
+ * DOM as a CSS property name, silently dropped, and paints nothing.
+ *
+ * This was not a theoretical concern: `Input.styles` carried
+ * `'&:focus': { borderColor: stroke }` alongside a flat
+ * `borderColor: rc.borderStrong`. The flat colour became an inline style,
+ * which outranks Mantine's own `border: 1px solid var(--input-bd)` — the rule
+ * that `.m_8fb7ebe7:focus { --input-bd: var(--input-bd-focus) }` drives. So
+ * the adapter both destroyed the working focus indicator AND its replacement
+ * never shipped. Text inputs and selects had no focus indicator at all
+ * (WCAG 2.4.7). Verified in a real browser, transitions disabled.
+ *
+ * State-dependent styling must therefore go through `vars` (CSS custom
+ * properties, which cascade into Mantine's own pseudo-class rules) or through
+ * `classNames` + a stylesheet — never through `styles`.
+ */
+describe('adapter styles contain no nested selectors', () => {
+  const NESTED = /^\s*[&:@]|::?[a-z-]+\s*$|\[data-/i;
+
+  // bundledThemeDefinitions are partials; adaptTheme needs them merged onto
+  // baseThemeDefaults, the same way the registry does at runtime.
+  const fullDefs = bundledThemeDefinitions.map(
+    (d) =>
+      [
+        d.id,
+        deepMerge(
+          JSON.parse(JSON.stringify(baseDefaults)),
+          JSON.parse(JSON.stringify(d)),
+        ) as unknown as ThemeDefinition,
+      ] as const,
+  );
+
+  it.each(fullDefs)(
+    'theme %s emits only flat CSS properties from every styles() block',
+    (_id, def) => {
+      const components = adaptTheme(def).components ?? {};
+      const offenders: string[] = [];
+
+      for (const [componentName, config] of Object.entries(components)) {
+        const styles = (config as { styles?: unknown }).styles;
+        if (typeof styles !== 'function') continue;
+        // Every styles() in the adapter ignores its arguments.
+        const resolved = (styles as () => Record<string, Record<string, unknown>>)();
+        for (const [selector, decls] of Object.entries(resolved ?? {})) {
+          if (!decls || typeof decls !== 'object') continue;
+          for (const prop of Object.keys(decls)) {
+            if (NESTED.test(prop)) {
+              offenders.push(`${componentName}.${selector} → ${prop}`);
+            }
+          }
+        }
+      }
+
+      expect(offenders).toEqual([]);
+    },
+  );
 });

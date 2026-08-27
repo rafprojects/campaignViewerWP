@@ -840,6 +840,164 @@ Three things the question did surface, all of which belong in this track:
 - Re-run P75-G's controlled experiment as the real regression proof: revert `default-dark`'s `borderStrong` to `#577577` and confirm something now **fails**. That has been the intended check since P75-G and has never once been satisfiable.
 
 
+### Implementation Notes — I-1 (2026-08-27)
+
+**Status: I-1 landed. I-2 still open, and its shape changed again — see "What I-2 now decides" below.**
+
+#### The suspicion was correct, and it was the root cause
+
+I-1's first instruction was to confirm or refute the pseudo-selector suspicion before anything else. **Confirmed, at three levels.**
+
+*Source.* `@mantine/core/esm/core/styles-api/use-styles/use-styles.mjs` resolves the `styles` prop through `getStyle()`, which spreads the result into React's `style` prop. Nested keys are only handled when a `stylesTransform` is registered — the `@mantine/emotion` escape hatch. A grep of `src/`, `packages/`, and `package.json` finds no `stylesTransform` and no `@mantine/emotion`. So nested keys are handed to the DOM as CSS property names and dropped.
+
+*Rendered DOM.* Rendering real components through `getMantineTheme('default-dark')`:
+
+```
+INPUT    style attr => "background-color: rgb(19,42,54); border-color: rgb(100,130,132); color: rgb(238,248,251);"
+CHECKBOX style attr => "border-color: rgb(100,130,132);"
+SWITCH   track      => "border-color: rgb(100,130,132); background-color: rgb(19,42,54);"
+```
+
+Every flat property survives. `&::placeholder`, `&:focus`, `&:checked` are absent — not overridden, never emitted.
+
+*Blast radius.* **18 nested blocks across 15 components**, every one inside `styles`, none anywhere else in the codebase:
+
+| Selector | Count | Components |
+|---|---|---|
+| `&:focus` | 6 | Input, TextInput, PasswordInput, Select, NumberInput, ColorInput |
+| `&:hover` | 6 | Tabs, Table, Menu, Select option, Anchor, Accordion |
+| `&::placeholder` | 3 | Input, TextInput, PasswordInput |
+| `&::before` | 1 | Notification |
+| `&:checked` | 1 | Checkbox |
+| `&[data-checked]` | 1 | Chip |
+
+#### Why this destroyed the focus indicator rather than merely failing to add one
+
+This is the part the plan did not anticipate, and it inverts the finding. Mantine ships a **working** focus indicator for inputs:
+
+```css
+.m_8fb7ebe7        { border: 1px solid var(--input-bd); }
+.m_8fb7ebe7:focus  { outline: none; --input-bd: var(--input-bd-focus); }
+```
+
+Focus swaps a variable; the border follows. The adapter wrote `borderColor: rc.borderStrong` as a **flat** property, which became an inline style — and an inline style outranks that stylesheet rule. Measured in a real browser, pre-fix:
+
+| | rendered `border-color` | `--input-bd` |
+|---|---|---|
+| resting | `rgb(100,130,132)` | `#263944` |
+| focused | `rgb(100,130,132)` | **`#007870`** |
+
+**The variable flipped correctly and the paint never moved.** So the adapter both suppressed Mantine's working indicator *and* its own replacement was silently dropped. Two failures, same line of code. WCAG 2.4.7 was failing because of an inline style, not a missing rule.
+
+#### A measurement trap I walked into, and the correction
+
+My first before/after comparison read computed style immediately after `.focus()` — and `.m_8fb7ebe7` carries `transition: border-color 100ms`. `getComputedStyle` returned the *start* of the transition, so the border appeared unchanged even after the fix worked. Every focus measurement in this track was re-taken with `transition: none !important` injected. Finding B survives the corrected method — pre-fix border is byte-identical resting vs focused with transitions off — but it very nearly became a second false premise on top of P76-D's. **Any state-change measurement in this codebase must disable transitions first.**
+
+#### The fix
+
+Move the input family from `styles` to `vars`. Mantine calls `useStyles({ name: ['Input', __staticSelector] })` for every input-family control, so a **single** `Input.vars` entry reaches Input / TextInput / PasswordInput / Select / NumberInput / ColorInput:
+
+```ts
+Input: {
+  vars: () => ({
+    wrapper: {
+      '--input-bd': rc.borderStrong,
+      '--input-bd-focus': stroke,
+      '--input-bg': rc.surface2,
+      '--input-color': rc.text,
+      '--input-placeholder-color': rc.textMuted2,
+    },
+  }),
+},
+```
+
+Placement is load-bearing: these go on the **wrapper**. Mantine's `:focus` rule redefines `--input-bd` on the input element itself, so an inline custom property on the input would outrank it and re-break focus in a way that looks correct in source.
+
+Verified in a browser, transitions disabled — resting unchanged, focus now moves:
+
+| | resting | focused |
+|---|---|---|
+| before | `1px solid rgb(100,130,132)` | `1px solid rgb(100,130,132)` |
+| after | `1px solid rgb(100,130,132)` | **`1px solid rgb(0,142,133)`** |
+
+`rgb(0,142,133)` is `#008e85` — `primaryStroke`, which is what `adapter.ts` always intended (`'&:focus': { borderColor: stroke }`). This restores the existing intent rather than choosing a new one, so it is not a decision taken on I-2's behalf.
+
+The other **nine** dead blocks were deleted rather than repaired. Deletion is provably zero-visual-change — they never emitted anything — whereas *restoring* their intent would change appearance and is properly I-2's call. `fillHover` went with them: it existed only to serve the dead Anchor hover.
+
+**Intent lost to those deletions, for I-2 to decide on:**
+
+| Component | Lost intent | What happens now |
+|---|---|---|
+| Anchor | `&:hover { color: fillHover }` | **No hover feedback on links** — the flat `color: fill` pins it. The one genuine defect in this group. |
+| Table `tr` | `&:hover` row highlight | Mantine only highlights with `highlightOnHover`; likely no row hover at all. |
+| Tabs, Menu, Accordion, Select option | themed hover backgrounds | Mantine's own defaults apply, reading adapter variables. Cosmetic drift only. |
+| Checkbox | `&:checked` fill + border | Mantine's `--checkbox-color` still fills the box; the flat `borderColor` pins the border, so checked state is visible but the border does not follow. |
+| Chip | `&[data-checked]` | Mantine's `--chip-bg` default applies; state still visible. |
+| Notification | `&::before` accent bar | Mantine's `--notification-color` default applies. |
+
+#### The tests were guarding the bug
+
+Two existing assertions in `adapter.test.ts` had to be rewritten, and they explain how this survived a review:
+
+```ts
+expect(input?.styles?.().input?.['&:focus']?.borderColor).toBe(colors['primaryStroke']);   // GREEN
+expect(checkbox?.styles?.().input?.['&:checked']?.backgroundColor).toBe(colors['primaryFill']); // GREEN
+```
+
+Both passed while the product had no focus indicator at all. They inspected the **config object**, never the mechanism that paints — so they could not have failed for the reason they claimed to test. This is the same failure mode as P75-G's byte-identical baselines and P76-D's `border-width: 0`: a green signal derived from something that never reached a pixel. Both now assert `vars` (the painted path) or a flat, painted consumer.
+
+New guard: `adapter styles contain no nested selectors` walks every component of all 23 themes and fails on any nested key. Mutation-tested — injecting `'&:hover'` into `Checkbox.label` fails with `[ 'Checkbox.label → &:hover' ]`.
+
+#### The audit correction
+
+With the fix in place, `primaryStroke` and `borderStrong` **are** now painted, so the six original checks became legitimate rather than needing to be re-pointed. The real gap was the other focus ring, which was never audited at all:
+
+```css
+.mantine-focus-auto:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);   /* primaryFill */
+  outline-offset: 2px;
+}
+```
+
+That governs Button, ActionIcon, Checkbox, Switch, Chip, and SegmentedControl. Because of the 2px offset the ring sits on the **container** surface, so it is checked against `surface` and `surfaceRaised` — not `surface2`, which is an input's own fill and where no outline ring is ever drawn (`outline: none` on focused inputs).
+
+Sweep across all 23 themes with the corrected checks:
+
+| Check | Themes under 3:1 |
+|---|---|
+| `primaryFill` on `surface` | **11** |
+| `primaryFill` on `surfaceRaised` | **13** |
+| `primaryStroke` on all three grounds | 0 |
+| `borderStrong` on all three grounds | 0 |
+
+**13 of 23 themes have at least one failure; every one is a dark theme.** Worst is `darcula` at **1.08:1** on both grounds. All 10 light themes pass comfortably (lowest 3.82). The 11-theme figure independently reproduces the number recorded before I-1, which is a useful cross-check given this track's history.
+
+Rather than leave the gate red or silently relax it, every gap is itemised in `KNOWN_FOCUS_RING_GAPS` with its exact measured ratio. The gate still fails on a **new** failing theme/ground, and on an **existing** one getting worse. A companion suite fails if a listed entry stops failing, so the table cannot rot into documentation of a problem that was already fixed. The six input-border checks keep zero exceptions. Both behaviours mutation-tested.
+
+This needs your explicit sign-off: the acceptance criteria allow "a documented, explicitly-approved threshold exception so the number is visible rather than hidden", and I have done the documenting but cannot approve it.
+
+#### Scope ceiling, stated in the code
+
+The audit header now says outright that it covers **theme-derived chrome only**. `card_border_color` is an arbitrary user hex and `card_border_width` is user-set, so no theme-level check can see them. The corrected audit must not read as a blanket 3:1 guarantee for a rendered page.
+
+#### What I-2 now decides
+
+1. **The focus ring token.** Inputs now use `primaryStroke` (clears 3:1 on all 23). Everything else uses Mantine's `primaryFill` ring (fails on 13). Options: re-point the global ring at `primaryStroke` for consistency and instant compliance; lift `primaryFill` on the 13 dark themes; or accept the gap on record. **Note this is no longer "which token is correct" — the product now uses two different tokens for the same affordance, which is its own inconsistency.**
+2. **The Switch track.** Still `border-width: 0`, so its `borderStrong` declaration remains inert. Pinned by a deliberately-named test so either resolution is a conscious edit.
+3. **The nine deleted intents**, above — Anchor hover is a real defect; the rest are cosmetic drift.
+
+#### Verification
+
+- `npx vitest run` — **3925 passed** (was 3888; +37 from the new guards).
+- `npx tsc --noEmit`, `npx eslint src packages e2e`, `npm run build` — all clean.
+- `npx playwright test theme-qa` — **20/20, zero baseline changes.** This is the load-bearing result for the deletions: nine blocks removed and the resting appearance is pixel-identical, which is what "they never painted" predicts.
+- Browser probes for every focus claim, transitions disabled, before and after.
+- Mutation tests on both new guards and on both branches of the gate's exception logic.
+- **Not verified:** the deleted hover intents were not measured individually in a browser — the theme-qa result covers resting appearance, and hover/checked states have no snapshot coverage. The table above is reasoned from Mantine's stylesheet, not measured. Flagged rather than asserted.
+
+Three e2e specs fail on a clean tree (`mantine8-runtime-qa` ×2, `accessibility` login modal). Confirmed pre-existing by stashing all I-1 changes and re-running at `13598e13` — identical failures. Filed in [FUTURE_TASKS.md](FUTURE_TASKS.md) rather than left as a note here, since a permanently-red e2e floor trains everyone to ignore failures.
+
+
 ---
 
 ## Follow-On Candidates
@@ -856,7 +1014,7 @@ Three things the question did surface, all of which belong in this track:
 Two durable lessons so far:
 
 - **From A: this plan's estimate of catalog staleness was off by two orders of magnitude** (+7/−13 msgids, not ~150), because the `.po` files had been hand-maintained ahead of the `.pot` for weeks. Size an i18n harvest by diffing msgid sets, not by counting phases since the last regen.
-- **From D: verify the fixture before believing the measurement, and verify the token reaches a pixel before testing it.** The first browser probe "showed" the brand lock doing nothing — because the fixture had left the gallery on the default theme, so lock and follow were the same palette. And the `borderStrong` criterion could not be met because the token is painted onto elements with `border-width: 0`; P75-G read that byte-identical result as a gap in snapshot *states*, when it was a gap in whether the token renders at all.
+- **From D: verify the fixture before believing the measurement.** The first browser probe "showed" the brand lock doing nothing — because the fixture had left the gallery on the default theme, so lock and follow were the same palette. The same fixture then produced a *second*, worse error: D concluded `borderStrong` was painted onto elements with `border-width: 0`, and P76-H had to retract that — every probe had inherited `BASE_SETTINGS`'s `applyThemeEverywhere: true`, the opposite of the shipped default, and follow mode was itself the bug. Re-deriving a wrong result from the same fixture is not confirmation. Vary the fixture, not just the probe.
 - **From E and G: for a deletion, the decisive check is the *built artifact*, not the source grep.** E's proof that nothing read the bridge is that the freshly built `dist/` contains zero occurrences of any deleted alias in CSS *or* JS — which a source grep for `var(--…)` could not have established for a runtime-composed name. Both tracks also turned up one live reference the plan had not listed (E: `src/styles/README.md`; G: the tense of the `FUTURE_TASKS.md` precedent note), so re-run the reference sweep yourself before deleting.
 
 ## Outcome
