@@ -236,7 +236,7 @@ Scope decision worth settling first: whether the manifest is **hand-maintained a
 
 **Files:** `wp-plugin/mullion-gallery/tests/` (new route-enum test), `src/types/` (shared constants), `src/components/Admin/SpaceManagementView.tsx` + `src/components/Admin/AccessTab.tsx` + `src/hooks/useAdminAccessState.ts` (consume rather than inline), plus the other call sites for whichever enums are covered.
 
-**Dependencies / risk:** Cross-artifact parity checks rot if they are not wired into CI — this repo has the precedent: `scripts/validate-adapter-settings-parity.mjs` broke silently in a refactor and is being deleted in [PHASE76_REPORT.md](PHASE76_REPORT.md) **P76-G**, superseded by a Vitest guard that says so in its own header. So the check belongs in the existing PHPUnit + Vitest runs, not in a standalone script nobody runs. Start with the four `access_level` routes (the ones with a demonstrated failure) and widen from there rather than manifesting all 24 in one pass.
+**Dependencies / risk:** Cross-artifact parity checks rot if they are not wired into CI — this repo has the precedent: `scripts/validate-adapter-settings-parity.mjs` broke silently in a refactor and was deleted in [PHASE76_REPORT.md](PHASE76_REPORT.md) **P76-G**, superseded by a Vitest guard that says so in its own header. So the check belongs in the existing PHPUnit + Vitest runs, not in a standalone script nobody runs. Start with the four `access_level` routes (the ones with a demonstrated failure) and widen from there rather than manifesting all 24 in one pass.
 
 **Effort:** Medium | **Impact:** Medium-High — this is the class of bug that reaches users through a fully green pipeline, and P75-I proved it can survive two phases of active development on adjacent code.
 

@@ -1,8 +1,8 @@
 # Phase 76 - Post-rebrand catalogs + Phase 75 colour-system follow-ons
 
-**Status:** In progress — P76-A landed
+**Status:** In progress — P76-A, P76-E, P76-G landed
 **Created:** 2026-08-25
-**Last updated:** 2026-08-26 (P76-A harvest + merge + compile complete)
+**Last updated:** 2026-08-26 (P76-E and P76-G deletions complete)
 
 ### Tracks
 
@@ -12,9 +12,9 @@
 | P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | Planned | Medium |
 | P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
 | P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | Planned | Medium |
-| P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | Planned | Small |
+| P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | **Done** (2026-08-26) | Small |
 | P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | Planned | Small |
-| P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | Planned | Small |
+| P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | **Done** (2026-08-26) | Small |
 
 ---
 
@@ -330,6 +330,41 @@ There is no user-facing risk. The aliases are *definitions*, never *reads*, so a
 - `npx playwright test theme-qa` — gallery-shell snapshots must be **byte-identical**. Any diff means something was reading a bridged token after all, and the grep missed it.
 - Visual: sticky gallery header still overlaps content on scroll.
 
+### Implementation Notes (2026-08-26)
+
+Deleted `src/styles/_tokens.scss`. Re-derived the consumer census independently rather than trusting the plan's table — it was correct, and the deletion is provably inert.
+
+**Consumer census, re-run against the live tree**
+
+| Group | Aliases defined | `var()` reads in `src/` + `packages/` |
+|-------|----------------:|--------------------------------------:|
+| `--color-*` | 14 | **0** |
+| `--radius-*` | 4 | **0** |
+| `--shadow-*` | 2 | **0** |
+| `--z-base` / `--z-overlay` / `--z-modal` | 3 | **0** |
+| `--z-header` | 1 | **3** |
+
+The only non-`var()` mentions of the dead groups anywhere were three comments — `global.scss:10`, `shadowStyles.ts:9`, and **`src/styles/README.md:5`, which this plan did not list**. All three updated; the README needed a rewrite rather than a line edit, since its whole premise was "this folder contains design tokens", which stopped being true when the theme engine took over.
+
+**What survived, and why it is a no-op**
+
+`--z-header: 40` moved into `global.scss`'s existing `.mullion-gallery` rule — the *same selector* the bridge used, in the *same compiled stylesheet* (`global.scss?inline` is what `shadowStyles.ts` injects into the shadow root, and `_tokens.scss` only ever reached the shadow root by being `@use`d from it). Same selector + same value = identical computed value for all three consumers. Verified by compiling `global.scss` standalone: output is one `.mullion-gallery` block carrying `--z-header: 40` and zero legacy aliases.
+
+`CardGallery.module.scss` got the literal fallback `var(--z-header, 40)`. **Note a discrepancy in the plan here:** it says to make this "match the two AuthBar call sites", but those use `var(--z-header, 100)` while the definition is `40`. Copying `100` would have changed the out-of-scope rendering of a rule that resolves to `40` today. Used `40` — the value it actually computes to — and left the AuthBar fallbacks alone, since changing them would alter `AuthBarMinimal`'s standalone (non-`.mullion-gallery`) behaviour, which is outside this track. **The `40`/`100` fallback inconsistency is real but pre-existing and harmless while the definition is present; not fixed here.**
+
+**Closes P75-E's hardcoded-ramp gap outright.** All three `--mullion-color-primary-<n>` index references in production SCSS (`primary-6` ×1, `primary-8` ×2, at `_tokens.scss:27,30,32`) lived in this file and only this file. A post-deletion grep of `src/` and `packages/` for `--mullion-color-<name>-<digit>` returns nothing.
+
+**Validation**
+
+- **`npx playwright test theme-qa` — 18/18 passed, exit 0, zero snapshot updates.** This is the criterion that mattered: the plan flagged any diff here as proof the grep had missed a live consumer. There is none.
+- Full `npx vitest run` — 3 879 passed / 258 files, exit 0. `npx tsc -b` exit 0.
+- `npm run build` exit 0 with **no missing-`@use` warning** — the specific failure mode of removing the import.
+- **End-to-end proof in the shipped bundle:** a grep of the entire freshly built `dist/` — CSS *and* JS — for `--color-*`, `--radius-*`, `--shadow-*`, `--z-base`, `--z-overlay`, `--z-modal` returns **zero files**. This is stronger than the source grep: it would catch a variable name composed at build time that a source grep could miss. `--z-header` is present in the fresh `global-*.css`, `index-*.css`, and `index-*.js`, and the emitted `global` stylesheet shrank 4 825 → 3 825 bytes — the bridge, and nothing else.
+- Stale copies of the pre-deletion CSS still sitting in `wp-plugin/mullion-gallery/assets/` are from a local build at 22:16 today, before this work; that path is gitignored (`.gitignore:37`) and regenerated by `scripts/copy-wp-assets.js` at packaging time, so nothing stale ships. Confirmed zero tracked changes under it.
+- Confirmed no `customCss` / `custom_css` setting exists anywhere in `src/`, `packages/`, or `includes/`, so no site owner could have been reading a bridged alias through custom CSS.
+- **Not run:** a manual scroll of the sticky gallery header. The computed `--z-header` is unchanged by construction (same selector, same value, same rule), and the gallery-shell snapshots are byte-identical, so there is no mechanism by which stacking order could have moved.
+
+
 ---
 
 ## Track P76-F - Make the `applyThemeEverywhere` toggle instantaneous
@@ -435,6 +470,26 @@ Do **not** repair the script by retargeting it at `src/data/adapterSettingGroups
 - `npx vitest run adapterSettingsParity` before and after — unchanged pass.
 - `npm run` lists no broken script; `grep -rn "validate:adapter-settings" .` returns nothing outside phase history.
 
+### Implementation Notes (2026-08-26)
+
+Deleted `scripts/validate-adapter-settings-parity.mjs` and its `validate:adapter-settings` entry from `package.json`. Re-verified every claim in this track's Problem section before deleting — all held, and one is **stronger than stated**.
+
+- **The break reproduces exactly as described.** `npm run validate:adapter-settings` on the pre-change tree exits 1 with `✗ Could not locate SETTING_GROUP_DEFINITIONS block in adapterRegistry.ts`, before performing a single check.
+- **Nothing ran it.** Grepped `.github/`, `.husky/`, `.lintstagedrc.cjs`, `scripts/`, and every root config: the only references anywhere were `package.json`, the script's own usage docstring, and prose in `docs/`. No gate could regress.
+- **It was broken in *two* places, not one — and this is what settles Key Decision J.** Its second stage scrapes `$nested_adapter_field_map` out of `class-mullion-settings-sanitizer.php`. That static array is also gone: the sanitizer now exposes `get_nested_adapter_field_map()` sourcing from `Mullion_Adapter_Field_Schema::get_map()`. And the surviving Vitest guard's check 7 — *"PHP sanitizer sources adapter map from Mullion_Adapter_Field_Schema, not a hand-maintained array"* — **asserts that array must not come back** (`expect(sanitizerSource).not.toContain("private static $nested_adapter_field_map = [")`). So "repair the script" was never really on the table: restoring its PHP scrape target would fail the test that replaced it. The plan reached the right answer via the weaker argument (duplicate coverage); the real one is that the two are mutually exclusive.
+- **Coverage genuinely moved, it was not lost.** `adapterSettingsParity.test.ts` imports `SETTING_GROUP_DEFINITIONS` properly from `src/data/adapterSettingGroups.ts` — the module the script's regex could no longer find — and runs 8 checks against `adapter-fields.json` as the single source of truth, versus the script's one-way key-existence scrape.
+
+**Doc reference updated:** [FUTURE_TASKS.md](FUTURE_TASKS.md) cited this script as its cautionary precedent in the future tense ("is being deleted in … P76-G"); moved to past tense. Its point — cross-artifact parity checks rot unless wired into CI — is unaffected and worth keeping.
+
+**Validation**
+
+- `npx vitest run adapterSettingsParity` — **8/8 passed**, unchanged before and after.
+- Full `npx vitest run` — **3 879 passed / 258 files**, exit 0.
+- `npx tsc -b` exit 0; `npm run build` exit 0 (only the pre-existing chunk-size advisory).
+- `package.json` still parses; `npm run` no longer lists `validate:adapter-settings`.
+- `grep -rn "validate-adapter-settings-parity\|validate:adapter-settings"` across the repo returns hits only in `docs/PHASE76_REPORT.md`, `docs/FUTURE_TASKS.md`, and `docs/archive/` — phase history, as the acceptance criterion allows.
+
+
 ---
 
 ## Follow-On Candidates
@@ -446,12 +501,15 @@ Do **not** repair the script by retargeting it at `src/data/adapterSettingGroups
 
 ## Implementation Notes
 
-**P76-A landed 2026-08-26** — see its per-track notes above. P76-B/C–G not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D–G were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
+**P76-A, P76-E, and P76-G landed 2026-08-26** — see their per-track notes above. P76-B, C, D, F not started. P76-A/B/C came from the Phase 74 PR Review leftover list; P76-D–G were added from the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) on 2026-08-25.
 
-The one durable lesson from A: **this plan's estimate of catalog staleness was off by two orders of magnitude** (+7/−13 msgids, not ~150), because the `.po` files had been hand-maintained ahead of the `.pot` for weeks. Size an i18n harvest by diffing msgid sets, not by counting phases since the last regen.
+Two durable lessons so far:
+
+- **From A: this plan's estimate of catalog staleness was off by two orders of magnitude** (+7/−13 msgids, not ~150), because the `.po` files had been hand-maintained ahead of the `.pot` for weeks. Size an i18n harvest by diffing msgid sets, not by counting phases since the last regen.
+- **From E and G: for a deletion, the decisive check is the *built artifact*, not the source grep.** E's proof that nothing read the bridge is that the freshly built `dist/` contains zero occurrences of any deleted alias in CSS *or* JS — which a source grep for `var(--…)` could not have established for a runtime-composed name. Both tracks also turned up one live reference the plan had not listed (E: `src/styles/README.md`; G: the tense of the `FUTURE_TASKS.md` precedent note), so re-run the reference sweep yourself before deleting.
 
 ## Outcome
 
-**In progress.** P76-A done.
+**In progress.** P76-A, P76-E, P76-G done. Remaining: B (15 strings), C (blocked on the WordPress.org account), D, F.
 
 **Originally:** Planned. Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D–G are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E and G are deletions, F is an a11y/UX fix to a toggle that already works.

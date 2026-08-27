@@ -5,8 +5,9 @@
  * Color theming is handled by MantineProvider's cssVariablesSelector
  * and the ThemeContext's CSS variable injection — no color CSS here.
  *
- * Global.scss contains only structural/reset rules + the legacy token
- * bridge (_tokens.scss) that aliases --color-* → --mullion-*.
+ * Global.scss contains only structural/reset rules. The legacy token bridge
+ * (_tokens.scss) it used to pull in was deleted in P76-E; modules read
+ * --mullion-* directly.
  *
  * Gold source: docs/THEME_SYSTEM_ASSESSMENT.md §Shadow DOM Integration
  */

@@ -1,6 +1,13 @@
 # Styles
 
-This folder contains design tokens and global SCSS used across the app.
+This folder contains the global SCSS used across the app.
 
-- _tokens.scss: CSS variables for colors, spacing, radii, and shadows.
-- global.scss: global reset and base styles.
+- global.scss: global reset, base styles, and the one structural `--z-header`
+  custom property.
+- builder.css / wpAdminFormReset.css: Layout Builder shell and wp-admin form
+  overrides.
+
+Design tokens are **not** defined here. Colors, radii, shadows, and fonts are
+`--mullion-*` custom properties emitted at runtime by the theme engine
+(`src/theme/`); read those directly. The old `_tokens.scss` alias bridge was
+deleted in P76-E.
