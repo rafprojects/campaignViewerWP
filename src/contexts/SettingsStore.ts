@@ -8,6 +8,12 @@ import { mergeSettingsWithDefaults } from '@/utils/mergeSettingsWithDefaults';
 
 export interface SettingsData extends GalleryBehaviorSettings {
   theme?: string | undefined;
+  /**
+   * P75-D: when false (default), Settings Panel + Layout Builder chrome stay
+   * on the Mullion brand palette. When true, those surfaces follow the
+   * selected gallery theme (pre-P75-D behavior).
+   */
+  applyThemeEverywhere?: boolean;
   galleryLayout: 'grid' | 'masonry' | 'carousel';
   itemsPerPage: number;
   enableLightbox: boolean;
@@ -18,6 +24,7 @@ export interface SettingsData extends GalleryBehaviorSettings {
 
 export type SettingsDataInput = Partial<GalleryBehaviorSettings> & {
   theme?: string | undefined;
+  applyThemeEverywhere?: boolean | undefined;
   galleryLayout?: string | undefined;
   itemsPerPage?: number | undefined;
   enableLightbox?: boolean | undefined;
@@ -27,6 +34,7 @@ export type SettingsDataInput = Partial<GalleryBehaviorSettings> & {
 
 export const DEFAULT_SETTINGS_DATA: SettingsData = {
   ...DEFAULT_GALLERY_BEHAVIOR_SETTINGS,
+  applyThemeEverywhere: false,
   galleryLayout: 'grid',
   itemsPerPage: 12,
   enableLightbox: true,
@@ -37,6 +45,7 @@ export function mapResponseToSettings(response: SettingsDataInput): SettingsData
   return {
     ...mergeSettingsWithDefaults(response as Partial<GalleryBehaviorSettings>),
     theme: response.theme,
+    applyThemeEverywhere: response.applyThemeEverywhere === true,
     galleryLayout: (response.galleryLayout as SettingsData['galleryLayout']) ?? DEFAULT_SETTINGS_DATA.galleryLayout,
     itemsPerPage: response.itemsPerPage ?? DEFAULT_SETTINGS_DATA.itemsPerPage,
     enableLightbox: response.enableLightbox ?? DEFAULT_SETTINGS_DATA.enableLightbox,

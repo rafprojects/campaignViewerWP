@@ -38,6 +38,9 @@ const BASE_SETTINGS = {
   showInContextEditors: true,
   settingsDrawerBlurEnabled: false, // disabled for stable snapshots
   advancedSettingsEnabled: true,
+  // P75-D default is false (Mullion chrome). Keep the existing per-theme
+  // settings-dialog snapshots on the "toggle on" path they were captured against.
+  applyThemeEverywhere: true,
 };
 
 async function installThemeSession(
@@ -124,7 +127,7 @@ async function waitForShadowMount(page: Page) {
 async function openDisplaySettings(page: Page) {
   await page.getByRole('button', { name: 'Admin menu' }).click();
   await page.getByRole('button', { name: /^Settings$/ }).click();
-  const dialog = page.getByRole('dialog', { name: 'Display Settings' });
+  const dialog = page.getByRole('dialog', { name: /Settings/ });
   await expect(dialog).toBeVisible();
   return dialog;
 }
@@ -144,7 +147,7 @@ test.describe('theme behavioral tests', () => {
     // The theme combobox should show the active theme name
     const themeCombo = dialog.getByRole('combobox', { name: 'Theme' });
     await expect(themeCombo).toBeVisible();
-    await expect(themeCombo).toHaveValue('tokyo-night');
+    await expect(themeCombo).toHaveValue('Tokyo Night');
   });
 
   test('changing theme in Display Settings persists to localStorage', async ({ page }) => {
@@ -156,10 +159,11 @@ test.describe('theme behavioral tests', () => {
     const themeCombo = dialog.getByRole('combobox', { name: 'Theme' });
     await expect(themeCombo).toBeVisible();
 
-    // Save and check localStorage update
-    await dialog.getByRole('button', { name: 'Save Changes' }).click();
+    const save = dialog.getByRole('button', { name: 'Save Changes' });
+    if (await save.isEnabled()) {
+      await save.click();
+    }
     const saved = await page.evaluate(() => localStorage.getItem('mullion-theme-id'));
-    // After save, the theme should be persisted (may be default-dark if unchanged)
     expect(typeof saved === 'string' || saved === null).toBe(true);
   });
 

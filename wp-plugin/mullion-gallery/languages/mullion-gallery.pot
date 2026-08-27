@@ -2120,6 +2120,14 @@ msgstr ""
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr ""
 
+#: includes/i18n/class-mullion-frontend-strings.php:509
+msgid "Apply gallery theme to editor"
+msgstr ""
+
+#: includes/i18n/class-mullion-frontend-strings.php:510
+msgid "When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme."
+msgstr ""
+
 #: includes/i18n/class-wpsg-frontend-strings.php:509
 #: includes/settings/class-wpsg-settings-renderer.php:161
 msgid "Default Layout"
@@ -10645,4 +10653,17 @@ msgstr ""
 #. translators: %s: the shortcode reference that did not resolve, e.g. space="acme".
 #: includes/class-wpsg-embed.php:519
 msgid "WP Super Gallery: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
+msgstr ""
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr ""
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr ""
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
 msgstr ""

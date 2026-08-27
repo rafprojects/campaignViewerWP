@@ -407,7 +407,8 @@ describe('validateTheme — comprehensive coverage', () => {
 
     describe('primaryShade', () => {
       it('accepts a theme that omits primaryShade (P74-N / P75-F)', () => {
-        const theme = makeValidTheme();
+        const theme = makeValidTheme() as { colors: Record<string, unknown> };
+        delete theme.colors.primaryShade;
         expect(() => validateTheme(theme)).not.toThrow();
       });
 

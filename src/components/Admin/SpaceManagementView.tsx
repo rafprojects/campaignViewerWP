@@ -44,11 +44,20 @@ export interface SpaceManagementViewProps {
  */
 export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSystemAdmin = false }: SpaceManagementViewProps) {
   const { t } = useTranslation('mullion');
+  // P53-D → P75-I: space grants are viewer-only. The server's access_level enum
+  // is ['viewer']; managing a space comes from the mullion_editor role plus space
+  // access, not from the grant level. Offering Editor/Owner here made every
+  // default grant fail with rest_invalid_param ("Invalid parameter(s): access_level").
   const spaceRoleOptions = [
     { value: 'viewer', label: t('admin_space_role_viewer', 'Viewer') },
-    { value: 'editor', label: t('admin_space_role_editor', 'Editor') },
-    { value: 'owner', label: t('admin_space_role_owner', 'Owner') },
   ];
+  // Display-only labels: 'viewer' is the sole grantable level, the other two
+  // only ever render for grants stored before P53-D.
+  const spaceRoleLabel = (level: string) => {
+    if (level === 'editor') return t('admin_space_role_editor', 'Editor');
+    if (level === 'owner') return t('admin_space_role_owner', 'Owner');
+    return t('admin_space_role_viewer', 'Viewer');
+  };
   const { spaces, spacesLoading, mutateSpaces } = useSpaces(apiClient);
   const [selectedSpaceId, setSelectedSpaceId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<string | null>('spaces');
@@ -61,10 +70,8 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
 
   // Grant management
   const [grantEmail, setGrantEmail] = useState('');
-  const [grantRole, setGrantRole] = useState<string>('editor');
+  const [grantRole, setGrantRole] = useState<string>('viewer');
   const [grantSaving, setGrantSaving] = useState(false);
-  // P51-H: tracks the grant whose role is currently being updated inline.
-  const [roleSavingUserId, setRoleSavingUserId] = useState<number | null>(null);
 
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
   const selectedSpace = spaces.find((s) => s.id === selectedSpaceId) ?? null;
@@ -276,25 +283,10 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
     });
   }, [handleRevokeAccess, t]);
 
-  // P51-H: change an existing grant's role inline. POST /access upserts the grant
-  // (see Mullion_Space_Controller::upsert_space_grant), so re-posting with the new
-  // access_level updates it in place.
-  const handleChangeRole = useCallback(async (userId: number, newLevel: string) => {
-    if (!selectedSpaceId) return;
-    setRoleSavingUserId(userId);
-    try {
-      await apiClient.post(`/wp-json/mullion-gallery/v1/spaces/${selectedSpaceId}/access`, {
-        userId,
-        access_level: newLevel,
-      });
-      await refetchGrants();
-      onNotify({ type: 'success', text: t('admin_space_role_updated', 'Role updated') });
-    } catch (err) {
-      onNotify({ type: 'error', text: (err as Error).message ?? t('admin_space_role_fail', 'Failed to update role') });
-    } finally {
-      setRoleSavingUserId(null);
-    }
-  }, [apiClient, selectedSpaceId, refetchGrants, onNotify, t]);
+  // P51-H added an inline role dropdown here (re-POSTing the grant with a new
+  // access_level, which upsert_space_grant applies in place). P75-I removed it:
+  // space grants are viewer-only since P53-D, so every level it could pick other
+  // than the current one was rejected with rest_invalid_param.
 
   return (
     <>
@@ -458,23 +450,23 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                           {grant.user?.email && <Text size="xs" c="dimmed">{grant.user.email}</Text>}
                         </Stack>
                       </Table.Td>
+                      {/* P75-I: read-only — grants are viewer-only (P53-D). A legacy
+                          editor/owner grant still shows its own stored level. */}
                       <Table.Td>
-                        <Select
-                          size="xs"
-                          variant="filled"
-                          w={120}
-                          data={spaceRoleOptions}
-                          value={grant.access_level ?? 'viewer'}
-                          allowDeselect={false}
-                          disabled={roleSavingUserId === grant.userId}
-                          comboboxProps={{ withinPortal: true }}
-                          aria-label={t('admin_space_role_for', 'Role for {{name}}', { name: grant.user?.displayName ?? t('admin_space_user_lc', 'user {{id}}', { id: grant.userId }) })}
-                          onChange={(v) => {
-                            if (v && v !== (grant.access_level ?? 'viewer')) {
-                              void handleChangeRole(grant.userId, v);
-                            }
-                          }}
-                        />
+                        <Tooltip
+                          label={(grant.access_level ?? 'viewer') === 'viewer'
+                            ? t('admin_space_role_viewer_tip', 'Can view this space')
+                            : t('admin_space_role_legacy_tip', 'Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role.')}
+                          withArrow
+                        >
+                          <Badge
+                            variant="light"
+                            color={(grant.access_level ?? 'viewer') === 'viewer' ? 'gray' : 'yellow'}
+                            aria-label={t('admin_space_role_for', 'Role for {{name}}', { name: grant.user?.displayName ?? t('admin_space_user_lc', 'user {{id}}', { id: grant.userId }) })}
+                          >
+                            {spaceRoleLabel(grant.access_level ?? 'viewer')}
+                          </Badge>
+                        </Tooltip>
                       </Table.Td>
                       <Table.Td>
                         <Text size="xs" c="dimmed">
@@ -517,7 +509,7 @@ export function SpaceManagementView({ apiClient, onNotify, onSpacesChanged, isSy
                 label={t('admin_space_role_label', 'Role')}
                 data={spaceRoleOptions}
                 value={grantRole}
-                onChange={(v) => setGrantRole(v ?? 'editor')}
+                onChange={(v) => setGrantRole(v ?? 'viewer')}
                 size="sm"
                 w={120}
                 allowDeselect={false}

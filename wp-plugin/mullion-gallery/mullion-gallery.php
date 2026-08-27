@@ -23,6 +23,104 @@ define('MULLION_VERSION', '0.90.0');
 define('MULLION_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('MULLION_PLUGIN_URL', plugin_dir_url(__FILE__));
 
+// ── Package edition (P75-A) ─────────────────────────────────────────────────
+// Build-emitted marker written by scripts/copy-wp-assets.js using the same
+// `process.env.MULLION_PREMIUM !== 'false'` check as vite.config.ts. PHP is
+// byte-identical across editions, so the SDK's `is_premium` flag (code type,
+// not entitlement) has to be read from this file rather than hardcoded.
+// Freemius: https://freemius.com/help/documentation/wordpress-sdk/integration/software-licensing/
+// ("set the is_premium flag to false to indicate that the SDK is running in
+// the scope of the free version") and the snippet reference
+// https://freemius.com/help/documentation/wordpress-sdk/integration/integration-snippet/
+if (!function_exists('mullion_edition_marker_path')) {
+    /**
+     * Absolute path of the build-emitted edition marker.
+     *
+     * Filterable so tests can point at a fixture without touching assets/.
+     */
+    function mullion_edition_marker_path(): string {
+        $default = MULLION_PLUGIN_DIR . 'assets/mullion-edition.json';
+        $path    = apply_filters('mullion_edition_marker_path', $default);
+        return is_string($path) && $path !== '' ? $path : $default;
+    }
+}
+
+if (!function_exists('mullion_is_premium_package')) {
+    /**
+     * Whether this installed ZIP is the premium package.
+     *
+     * Missing / unreadable / malformed / non-boolean `premium` → true.
+     * Matches vite.config.ts: premium is the default edition (Key Decision B)
+     * and the SDK's own dynamic_init default for `is_premium` (true).
+     */
+    function mullion_is_premium_package(): bool {
+        // Memoized per resolved path: mullion_fs() does not cache its null
+        // result (isset() is false for null), so every Mullion_License
+        // entitlement check re-enters this function. Keying on the path keeps
+        // the `mullion_edition_marker_path` filter (and its tests) working.
+        static $cache = [];
+
+        $path = mullion_edition_marker_path();
+        if (array_key_exists($path, $cache)) {
+            return $cache[$path];
+        }
+
+        $cache[$path] = true;
+
+        if (!is_readable($path)) {
+            return true;
+        }
+
+        $raw = file_get_contents($path);
+        if ($raw === false || $raw === '') {
+            return true;
+        }
+
+        $data = json_decode($raw, true);
+        if (!is_array($data) || !array_key_exists('premium', $data) || !is_bool($data['premium'])) {
+            return true;
+        }
+
+        $cache[$path] = $data['premium'];
+        return $cache[$path];
+    }
+}
+
+if (!function_exists('mullion_freemius_init_args')) {
+    /**
+     * Pure fs_dynamic_init() argument bag. $config (from mullion_freemius_config)
+     * is merged last so the filter remains the final override for every key.
+     *
+     * Freemius's snippet docs warn against passing a *variable* into
+     * fs_dynamic_init() because their deployment preprocessor rewrites a
+     * literal `'is_premium' => true|false` when generating the free ZIP. This
+     * product does not use that preprocessor (Vite DCE split, identical PHP
+     * in both ZIPs), so is_premium must be computed from the edition marker
+     * at runtime. The SDK itself accepts an array argument — see
+     * vendor/freemius/wordpress-sdk/start.php::fs_dynamic_init().
+     *
+     * @param array<string, mixed> $config
+     * @return array<string, mixed>
+     */
+    function mullion_freemius_init_args(array $config): array {
+        return array_merge([
+            'id'                   => '',
+            'slug'                 => 'mullion-gallery',
+            'type'                 => 'plugin',
+            'public_key'           => '',
+            'is_premium'           => mullion_is_premium_package(),
+            'has_premium_version'  => true,
+            'has_addons'           => false,
+            'has_paid_plans'       => true,
+            'is_org_compliant'     => true,
+            'menu'                 => [
+                'slug'       => 'mullion-gallery',
+                'first-path' => '',
+            ],
+        ], $config);
+    }
+}
+
 // ── Freemius SDK bootstrap (P62-B) ──────────────────────────────────────────
 // Deliberately a distinct block before the require_once list: Freemius's own
 // integration docs require the SDK to bootstrap before other plugin code.
@@ -49,7 +147,7 @@ if (!function_exists('mullion_fs')) {
         $config = apply_filters('mullion_freemius_config', [
             'id'         => '',
             'public_key' => '',
-            'is_premium' => false,
+            'is_premium' => mullion_is_premium_package(),
         ]);
         $config = is_array($config) ? $config : [];
 
@@ -71,26 +169,14 @@ if (!function_exists('mullion_fs')) {
             return null;
         }
 
-        // NOTE (M2): once the Freemius dashboard product exists, reconcile these
-        // defaults with the exact snippet Freemius generates for this product. For
-        // the freemium (WP.org "lite" + premium) model the generated snippet adds
-        // `has_premium_version => true`, a distinct `premium_slug`, and
-        // `is_org_compliant => true`, and sets a non-empty `menu['first-path']`
-        // (see docs/PHASE62_REPORT.md P62-K and guides/MARKETPLACE_READINESS.md §4).
-        // $config is merged last so real credentials always come from the filter.
-        $mullion_fs = fs_dynamic_init(array_merge([
-            'id'             => '',
-            'slug'           => 'mullion-gallery',
-            'type'           => 'plugin',
-            'public_key'     => '',
-            'is_premium'     => false,
-            'has_addons'     => false,
-            'has_paid_plans' => true,
-            'menu'           => [
-                'slug'       => 'mullion-gallery',
-                'first-path' => '',
-            ],
-        ], $config));
+        // NOTE (M2): is_premium / has_premium_version / is_org_compliant are now
+        // resolved by P75-A (edition marker + fixed freemium flags). Remaining
+        // dashboard-only values: real `id` / `public_key`, a distinct
+        // `premium_slug`, and a non-empty `menu['first-path']` — reconcile with
+        // Freemius's generated snippet once the product exists (P62-K /
+        // MARKETPLACE_READINESS.md §4). $config is merged last so real
+        // credentials always come from the filter.
+        $mullion_fs = fs_dynamic_init(mullion_freemius_init_args($config));
 
         return $mullion_fs;
     }

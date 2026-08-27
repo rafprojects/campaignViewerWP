@@ -49,6 +49,7 @@ describe('settingsQuery', () => {
     expect(normalized.appMaxWidth).toBe(1200);
     expect(normalized.theme).toBe('nord');
     expect(normalized.appPadding).toBeDefined();
+    expect(normalized.applyThemeEverywhere).toBe(false);
   });
 
   it('fetches and caches normalized settings', async () => {

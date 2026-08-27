@@ -51,7 +51,7 @@ describe('generateCssVariables', () => {
     expect(result).toContain('--mullion-color-surface-raised:');
     expect(result).toContain('#1a3542');
     expect(result).toContain('--mullion-color-border-strong:');
-    expect(result).toContain('#577577');
+    expect(result).toContain('#648284');
   });
 
   it('includes --mullion-color-background variable', () => {
@@ -74,8 +74,10 @@ describe('generateCssVariables', () => {
     const rc = makeResolvedColors();
     const def = makeThemeDef();
     const result = generateCssVariables(rc, def);
-    // primary is rc.primary[5], which is a generated shade
     expect(result).toContain('--mullion-color-primary:');
+    expect(result).toContain(`--mullion-color-primary: ${rc.primaryFill}`);
+    expect(result).toContain(`--mullion-color-primary-stroke: ${rc.primaryStroke}`);
+    expect(result).toContain(`--mullion-color-primary-on: ${rc.primaryOnFill}`);
   });
 
   it('includes all 10 primary shade variables', () => {

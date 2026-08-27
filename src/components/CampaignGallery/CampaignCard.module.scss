@@ -10,7 +10,10 @@
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary) 60%, transparent);
+    // color-mix() with an undefined var invalidates the whole declaration and
+    // drops the focus ring. The gallery always injects --mullion-color-*, but
+    // keep the fallback symmetric with the other 1.4.11 stroke sites.
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary-stroke, var(--mantine-primary-color-filled)) 60%, transparent);
     border-radius: var(--mantine-radius-md);
   }
 }

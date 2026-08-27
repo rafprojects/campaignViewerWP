@@ -70,11 +70,11 @@ export function intendedContrastChecks(
   // primary shade this theme's scheme uses. Passes if the better of black/white
   // reaches AA.
   const shade = rc.primaryShade[colorScheme];
-  const buttonBg = rc.primary[shade] ?? rc.primary[colorScheme === 'light' ? 6 : 5]!;
-  const useWhite = (contrastRatio('#ffffff', buttonBg) ?? 0) >= (contrastRatio('#000000', buttonBg) ?? 0);
+  const buttonBg = rc.primaryFill;
+  const useWhite = rc.primaryOnFill === '#ffffff';
   checks.push({
     label: `primary button label (auto ${useWhite ? 'white' : 'black'}) on primary[${shade}]`,
-    fg: useWhite ? '#ffffff' : '#000000',
+    fg: rc.primaryOnFill,
     bg: buttonBg,
     minRatio,
   });

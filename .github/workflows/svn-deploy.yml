@@ -1,9 +1,16 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # Mullion — Deploy existing release to WordPress.org SVN
 #
-# This workflow downloads a previously-built release ZIP from GitHub Releases
-# and deploys it to WordPress.org SVN — no rebuild required.
+# This workflow downloads a previously-built LITE release ZIP from GitHub
+# Releases and deploys it to WordPress.org SVN — no rebuild required.
 # The exact bytes that were tested during the release are what get deployed.
+#
+# WordPress.org guideline 5 forbids locked/premium functionality in the
+# directory. Freemius prepares a WP.org-compatible package but does not
+# publish it (https://freemius.com/help/documentation/wordpress/deployment-process/).
+# This product self-builds the free ZIP (`npm run build:wp:free`, attached
+# to the GitHub Release as mullion-gallery-lite-v*.zip) and self-deploys it
+# here. The premium ZIP (mullion-gallery-v*.zip) is Freemius-only.
 #
 # Requires repository secrets:
 #   SVN_USERNAME — WordPress.org username
@@ -29,21 +36,14 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # ── P62-G guard ─────────────────────────────────────────────────────────
-      # WordPress.org must receive the FREE ("lite") build, but this workflow still
-      # downloads the PREMIUM release ZIP (mullion-gallery-v*.zip from release.yml),
-      # which contains Pro code WordPress.org disallows — deploying it would leak
-      # locked functionality. Wiring a dedicated free ZIP (npm run build:wp:free) into
-      # the release and this deploy is tracked in P62-I. Until then this workflow is
-      # intentionally blocked; remove this guard as part of P62-I.
-      - name: Guard — free build required for WordPress.org (P62-G)
-        run: |
-          echo "::error::SVN Deploy is disabled: it would push the PREMIUM build (Pro code) to WordPress.org, which is not allowed. Wire the free 'lite' build (npm run build:wp:free) first — see P62-I."
-          exit 1
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # check-free-build-clean.mjs has zero npm dependencies.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
       - name: Validate tag exists
         run: |
@@ -53,13 +53,13 @@ jobs:
             exit 1
           fi
 
-      - name: Download release ZIP
+      - name: Download lite release ZIP
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ inputs.tag }}
         run: |
           VERSION="${TAG#v}"
-          ZIP_NAME="mullion-gallery-v${VERSION}.zip"
+          ZIP_NAME="mullion-gallery-lite-v${VERSION}.zip"
 
           echo "Downloading $ZIP_NAME from release $TAG..."
           gh release download "$TAG" --pattern "$ZIP_NAME" --output "$ZIP_NAME"
@@ -71,19 +71,41 @@ jobs:
 
           echo "Downloaded $(du -h "$ZIP_NAME" | cut -f1)"
 
-      - name: Extract release ZIP
+      - name: Extract lite release ZIP
         id: extract
         env:
           TAG: ${{ inputs.tag }}
         run: |
           VERSION="${TAG#v}"
-          ZIP_NAME="mullion-gallery-v${VERSION}.zip"
+          ZIP_NAME="mullion-gallery-lite-v${VERSION}.zip"
 
           mkdir -p deploy-dir
           unzip "$ZIP_NAME" -d deploy-dir
           echo "Extracted to deploy-dir/mullion-gallery/"
           ls -la deploy-dir/mullion-gallery/
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      # Last gate before SVN: the literal bytes about to reach WordPress.org,
+      # independent of whatever produced the ZIP. Recurses; hashed chunks live
+      # in assets/assets/ (copy of dist/).
+      - name: Verify downloaded build is Pro-code clean
+        run: |
+          node scripts/check-free-build-clean.mjs deploy-dir/mullion-gallery/assets
+          node -e '
+            const fs = require("fs");
+            const p = "deploy-dir/mullion-gallery/assets/mullion-edition.json";
+            let data;
+            try { data = JSON.parse(fs.readFileSync(p, "utf8")); }
+            catch (e) {
+              console.error("FAIL — missing or malformed edition marker at", p);
+              process.exit(1);
+            }
+            if (data.premium !== false) {
+              console.error("FAIL — lite package marker is not { premium: false }:", data);
+              process.exit(1);
+            }
+            console.log("Edition marker is free (premium: false)");
+          '
 
       - name: Deploy to WordPress.org SVN
         uses: 10up/action-wordpress-plugin-deploy@v2

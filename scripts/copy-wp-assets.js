@@ -30,4 +30,16 @@ for (const entry of fs.readdirSync(pluginAssetsDir)) {
 
 copyRecursive(distDir, pluginAssetsDir);
 
+// P75-A: edition marker for PHP/Freemius. Same check as vite.config.ts
+// `define.__MULLION_PREMIUM__` so the JS DCE flag and the PHP-reported
+// package identity cannot disagree. Written after the wipe-and-copy so it
+// is not deleted with the rest of assets/.
+const isPremium = process.env.MULLION_PREMIUM !== 'false';
+const editionMarkerPath = path.join(pluginAssetsDir, 'mullion-edition.json');
+fs.writeFileSync(
+  editionMarkerPath,
+  `${JSON.stringify({ premium: isPremium, generatedAt: new Date().toISOString() }, null, 2)}\n`,
+  'utf8',
+);
 console.log(`Copied ${distDir} -> ${pluginAssetsDir}`);
+console.log(`Wrote ${editionMarkerPath} (premium: ${isPremium})`);

@@ -129,7 +129,7 @@ Every marketplace-readiness placeholder still in the tree. Grep to re-verify:
 | `docs/guides/LICENSE_ACTIVATION.md` | support email + refund policy (2 `[PLACEHOLDER]`) | Same values as readme (M4). |
 | `wp-plugin/mullion-gallery/includes/class-mullion-license.php` | `get_upgrade_url()` → `https://your-site.tld/pricing` | **Prefer** the `mullion_license_upgrade_url` filter (§3) — then this hardcoded default is never used. Optionally update the default too. |
 | `src/hooks/useMullionLicense.ts` | `DEFAULT_UPGRADE_URL` fallback | Same — the client reads the URL from `get_upgrade_url()` via page config, so the filter covers it; this fallback only shows if config omits a URL. |
-| `.wordpress-org/README.md` | banner / icon / screenshot artwork spec | Commission the store artwork (designer pass, from P60-E); needed for both the Freemius and WP.org listings (P62-I). |
+| [`docs/design/STORE_ASSETS.md`](../design/STORE_ASSETS.md) | banner / icon / screenshot artwork spec (artwork itself goes in `.wordpress-org/`) | Commission the store artwork (designer pass, from P60-E); needed for both the Freemius and WP.org listings (P62-I). |
 | Product **EULA** + `docs/PRIVACY.md` | not yet authored (P62-J) | Author a product EULA (link from the Freemius listing + `LICENSE_ACTIVATION.md`) and **extend** `docs/PRIVACY.md` to cover Freemius-checkout data handling + the SDK opt-in analytics. |
 
 > **Tip:** setting `mullion_license_upgrade_url` in your mu-plugin (§3) fixes the upgrade URL for
@@ -313,7 +313,7 @@ WCAG work and the 1–10 day WP.org review off the paid-launch critical path.
 - [ ] **M2** — Product/bundle configured; `mullion_fs()` `NOTE (M2)` defaults reconciled with Freemius's snippet.
 - [ ] **M3** — Tiers / renewals / trial configured in Freemius (pricing confirmed vs competitors — §6).
 - [ ] **M4** — Support email + SLA and refund policy decided.
-- [ ] Placeholders filled (§5): `readme.txt`, `LICENSE_ACTIVATION.md`, upgrade URL (filter or source), `.wordpress-org` artwork.
+- [ ] Placeholders filled (§5): `readme.txt`, `LICENSE_ACTIVATION.md`, upgrade URL (filter or source), `.wordpress-org/` artwork (spec: [`docs/design/STORE_ASSETS.md`](../design/STORE_ASSETS.md)).
 - [ ] Credentials injected via `mullion_freemius_config` mu-plugin (outside the repo); `is_sdk_active()` returns true on the store site.
 - [ ] Automated gates green (§8c): Vitest, PHPUnit license/gating suites, `i18n:check:locales`.
 - [ ] Manual Pro matrix passed (§8b), including server-enforcement + "existing content renders."

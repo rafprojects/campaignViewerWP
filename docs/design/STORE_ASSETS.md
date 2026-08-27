@@ -1,13 +1,32 @@
-# Store assets — spec & manifest (`.wordpress-org/`)
+# Store assets — spec & manifest for `.wordpress-org/`
 
-This directory holds the **marketplace/listing graphics** (banner, icon, screenshots).
-It is **not** shipped inside the plugin ZIP. The WordPress.org deploy workflow
-(`.github/workflows/svn-deploy.yml`, via `10up/action-wordpress-plugin-deploy@v2`) reads
-this directory automatically and publishes its contents to the SVN **`/assets/`** area of
-the listing. For a premium/Freemius or CodeCanyon listing, reuse the same source graphics.
+This is the filename, dimension, and content spec for the **marketplace/listing graphics**
+(banner, icon, screenshots). The artwork itself belongs in a top-level **`.wordpress-org/`**
+directory, which does not exist in this repo yet — nothing has been commissioned. Create it
+when the first finals arrive.
+
+The graphics are **not** shipped inside the plugin ZIP. The WordPress.org deploy workflow
+(`.github/workflows/svn-deploy.yml`, via `10up/action-wordpress-plugin-deploy@v2` with
+`ASSETS_DIR` unset) reads `.wordpress-org/` automatically and publishes its contents to the
+SVN **`/assets/`** area of the listing. For a premium/Freemius or CodeCanyon listing, reuse
+the same source graphics.
+
+> ### `.wordpress-org/` holds image files only — nothing else
+>
+> The deploy action runs `rsync -rc "$ASSETS_DIR/" assets/ --delete`, so **every file in that
+> directory becomes publicly browsable** at
+> `https://plugins.svn.wordpress.org/mullion-gallery/assets/`, and anything *not* in it is
+> deleted from the listing. `COLOR-SPEC.md` and `DESIGN_BRIEF.md` were exposed that way until
+> P75-G moved them here; this spec followed in the Phase 75 branch review, since a manifest is
+> no more a listing asset than a colour spec is. Keep design docs and designer correspondence
+> under `docs/design/` (this directory) and [`docs/design/correspondences/`](correspondences/).
+>
+> The action guards the directory with `if [[ -d … ]]` and logs *"No assets directory found;
+> skipping asset copy"* when it is absent, so its non-existence is safe — `svn-deploy.yml`
+> still publishes `trunk/` normally.
 
 > **Status: slots specified, artwork pending.** The image files below are graphic-design
-> deliverables. This README defines the exact filenames, dimensions, and content brief so a
+> deliverables. This document defines the exact filenames, dimensions, and content brief so a
 > designer (or a later screenshot-capture pass) can drop finals straight in — no further
 > spec work needed. Filenames must match **exactly**; WordPress.org keys off them.
 
@@ -37,7 +56,7 @@ extreme edges (avatar/badge overlap on the listing page).
 ## Screenshot manifest — MUST stay in sync with `readme.txt`
 
 The `== Screenshots ==` section of
-[`wp-plugin/mullion-gallery/readme.txt`](../wp-plugin/mullion-gallery/readme.txt) lists
+[`wp-plugin/mullion-gallery/readme.txt`](../../wp-plugin/mullion-gallery/readme.txt) lists
 captions in numbered order; each number maps to `screenshot-N.png` here. **If you add,
 remove, or reorder a screenshot, update both places.**
 

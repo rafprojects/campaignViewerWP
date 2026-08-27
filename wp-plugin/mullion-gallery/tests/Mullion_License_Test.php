@@ -102,7 +102,9 @@ class Mullion_License_Test extends WP_UnitTestCase {
         $this->assertIsArray( $config );
         $this->assertSame( '', $config['id'] );
         $this->assertSame( '', $config['public_key'] );
-        $this->assertFalse( $config['is_premium'] );
+        // P75-A: no build-emitted marker in PHPUnit, so the package defaults
+        // to premium (same as vite.config.ts / the SDK's is_premium default).
+        $this->assertTrue( $config['is_premium'] );
     }
 
     public function test_get_config_from_filter() {

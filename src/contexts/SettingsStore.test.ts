@@ -4,9 +4,26 @@ import {
   areSettingsValuesEqual,
   createSettingsDraftStore,
   DEFAULT_SETTINGS_DATA,
+  mapResponseToSettings,
 } from './SettingsStore';
 
 describe('SettingsStore', () => {
+  it('defaults applyThemeEverywhere to false when the response omits it', () => {
+    expect(DEFAULT_SETTINGS_DATA.applyThemeEverywhere).toBe(false);
+    const mapped = mapResponseToSettings({
+      ...DEFAULT_SETTINGS_DATA,
+    });
+    expect(mapped.applyThemeEverywhere).toBe(false);
+  });
+
+  it('maps applyThemeEverywhere true from a settings response', () => {
+    const mapped = mapResponseToSettings({
+      ...DEFAULT_SETTINGS_DATA,
+      applyThemeEverywhere: true,
+    });
+    expect(mapped.applyThemeEverywhere).toBe(true);
+  });
+
   it('tracks dirty draft updates with structural equality', () => {
     const store = createSettingsDraftStore({
       ...DEFAULT_SETTINGS_DATA,

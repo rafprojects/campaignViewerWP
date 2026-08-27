@@ -1,21 +1,23 @@
 # Phase 75 - Freemius Package Self-Identification + Dual-Channel Release Wiring
 
-**Status:** Planned — no code yet
+**Status:** Complete — 10 tracks landed + branch review (P75-I / P75-J absorbed from the first hands-on QA pass, and manually verified)
 **Created:** 2026-07-27
-**Last updated:** 2026-08-25 (P74 PR Review leftovers: P75-G Rig Cyan light companion, P75-H Checkbox/Switch `borderStrong`. `primaryShade` remains P75-F.)
+**Last updated:** 2026-08-26 (P75-I / P75-J added — see [Hands-on QA follow-on](#hands-on-qa-follow-on-2026-08-26))
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Planned | Small-Medium |
-| P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Planned | Medium |
-| P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Planned | Small |
-| P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Planned | Medium |
-| P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Planned — spike first | Medium-Large |
-| P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Planned | Small-Medium |
-| P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Planned — blocked on designer light values | Medium |
-| P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Planned | Small |
+| P75-A | PHP self-identifies its shipped edition (`is_premium`, `has_premium_version`, `is_org_compliant`) to the Freemius SDK bootstrap, via a build-emitted marker | Done | Small-Medium |
+| P75-B | Wire `release.yml` to emit both a premium and a lite ZIP; point `svn-deploy.yml` at the lite ZIP and remove its P62-G hard-fail guard | Done | Medium |
+| P75-C | Update `docs/guides/PACKAGING_RELEASE.md` to document the free/premium split | Done | Small |
+| P75-D | Lock Settings Panel + Layout Builder chrome to the fixed Mullion brand palette by default, with an `applyThemeEverywhere` toggle (default `false`) restoring today's behavior | Done | Medium |
+| P75-E | Non-text UI contrast correctness (WCAG 1.4.11): fix the `primaryShade`-hardcoding bug behind raw-accent UI indicators, then a criterion-based repair layer where theme-authored shades still fail 3:1 — spanning admin chrome and the front-end gallery | Done | Medium-Large |
+| P75-F | Migrate the accent ramp generator from HSL to OKLCH, with gamut mapping (chroma reduction, not channel clipping); set Rig Cyan's `primaryShade` (moved from P74-N) and re-derive the other 16 themes' indices in the same commit; gates P75-E's step 3 repair layer | Done | Small-Medium |
+| P75-G | Rig Cyan light companion: overwrite `default-light.json` in place once the designer supplies a light 11-role spec | Done | Medium |
+| P75-H | Checkbox / Switch adapter outlines: use `borderStrong` (same 1.4.11 miss P74-review fixed on NumberInput / ColorInput) | Done | Small |
+| P75-I | **Fix:** granting access fails with `Invalid parameter(s): access_level` — three grant UIs still offer the `editor` / `owner` levels P53-D removed from the server enums | Done | Small-Medium |
+| P75-J | **Fix:** re-creating a space with the name of a deleted one fails with an ambiguous `Failed to create space` — the archived row still holds the `UNIQUE KEY slug` | Done | Small |
 
 ---
 
@@ -123,6 +125,17 @@ The `NOTE (M2)` comment is tightened to reflect that `is_premium`/`has_premium_v
 - `php -l` on the two changed files (already CI-gated repo-wide in `test-php`).
 - No new Vitest unit test for `copy-wp-assets.js`'s marker-writing logic — consistent with that script's existing untested-by-design status (it has zero unit tests today; correctness is proven by running it). Verified instead via the phase-wide Verification section below (local build dry-run, inspect the emitted JSON).
 
+### Implementation Notes (2026-08-25)
+
+Verified against current Freemius docs and the vendored SDK, not only this plan:
+
+- **[Software Licensing](https://freemius.com/help/documentation/wordpress-sdk/integration/software-licensing/) §Managing One Codebase:** if you ignore Freemius's generated free ZIP, "make sure to also integrate the SDK into your free version and set the `is_premium` flag to `false` to indicate that the SDK is running in the scope of the free version." That is code *type* (which ZIP is running), distinct from `can_use_premium_code()` (entitlement). Matches this track's split.
+- **[Integration snippet](https://freemius.com/help/documentation/wordpress-sdk/integration/integration-snippet/) settings:** `is_premium` = "Specify if the product's codebase is the free or premium version"; `has_premium_version` default `false` in the snippet reference; `is_org_compliant` default `true`. Set the first two explicitly (`has_premium_version` true — this product always has a premium sibling) and `is_org_compliant` true for the WP.org lite model.
+- **Vendored SDK** (`class-freemius.php` `dynamic_init`): `is_premium` defaults to **true** if omitted (`get_bool_option(..., 'is_premium', true)`); `has_premium_version` defaults to `has_paid_plans`; `is_org_compliant` defaults to true. Key Decision B (missing marker → premium) matches the SDK, not the old hardcoded `false`.
+- **Snippet warning vs helper.** Freemius says do not pass a *variable* into `fs_dynamic_init()` because *their* preprocessor rewrites a literal `'is_premium' => true|false` when generating the free ZIP. This product does not use that preprocessor (Vite DCE, byte-identical PHP in both ZIPs), so a literal cannot vary between editions. Runtime `fs_dynamic_init($module)` just reads the array. The helper is therefore required, not a violation. Documented on `mullion_freemius_init_args()`.
+- **Stricter than the plan's `(bool) $data['premium']`.** JSON string `"false"` is truthy in PHP. Only a JSON boolean is accepted; anything else falls back to premium. Extra test: `test_non_boolean_premium_falls_back_to_premium`.
+- **Validation.** `php -l` on the three PHP files. `Mullion_Package_Edition_Test` 8/8, `Mullion_License_Test` 14/14. `node scripts/copy-wp-assets.js` wrote `{"premium": true, ...}`; `MULLION_PREMIUM=false node scripts/copy-wp-assets.js` wrote `{"premium": false, ...}`. Marker deleted after the dry-run so the no-marker PHPUnit path stays clean.
+
 ## Track P75-B - Dual-channel release pipeline
 
 ### Problem
@@ -159,6 +172,22 @@ No changes to the premium build, Vitest sanity gate, or PHPUnit sanity gate step
 - Manual review of the YAML diff for step-ordering correctness (the ordering constraint in the Fix section above is the one genuine footgun — a future reorder that runs the free build before the premium zip would silently ship a stripped-down "premium" ZIP).
 - No `actionlint`/`yamllint` tooling exists in this repo today; out of scope to add it here — manual review plus the local dry-run substitute for automated YAML linting.
 
+### Implementation Notes (2026-08-25)
+
+Verified against current WordPress.org guidelines, Freemius deployment docs, and the live YAML/`copy-wp-assets.js` layout — not only this plan.
+
+- **[WP.org Plugin Guideline 5](https://developer.wordpress.org/plugins/wordpress-org/detailed-plugin-guidelines/#5-trialware-is-not-permitted):** "Plugins may not contain functionality that is restricted or locked, only to be made available by payment or upgrade." Lite ZIP + SVN path must be the DCE-stripped free build. Freemius [Software Licensing](https://freemius.com/help/documentation/wordpress-sdk/integration/software-licensing/) quotes the same bar and tells you to keep premium code out of the `.org` package.
+- **[Freemius Deployment Process](https://freemius.com/help/documentation/wordpress/deployment-process/):** "Freemius prepares the WordPress.org-compatible package, but it does not publish it to WordPress.org for you." This product already chose the self-managed fallback (Vite DCE, not Freemius's preprocessor), so `release.yml` emits the lite ZIP and `svn-deploy.yml` is the SVN publish step. Freemius still gets the premium ZIP (out of band / later M1 deploy-on-Freemius). No credentials invented.
+- **Scan-path footgun vs the plan.** `copy-wp-assets.js` copies all of `dist/` into `wp-plugin/mullion-gallery/assets/`, so hashed chunks live at `assets/assets/*.js` (confirmed on disk; `sw.js` sits at the parent). The plan's `check-free-build-clean.mjs wp-plugin/mullion-gallery/assets` against a *non-recursive* scanner would have listed only `sw.js`, reported clean, and shipped Pro chunks. The scanner now walks `.js` files recursively and matches chunk prefixes on `basename()`. `npm run check:free-build` (no argv, `./dist/assets`) stays equivalent.
+- **Edition-marker assertion** (not in the original Fix sketch, added because P75-A exists): after the Pro-code scan, both `release.yml` and `svn-deploy.yml` require `mullion-edition.json` to parse as `{ premium: false }`. Catches zipping the premium working tree as `-lite-` if the free rebuild is skipped or reordered.
+- **`release.yml` optional `deploy_svn`.** Pre-existing hole: that step used `BUILD_DIR: wp-plugin/mullion-gallery` with no P62-G guard, so checking the box would have pushed premium assets. After this track it runs *after* `build:wp:free` overwrites `assets/`, so it deploys lite. Comment forbids moving it above the free build. Dedicated `svn-deploy.yml` still prefers the downloaded lite ZIP (exact released bytes).
+- **ZIP naming / excludes.** Premium `mullion-gallery-v${VERSION}.zip`, lite `mullion-gallery-lite-v${VERSION}.zip`; internal folder remains `mullion-gallery/` (Phase 74 Decision C). Same `zip -x` list as before; `.distignore` unchanged.
+- **Validation.** Scanner on leftover premium plugin assets: exit 1, all five Pro markers. Missing-dir argv: exit 1. Local dual-build dry-run (`build:wp` → zip premium → `build:wp:free` → scan plugin `assets/` and `./dist/assets` → zip lite → unzip both → scan extracted lite as `svn-deploy.yml` would):
+  - Premium ZIP `mullion-gallery-v0.90.0.zip`: 3234 files, marker `{ premium: true }`, contains `PresetGalleryModal-*.js` + `TextPropertiesPanel-*.js`; lite-scan of the extracted tree fails with all five Pro markers.
+  - Lite ZIP `mullion-gallery-lite-v0.90.0.zip`: 3232 files (the two Pro chunks), marker `{ premium: false }`; scan of working-tree assets, `./dist/assets` (58 JS), plugin `assets/` (59 JS, includes `sw.js`), and extracted lite tree: all clean.
+  - Both ZIPs include `readme.txt`, `mullion-gallery.php`, and `vendor/freemius/wordpress-sdk`. Local host has `unzip` but not `zip`; the dry-run used Python `zipfile` with the same exclude set the YAML `zip -x` list uses. Marker deleted after the dry-run so the PHPUnit no-marker path stays valid.
+  - Pre-existing, not changed: `zip -x` excludes `phpunit/*` but not the root `phpunit` binary; `.distignore` lists `phpunit`. 10up SVN (`.distignore`) and the GitHub ZIP therefore still diverge on that file. P75-C can call it out; this track does not retune the exclude list. **The drift is wider than this one file and is now [PHASE77_REPORT.md](PHASE77_REPORT.md) track P77-A** — the branch review found `.distignore` itself, `.DS_Store`/`Thumbs.db`, and an untracked `admin/` build directory are also unaligned, and that `zip -x`'s `phpunit/*` matches nothing since `phpunit` is a file. P77-A removes the duplicated list rather than patching entries into it.
+
 ## Track P75-C - Update `docs/guides/PACKAGING_RELEASE.md`
 
 ### Problem
@@ -183,11 +212,23 @@ No changes to the premium build, Vitest sanity gate, or PHPUnit sanity gate step
 - Manual read-through diffing the doc against `package.json`'s actual script names and `release.yml`'s actual ZIP-naming output (post P75-B) to catch drift before it ships, same as this track exists to fix in the first place.
 - No automated doc-link checker exists in this repo (confirmed: no CI step lints markdown links) — this stays a manual check, consistent with how the other guides are maintained.
 
+### Implementation Notes (2026-08-25)
+
+Documented A/B as they shipped, not the pre-B sketch:
+
+- **Links.** `PACKAGING_RELEASE.md` lives in `docs/guides/`, so PRO_FEATURES anchors are same-directory (`PRO_FEATURES.md#…`), not `guides/PRO_FEATURES.md#…`. GitHub-slugger style: em dash / `&` become `--` (`#7-free-vs-premium-build-split--the-wporg-lite-build-p62-f-decision`, `#8-building--deploy-testing-the-free-vs-premium-editions`).
+- **Script names and bodies** copied from current `package.json` (`build`, `build:wp`, `build:free`, `build:wp:free`, `check:free-build`). Env var is `MULLION_PREMIUM` (vite.config.ts), not the stale `Mullion_PREMIUM` still sitting in a couple of PRO_FEATURES sentences.
+- **Asset layout** in "Verify the Build" was wrong (hashed files are `assets/assets/`, marker at `assets/mullion-edition.json`, Vite manifest at `assets/.vite/manifest.json`). Corrected so a reader can find the lite scan path.
+- **No `npm run package`.** The old "if configured" example is gone. Manual zip uses the live `release.yml` `zip -x` list and `VERSION` from `package.json`.
+- **`composer.json` does not ship** — `.distignore` and `zip -x` both exclude it; `vendor/` does ship. The old "MUST include composer.json" line is gone.
+- **`phpunit` binary drift** (P75-B leftover): `.distignore` excludes it; GitHub `zip -x` does not. Called out so a manual packager copies the Release artifact rather than "fixing" it ad hoc.
+- **Common Commands** in this guide is a bash listing, not a markdown table; `build:wp:free` / `build:free` / `check:free-build` / the static-scan argv are in that listing plus the 3a table.
+
 ## Track P75-D - Decouple admin chrome from the gallery theme by default
 
 ### Problem
 
-Originated from a designer review of the new default theme's color system (`.wordpress-org/color-response-from-designer.md.md`, response drafted in `.wordpress-org/response-to-designer.md`). The designer's core point: the Settings Panel and Layout Builder are surfaces the same admin/agency user sees every day across every site they run, unlike the front-end gallery embed, which is themed per-site specifically to match that site's own visitors and brand. Today, the admin-side chrome unintentionally inherits whatever gallery display theme is currently selected, rather than staying fixed to the Mullion brand:
+Originated from a designer review of the new default theme's color system (`docs/design/correspondences/color-response-from-designer.md`, response drafted in `docs/design/correspondences/response-to-designer.md`). The designer's core point: the Settings Panel and Layout Builder are surfaces the same admin/agency user sees every day across every site they run, unlike the front-end gallery embed, which is themed per-site specifically to match that site's own visitors and brand. Today, the admin-side chrome unintentionally inherits whatever gallery display theme is currently selected, rather than staying fixed to the Mullion brand:
 
 - `src/main.tsx:93` — `ThemedApp` calls `useTheme()`, which resolves the *currently selected gallery theme*, and feeds it into the `MantineProvider` (`src/main.tsx:109`) wrapping the whole app tree, including the lazy-loaded Settings Panel / Admin Panel.
 - `src/hooks/useBuilderShellColors.ts:27-29` — the Layout Builder shell independently calls `getTheme(themeId)` and derives its own accent (`colors.primary[5] ?? colors.accent`) from it.
@@ -202,7 +243,7 @@ Not all-or-nothing: default to a fixed Mullion brand palette for the Settings Pa
 
 ### Fix (sketch — not yet detailed)
 
-- New setting, canonical name pinned to remove the ambiguity an earlier informal description of this track had (see `.wordpress-org/response-to-designer.md` history): **`applyThemeEverywhere: false`** by default. `false` means chrome is locked to the fixed Mullion brand palette; `true` restores today's behavior (chrome follows the selected gallery theme). `ThemedApp` (`src/main.tsx`) and `useBuilderShellColors.ts` resolve their palette from a fixed Mullion brand theme object instead of `useTheme()`/`getTheme(themeId)` whenever the flag is `false`.
+- New setting, canonical name pinned to remove the ambiguity an earlier informal description of this track had (see `docs/design/correspondences/response-to-designer.md` history): **`applyThemeEverywhere: false`** by default. `false` means chrome is locked to the fixed Mullion brand palette; `true` restores today's behavior (chrome follows the selected gallery theme). `ThemedApp` (`src/main.tsx`) and `useBuilderShellColors.ts` resolve their palette from a fixed Mullion brand theme object instead of `useTheme()`/`getTheme(themeId)` whenever the flag is `false`.
 - Where the setting lives (a dedicated "advanced" toggle vs. folded into the existing theme-selection settings area) and its exact plumbing through `useTheme()`/`useBuilderShellColors()` needs design during implementation — not resolved by this planning pass.
 
 ### Acceptance criteria
@@ -214,7 +255,22 @@ Not all-or-nothing: default to a fixed Mullion brand palette for the Settings Pa
 
 ### Validation
 
-- Not yet started — full test plan (Vitest for the new setting's branch logic, manual verification of both toggle states across at least one non-default gallery theme) to be written when this track is picked up.
+- Vitest: `chromeTheme` (lock vs follow, classNames), `AdminChromeProvider` (passthrough vs brand primary swatch), `useBuilderShellColors` (default lock vs follow), SettingsStore/settingsQuery defaults, Appearance tab switch off by default, SettingsPanel save payload includes `applyThemeEverywhere: true` when toggled, LayoutBuilder keyboard suite still green with `getSettings` mock.
+- PHPUnit: `Mullion_Settings_Test` (default false, bool sanitize, space-overridable) plus settings REST/split files — 23 tests, 159 assertions.
+- `tsc -b` clean. `npm run i18n:check` + `i18n:check:locales` — 2381/2381.
+- No browser MCP in this session; Settings Panel / Builder visual check of both toggle states against a non-default gallery theme was not run here.
+
+### Implementation Notes (2026-08-25)
+
+Verified against the live tree, not only this plan's sketch.
+
+- **Did not retarget `ThemedApp`.** `ThemedApp`'s `MantineProvider` wraps the public gallery as well as admin chrome. Swapping it to Mullion when the toggle is off would restyle CardGallery / AuthBar / campaign modals — violating "public-facing gallery embed's theming is unaffected." Chrome lock is a **nested** `AdminChromeProvider` on Settings Panel + Layout Builder only. `cssVariablesSelector=".mullion-admin-chrome"` so nested tokens cannot overwrite `:root` / `:host` gallery vars. When the toggle is on, the provider is a passthrough (no extra MantineProvider) so chrome is pixel-identical to today.
+- **Setting location.** Folded into Theme & Layout next to `ThemeSelector` as a Switch. Canonical name `applyThemeEverywhere` / `apply_theme_everywhere`. Default **false**. Space-overridable (with `theme`); not admin-only. PHP registry boolean is handled by the generic sanitizer. Missing/undefined API values map to `false` (`=== true` only).
+- **Brand palette.** Locked chrome uses `DEFAULT_THEME_ID` (`default-dark` / Mullion / Rig Cyan), including its dark `colorScheme`. Do not follow the gallery's light/dark pair — `default-light` is still Instrument Blue until P75-G.
+- **Builder.** `useBuilderShellColors(applyThemeEverywhere)` and Dockview `colorScheme` follow the chrome theme. Overlay colors (`useBuilderOverlayColors`) stay on the gallery scheme — selection/snap/rulers were already classified as theme-independent for this track.
+- **Standalone wp-admin pages** (Gallery Spaces, Asset Library) untouched — they already mount a bare `MantineProvider`.
+- **e2e `theme-qa`.** Existing per-theme Display Settings snapshots were captured against today's themed chrome. `BASE_SETTINGS.applyThemeEverywhere` is **true** there so those baselines stay valid (the "toggle on" acceptance path). Gallery-shell snapshots are unaffected.
+- **i18n.** New `set_apply_theme_everywhere` / `_desc` keys harvested into the frontend manifest and translated in de/es/fr/ru/zh; `.mo` / `.l10n.php` recompiled.
 
 ---
 
@@ -222,7 +278,7 @@ Not all-or-nothing: default to a fixed Mullion brand palette for the Settings Pa
 
 ### Problem
 
-A second round of designer review on P75-D (`.wordpress-org/color-response-from-designer.md.md`) flagged that the Layout Builder's panel-docking chrome (active-panel outline, drag-over border/background) draws in the raw theme accent with no contrast guarantee against its own panel surface, and that a custom theme can make this arbitrarily worse. Investigating that claim against the actual code (rather than the designer's own approximation of it) surfaced a bigger and more specific problem than either side had scoped:
+A second round of designer review on P75-D (`docs/design/correspondences/color-response-from-designer.md`) flagged that the Layout Builder's panel-docking chrome (active-panel outline, drag-over border/background) draws in the raw theme accent with no contrast guarantee against its own panel surface, and that a custom theme can make this arbitrarily worse. Investigating that claim against the actual code (rather than the designer's own approximation of it) surfaced a bigger and more specific problem than either side had scoped:
 
 1. **The code never uses the raw accent hex.** `useBuilderShellColors.ts:29` derives the Builder's accent as `colors.primary[5] ?? colors.accent` — one rung of the theme's auto-generated 10-step ramp, not the raw base color the designer's table tested. `[5]` is **hardcoded**, ignoring each theme's own authored `colors.primaryShade[colorScheme]` — the field every theme JSON already carries specifically to name which rung its UI fills should use. Checked against all 23 shipped theme definitions: **16 of 23 have a `primaryShade` that differs from index 5**, meaning the Builder's panel chrome has been silently ignoring most themes' own authored intent since before this rebrand — a pre-existing, independent defect, not something either this phase or the designer conversation created.
 2. **Once the correct authored shade is used instead of the hardcoded one, the contrast picture changes.** The designer's single flagged example (Sunset Boulevard, reported ~2.26–2.68:1 depending on surface approximation) **passes at 3.73:1** once bug #1 is fixed — their fix target didn't need a WCAG-specific repair at all, just the existing-field bug fixed. But a *different* set of themes still fails 3:1 even using their own correctly-authored shade: **catppuccin-mocha, crimson-canvas, darcula, default-dark (pre-Rig Cyan), forest-whisper, material-dark, solarized-dark, tokyo-night — 8 of 23.**
@@ -240,7 +296,7 @@ The designer's proposed repair mechanism — "derive it, don't pin it: keep the 
 
 **Step 2 — spike: full audit, all 23 themes × every non-text indicator site, admin and front-end.** With step 1's correct-by-authored-intent baseline established, measure real contrast for every (theme, indicator-site, surface) combination and confirm the true failure set — expected to be close to the 8 themes found in this investigation for the Builder specifically, but not yet confirmed for the front-end gallery or the other 21 admin sites. This spike's job is to produce that confirmed list before any repair-layer code is written, given how much the designer's own 8-theme sample diverged from what the real code does.
 
-The spike carries two methodology requirements from a second designer review round (`.wordpress-org/color-response-from-designer.md.md`, round 4), both to be settled empirically rather than assumed:
+The spike carries two methodology requirements from a second designer review round (`docs/design/correspondences/color-response-from-designer.md`, round 4), both to be settled empirically rather than assumed:
 
 - **Classify before measuring pass/fail.** WCAG 1.4.11's 3:1 bar applies only to a non-text indicator that is the *sole* means of identifying a UI component or state. A hover border that merely reinforces a state already signaled another way (cursor change, tooltip, an already-distinct icon) is decorative and exempt — the same distinction the designer's finished palette formalizes as `border` (1.46:1, decorative dividers, exempt) vs. `borderStrong` (3:1, input outlines and focusable edges — the affordance itself). Focus rings are always the non-exempt case: run every one of the ≥21+ admin sites and the front-end sites through this classification *before* computing pass/fail, not after — repairing an exempt decorative site the same as a sole-indicator one is how the fix makes the admin UI look heavier without actually improving accessibility.
 - **Test the fill-vs-stroke-shade hypothesis, don't assume it.** `primaryShade` is authored to answer "what shade of the accent does a white button label sit on" (a 4.5:1-under-white-text criterion — see round 4's `COLOR-SPEC.md` §2) — a different question from "what shade of the accent is visible as a thin border against this panel surface" (3:1 against the *surface*, no text-legibility component). The designer's own modeling of the confirmed Builder failures suggests these two needs may require different ramp rungs — tokyo-night and catppuccin-mocha ~3 rungs apart, material-dark and solarized-dark ~2 apart — which, if it holds generally, means the repair layer needs two roles (a fill rung and a separate stroke rung), not one. Flagged explicitly as unconfirmed: their own model doesn't explain forest-whisper (predicts 0 rungs of separation, i.e. no problem, but forest-whisper fails today), and it was built on the same surface approximation already shown wrong twice in this investigation. The spike should test this directly — for every theme in the confirmed failure set, does a single `primaryShade`-derived rung satisfy both the fill criterion and 3:1-against-surface, or genuinely not — before deciding whether a second shade role is needed at all.
@@ -256,7 +312,38 @@ The spike carries two methodology requirements from a second designer review rou
 
 ### Validation
 
-- Not yet started. The spike itself (step 2) is the first deliverable and directly informs the shape of automated test coverage for step 3.
+- `uiContrastAudit.test.ts` — 23 themes × (3:1 stroke sites + authored-fill lock + fill-equals-stroke-when-already-passing). Blocking CI.
+- Focused Vitest: colorGen + uiContrast + contrastAudit + cssVariables + adapter + useBuilderColors.
+- `tsc -b` clean. No remaining `primary[5]` lookups in production TS/SCSS.
+- Theme-QA: 14 Phase-1 snapshots captured (6 gallery shells, 6 settings dialogs, 2 theme-selector dropdowns). Settings locator had drifted (`Display Settings` → accessible name `Settings`). Combobox shows the display name (`Tokyo Night`), not the id.
+
+### Implementation Notes (2026-08-25)
+
+Verified against the live adapter, CSS vars, Builder shell, and gallery focus/selection sites — not only this plan. P75-F has landed, so step 3 uses the OKLCH ramp.
+
+**Step 1 — authored shade, not `[5]`.** `resolveColors` now emits `primaryFill` / `primaryFillIndex` from `primaryShade[colorScheme]`. `--mullion-color-primary` and every previous `rc.primary[5]` site consume that hex. Confirmed: 16/23 themes (post-F) have a fill index other than 5; tokyo-night adapter test fails if Checkbox checked fill regresses to `[5]`.
+
+**Step 2 — classify, then measure.** 1.4.11 3:1 applies only when the colour is the *sole* indicator of a component or state.
+
+| Site | Class | Token |
+|---|---|---|
+| Input / TextInput / PasswordInput / NumberInput / ColorInput / Select `:focus` border | Affordance (focus) | `primaryStroke` vs surface2 |
+| CampaignCard / MediaCard `:focus-visible` ring | Affordance (focus) | `--mullion-color-primary-stroke` |
+| Tabs `[data-active]` border | Affordance (active tab) | stroke |
+| SpotlightGallery active thumb border | Affordance (selected) | stroke |
+| useMediaDnd insertion line | Affordance (drop target) | stroke |
+| Builder `--dv-paneview-active-outline` / `--dv-drag-over-border` | Affordance | `useBuilderShellColors().accent` = stroke |
+| Slider thumb border | Affordance | stroke |
+| Checkbox / Chip checked fill, Slider bar, Select option selected | Fill (label or check is also present; 4.5:1 under `primaryOnFill`) | `primaryFill` |
+| `.mullion-admin-btn:hover` border, MediaTab/MediaCard hover, badge glow, 5% company-row tint | Decorative (transform / shadow / other signal) | left on fill, not repaired |
+| Notification `::before` stripe | Decorative (title + description carry the meaning) | fill |
+| Anchor color | Text (1.4.3), not 1.4.11 | fill |
+
+**Fill-vs-stroke hypothesis: confirmed.** `primaryShade` answers 4.5:1 under white text. That rung often **fails** 3:1 as a thin stroke on a dark panel. After P75-F, **13 of 23** themes need a different stroke index (nearest passing vs surface + surface2 + surfaceRaised). The plan's "8 of 23" was measured against HSL + hardcoded `[5]` and is obsolete. Light themes mostly already pass (fill = stroke). Notable: Rig Cyan fill `#007870` vs surface `#102530` is **2.95:1** — one hundredth under the bar — stroke steps to index 4 `#008e85`. forest-whisper, flagged in the old 8, now passes with its F-derived fill.
+
+**Step 3 — one repair, only where needed.** `selectUiContrastIndex(ramp, [surface, surface2, surfaceRaised], fillIndex)` keeps the authored index when it already clears 3:1 on all three (the "provably unchanged" test). Otherwise steps to the nearest passing rung (darker on light surfaces, lighter on dark). Result is `primaryStroke` / `--mullion-color-primary-stroke`. Two CSS extras: `--mullion-color-primary-on` (white/black on fill) for selected options and chips.
+
+**Hardcoded-index regression gate.** `uiContrastAudit.ts` is the 1.4.11 sibling of `auditThemeContrast`. A return to `primary[5]` would make tokyo-night / darcula fill tests fail; a stroke that drops below 3:1 fails the 23-theme UI audit.
 
 ---
 
@@ -264,9 +351,9 @@ The spike carries two methodology requirements from a second designer review rou
 
 ### Problem
 
-`packages/theme-engine/src/colorGen.ts`'s `generateColorScale` steps lightness linearly in HSL space; a stale code comment elsewhere in the module claims LAB, which was never true of this function (it describes an unrelated dark-tuple helper, `deriveDarkTuple`). Confirmed independently by the designer during color-system review (`.wordpress-org/color-response-from-designer.md.md`, round 3) — flagged as worth fixing on its own terms (an accurate ramp is foundational to every theme's generated 10-step scale, not just Rig Cyan's), and it turns out to gate two other pieces of work already in this phase:
+`packages/theme-engine/src/colorGen.ts`'s `generateColorScale` steps lightness linearly in HSL space; a stale code comment elsewhere in the module claims LAB, which was never true of this function (it describes an unrelated dark-tuple helper, `deriveDarkTuple`). Confirmed independently by the designer during color-system review (`docs/design/correspondences/color-response-from-designer.md`, round 3) — flagged as worth fixing on its own terms (an accurate ramp is foundational to every theme's generated 10-step scale, not just Rig Cyan's), and it turns out to gate two other pieces of work already in this phase:
 
-- **Rig Cyan's `primaryShade` (moved from P74-N, Phase 74 Decision I).** The designer's spec (`.wordpress-org/COLOR-SPEC.md` §2) defines `primaryShade` by criterion (first array index from the dark end clearing 4.5:1 against the lightest surface *and* 4.5:1 under white text). P74-N ships `default-dark.json` with no `primaryShade` value — only a `_primaryShade` note — so Phase 74 can close without guessing an index the OKLCH generator will immediately invalidate. **This track sets the live index** against the new ramp, in the same commit as the generator swap. Under the current HSL generator the criterion is index 7 (`#0f7971`); the OKLCH-side answer is not derivable until this track chooses lightness stops.
+- **Rig Cyan's `primaryShade` (moved from P74-N, Phase 74 Decision I).** The designer's spec (`docs/design/COLOR-SPEC.md` §2) defines `primaryShade` by criterion (first array index from the dark end clearing 4.5:1 against the lightest surface *and* 4.5:1 under white text). P74-N ships `default-dark.json` with no `primaryShade` value — only a `_primaryShade` note — so Phase 74 can close without guessing an index the OKLCH generator will immediately invalidate. **This track sets the live index** against the new ramp, in the same commit as the generator swap. Under the current HSL generator the criterion is index 7 (`#0f7971`); the OKLCH-side answer is not derivable until this track chooses lightness stops.
 - **P75-E step 3's repair layer**, which selects a ramp rung by criterion (nearest rung clearing 3:1 against a panel/UI surface) — correctness of that selection depends on the ramp itself being generated correctly.
 
 ### The gamut-mapping requirement (not optional)
@@ -286,7 +373,7 @@ A naive OKLCH port would be **worse** than the HSL generator it replaces for exa
 
 Before emitting each rung, test whether `oklch(L, C, H)` falls inside sRGB; if not, binary-search chroma downward, holding L and H fixed, until it does. Estimated ~15 lines. The chroma taper already used cosmetically for the Rig Cyan ramp is a refinement on top of this, not a substitute for it.
 
-**This is a data migration, not only an algorithm change — treat it as such in the same commit.** A theme's `primaryShade` index doesn't name a color, it names a *position* in a ramp; swapping the ramp-generation algorithm silently changes what every existing index resolves to. **16 of the 23 shipped themes set a non-default `primaryShade`.** Migrating the generator without re-deriving those 16 values would silently recolor every filled button/UI-fill element in each of those themes — a real regression, not a cosmetic one, and one that would ship invisibly (nothing currently asserts that a theme's *resolved* `primaryShade` color still clears its intended contrast bar, only that the field is present). Confirmed via the designer's round-5 review (`.wordpress-org/color-response-from-designer.md.md`) — their specific example numbers didn't reproduce against the real `generateColorScale` function when checked directly (see the Note below), but the underlying coupling is real and independently verified against our own code.
+**This is a data migration, not only an algorithm change — treat it as such in the same commit.** A theme's `primaryShade` index doesn't name a color, it names a *position* in a ramp; swapping the ramp-generation algorithm silently changes what every existing index resolves to. **16 of the 23 shipped themes set a non-default `primaryShade`.** Migrating the generator without re-deriving those 16 values would silently recolor every filled button/UI-fill element in each of those themes — a real regression, not a cosmetic one, and one that would ship invisibly (nothing currently asserts that a theme's *resolved* `primaryShade` color still clears its intended contrast bar, only that the field is present). Confirmed via the designer's round-5 review (`docs/design/correspondences/color-response-from-designer.md`) — their specific example numbers didn't reproduce against the real `generateColorScale` function when checked directly (see the Note below), but the underlying coupling is real and independently verified against our own code.
 
 **In the same change that swaps the generator:**
 1. **Set Rig Cyan / `default-dark`'s `primaryShade`** (the value P74-N deliberately omitted) against the new OKLCH ramp, by the criterion in `COLOR-SPEC.md` §2. Remove the `_primaryShade` note once a real index is in the file.
@@ -310,6 +397,20 @@ Per the designer's own suggestion (round 4): implement as a **property test**, n
 
 Must land before P75-E's step 3 repair layer is implemented. **Does not block Phase 74** — P74-N/O close with no `primaryShade` on Rig Cyan (Decision I). This track is what *sets* that index, rather than a gate that Phase 74 waits on.
 
+### Implementation Notes (2026-08-25)
+
+Verified against the live `generateColorScale`, chroma-js 3.2 `oklch`/`clipped()`, and COLOR-SPEC.md §2 — not only this plan.
+
+- **HSL comment was always wrong.** `generateColorScale` stepped HSL L% (with a 0.7 sat taper at i<2 / i>7). LAB is used by `deriveDarkTuple` / `deriveBorderStrong` only. The stale "Uses LAB" header is gone.
+- **Lightness stops, chosen here.** OKLCH L is not HSL L%, so copying `[95,15]` / `[85,10]` as 0–1 values made the dark end near-black (Rig Cyan HSL index 9 was OKLCH L≈0.25, not 0.10). Stops: light **0.95→0.25**, dark **0.85→0.25**. Same floor, higher light-scheme ceiling so shade 0 stays a wash and the existing "light shade 0 lighter than dark shade 0" property still holds. No cosmetic chroma taper — gamut mapping is the only C reduction.
+- **Gamut mapping matches the spec table exactly.** `mapOklchToSrgbHex` binary-searches C down, holding L and H, until `!chroma.oklch(...).clipped()`. Cyberpunk `#ff2d95` at L=0.95/0.88/0.78/0.68 emits `#ffe7ee` / `#ffc5d8` / `#ff8eb8` / `#ff4199` (hue drift 0.7° / 0.2° / 0.1° / 0.1°). Naive clip at L=0.95 is `#ff9af0` at 24.8° — the failure the spec warned about.
+- **1° hue bar vs 8-bit hex.** Colorimetric hue is preserved by construction. Post-hex quantization at the pale/dark cusp can exceed 1° on some hues (the spec's 1° claim was demonstrated on Cyberpunk, not a 360° sweep). Tests: every rung in-gamut; well-chromatic rungs (C≥0.08) stay under 1°; chromatic rungs (C≥0.03) stay under 5° (clipping is 8–25°).
+- **Criterion walk.** Spec text says "first from the dark end"; the measured HSL answer (index 7, not 9) is the *lightest still-safe* shade — walk 0→9, take the first that clears both 4.5:1 bars. Using a dark theme's own panel as "lightest surface" makes the dual criterion empty (dark fill vs dark panel vs white text cannot all pass). `inkContrastGround`: lightest surface token if OKLCH L≥0.5; else near-neutral light `text` (Rig Cyan `#eef8fb`); else `#ffffff`. Chromatic text (Halloween orange) is not a surface stand-in.
+- **"16 of 23" did not match the repo.** 8 themes authored a non-`{light:6,dark:5}` pair, 14 authored the default pair, 1 omitted (`default-dark`). The coupling applies to every index, so **all 23 were re-derived**. Five kept `6/5` (catppuccin-latte, forest-whisper, ocean-breeze, solarized-dark, solarized-light). Rig Cyan / `default-dark` is now `{light:6, dark:5}` filling `#007870` (ΔE≈1.0 from brand `#007a70`). `_primaryShade` note removed.
+- **Omit path.** `resolveColors` derives by criterion when the field is missing (custom themes); authored JSON remains the snapshot the regression test locks to.
+- **P75-G.** F has landed. When the light companion overwrites `default-light.json`, re-derive `primaryShade` against that palette — do not copy Rig Cyan dark's `6/5`.
+- **Validation.** Theme-engine + adapter Vitest 352/352. `tsc -b` clean. `node scripts/validate-themes.mjs` 23/23. No browser MCP; `e2e/theme-qa` screenshots were not recaptured (ramps change filled-control colours; 0.1 maxDiffPixelRatio may still pass). Adapter still hardcodes `primary[5]` in many sites — that is P75-E step 1, not this track.
+
 ---
 
 ## Track P75-G - Rig Cyan light companion (`default-light.json`)
@@ -326,13 +427,13 @@ Sourced from the 2026-08-25 P74 PR Review leftover list.
 
 ### Fix
 
-**Do not invent hexes.** Ask the designer for a Rig Cyan *light* 11-role spec, same roles as [COLOR-SPEC.md](../.wordpress-org/COLOR-SPEC.md) §1 (`background`, `surface`, `surfaceRaised`, `border`, `borderStrong`, `text`, `textMuted`, `accent`, `success`, `warning`, `error`), plus whatever they want for `info` / `accentGreen` / `accentPurple`. Wordmark-on-light and "accent on light" (`#007a70`) already exist in COLOR-SPEC §3 as *brand* rules, not as a full theme. Those are not enough to fill `default-light.json` on their own.
+**Do not invent hexes.** Ask the designer for a Rig Cyan *light* 11-role spec, same roles as [COLOR-SPEC.md](design/COLOR-SPEC.md) §1 (`background`, `surface`, `surfaceRaised`, `border`, `borderStrong`, `text`, `textMuted`, `accent`, `success`, `warning`, `error`), plus whatever they want for `info` / `accentGreen` / `accentPurple`. Wordmark-on-light and "accent on light" (`#007a70`) already exist in COLOR-SPEC §3 as *brand* rules, not as a full theme. Those are not enough to fill `default-light.json` on their own.
 
 Once values exist:
 
 - Overwrite `packages/theme-engine/src/definitions/default-light.json` in place. Keep `id: "default-light"` (same Decision F as the dark default).
 - Author `surfaceRaised` / `borderStrong` explicitly if the spec includes them; otherwise let resolve derive (raised → surface2; borderStrong → 3:1 against surface).
-- Omit `primaryShade` or set it in the same commit as P75-F if F has already landed — do not bake an HSL-ramp index that F will invalidate. If G lands first, follow P74-N: no live `primaryShade`, a `_primaryShade` note pointing at F.
+- **P75-F has landed.** Set `primaryShade` in the same overwrite via `derivePrimaryShade` against the new light palette. Do not copy Rig Cyan dark's `{light:6, dark:5}` and do not bake an HSL-era index.
 - Update `theme-catalog.json`'s `default-light` `name` / `description` so the Default group reads as a light/dark Rig Cyan pair, not "Mullion" vs "Clean light baseline."
 - Run `auditThemeContrast` on the new light palette before commit. Visual-regression: `default-light` is not the Storybook adapter default, so no snapshot recapture is required unless a test hardcodes those old hexes.
 
@@ -349,6 +450,46 @@ Once values exist:
 - `auditThemeContrast` / theme-engine Vitest, including a light-scheme case.
 - `node scripts/validate-themes.mjs`.
 - Manual: ThemeSelector, switch Default dark ↔ light, confirm brand continuity (or the won't-fix copy).
+
+### Implementation Notes (2026-08-25)
+
+Outcome **(a)**: the designer supplied a full light 11-role spec ([LIGHT-THEME-SPEC.md](design/LIGHT-THEME-SPEC.md)), so `default-light.json` was overwritten in place with authored values. No hex in this track was invented on our side.
+
+**Every designer number was re-measured before use, not taken on faith.** Per the reliability rule in [COLOR-SPEC.md](design/COLOR-SPEC.md) — pure colour math on fixed hexes is trustworthy, anything modelling our code is not — all 11 roles were run through the real `chroma.contrast` against all three light grounds, plus the OKLCH hue deltas against their dark siblings. **All of it reproduced to two decimals** (`text` 14.25/15.88/16.65, `textMuted` 4.64/5.17/5.43, `success` 4.60/5.13/5.38, `warning` 4.61/5.14/5.39, `error` 4.60/5.13/5.38, `borderStrong` 3.12/3.48/3.65, `accent` 4.58/5.11/5.36, white-on-accent 5.36, text-on-accent 3.11, hue deltas 0.1°/0.1°/0.6°/0.1°). This is the first category doing its job again.
+
+**`primaryShade` is derived, not copied.** The plan warned against reusing Rig Cyan dark's `{light:6, dark:5}`. Run against the *light* palette, `derivePrimaryShade` independently returns `{light:6, dark:5}` — the same tuple, for a different reason: `inkContrastGround` picks `surfaceRaised` `#ffffff` as the lightest ground (the dark theme falls through to its `text` token), and index 6 of the OKLCH ramp from `#007870` is the first rung clearing 4.5:1 on white *and* 4.5:1 under white text. The value is authored in the JSON because `colorGen.test.ts`'s P75-F gate requires every bundled theme to state an index that matches live derivation; leaving it absent failed that test.
+
+**One designer claim did not hold, and it changed nothing.** The spec says `info` / `accentGreen` / `accentPurple` are omitted "so the pair stays symmetric with the dark theme, which does not author them either." `default-dark.json` **does** author all three — the premise is wrong (code-modelling category, as predicted). The conclusion survives anyway, for a better reason: resolve's fallbacks land on exactly the values the dark theme authors (`info` → `primary`, `accentGreen` → `success`, `accentPurple` → the literal `#a855f7` dark authors), and none of the three is read by any component — `adapter.ts` only forwards them into Mantine's `other`. Omitting them is therefore behaviour-identical *and* keeps the "no invented hexes" bar. The JSON `_comment` records that reasoning rather than the designer's.
+
+**Carried in from the same review: a real defect in the shipped dark theme.** `borderStrong` `#577577` measures **2.58:1 on `surfaceRaised` `#1a3542`** — it was originally verified against `surface` (3.17:1) and never against the raised ground, so any input or focusable edge inside a menu or popover was under the 1.4.11 bar. Fixed to `#648284` (same hue to 0.1°, 4.50/3.81/**3.11** on the three dark grounds, still 2.62:1 clear of `border`). Three follow-through changes so the class of bug cannot recur:
+
+- `deriveBorderStrong(surface, alsoAgainst[])` now satisfies 3:1 against *every* ground it is given; `resolveColors` passes `[surfaceRaised]`. Its four-theme test asserts both grounds.
+- `intendedUiContrastChecks` gained `borderStrong on surface2` and `borderStrong on surfaceRaised`, so the 23-theme audit samples the elevated grounds. All 23 pass — the omission the designer suspected in other bundled themes is not there.
+- `COLOR-SPEC.md` §1 and its fallback table carry the corrected value.
+
+**Brand-token alignment.** COLOR-SPEC §3's hand-derived *accent on light* `#007a70` is superseded by `#007870` — hue 186.7 vs the brand's 186.8 (the old value drifted to 184.9), ΔE ≈ 1, and it is the exact hex the dark theme's own fill resolves to. Brand and product now share one teal, and `colorGen.test.ts` tightened its assertion from ΔE < 3 to ΔE < 1 accordingly.
+
+**A gap the visual gate does not cover.** Controlled test: reverting the dark `borderStrong` to `#577577` and force-recapturing produced a **byte-identical** `display-settings-default-dark` and `theme-selector-open-default-dark`. borderStrong is painted on Input/Select/Checkbox/Switch outlines (`adapter.ts` ×9) but no theme-QA snapshot state exercises one. The whole 4-file baseline delta below is the light palette plus the "Mullion Light" label — nothing in the visual suite would have caught the 2.58:1 regression. `uiContrastAudit` is the only gate that covers it. Worth a Phase-76+ note if the snapshot matrix is ever extended.
+
+**The design docs moved out of `.wordpress-org/`.** `svn-deploy.yml` runs `10up/action-wordpress-plugin-deploy@v2` with `ASSETS_DIR` unset, so it syncs that **entire** directory into the listing's SVN `/assets/` area — publicly browsable. `COLOR-SPEC.md` and `DESIGN_BRIEF.md` were already exposed that way; adding the light spec and three rounds of designer correspondence would have widened it. All of it now lives under `docs/design/` (specs + brief) and `docs/design/correspondences/` (the request/response log), leaving `.wordpress-org/` holding only listing artwork and its filename manifest. Every reference was rewritten — 5 files in `docs/` and `packages/`, plus the cross-links inside the moved docs and the `.wordpress-org/README.md` pointer, which now states the exposure rule so the directory does not silently re-accumulate internal docs.
+
+**Catalog copy.** `theme-catalog.json` `default-light` → name "Mullion Light", description "Rig Cyan — light companion to the brand default"; the PHP picker label follows. The gettext catalogs still carry the orphaned `Default Light` msgid (and `Default Dark`, and `#: class-wpsg-*.php` refs) — that is **P76-A's** harvest, not this track's; `npm run i18n:check:locales` only covers front-end strings and stays green. `DESIGN_BRIEF.md` / `design-brief.html` swatches were retargeted off the retired `#f8fafc` / `#3b82f6`.
+
+### Validation results (2026-08-25)
+
+| Gate | Result |
+|---|---|
+| `npx vitest run` (full) | 3880 passed / 258 files |
+| theme-engine suite incl. `auditThemeContrast` + `uiContrastAudit` (23 themes, light case included) | 411 passed |
+| `node scripts/validate-themes.mjs` | 23 definitions, 0 errors, 0 warnings |
+| `npx tsc -b` | clean |
+| `npm run lint` | clean |
+| `npm run i18n:check` / `i18n:check:locales` | up to date / 5 locales complete |
+| `npx playwright test theme-qa` | 18 passed; 4 baselines recaptured (3× `default-light`, `theme-selector-open-default-dark`), other 10 byte-identical |
+| `npx playwright test --config=playwright.visual.config.ts` (Storybook, 0.1% tolerance) | 33 passed, no recapture needed |
+| `npm run validate:adapter-settings` | fails — **pre-existing**, reproduces on a clean `git stash` of this branch; unrelated to colour work |
+
+**Manual:** ThemeSelector dropdown captured on the light theme — the Default group now reads *Mullion / Rig Cyan — the Mullion brand default* above *Mullion Light / Rig Cyan — light companion to the brand default*, both swatch strips teal-led. Gallery shell renders the teal FAB and filter chip on `#e9eef1`. Acceptance criterion 2 satisfied: the Default group no longer pairs Rig Cyan dark with Instrument Blue light.
 
 ---
 
@@ -377,7 +518,7 @@ Independent of P75-F: `borderStrong` is a surface-relative derived token, not a 
 
 ### Acceptance criteria
 
-- Unchecked Checkbox and Switch track outlines resolve to `borderStrong` (Rig Cyan `#577577`, ~3.18:1 on surface).
+- Unchecked Checkbox and Switch track outlines resolve to `borderStrong` (Rig Cyan `#577577` at plan time, ~3.18:1 on surface; P75-G later corrected the shipped value to `#648284` — see that track).
 - Checked / on styles unchanged by this track.
 - Adapter unit test fails if either site regresses to `rc.border`.
 
@@ -385,6 +526,141 @@ Independent of P75-F: `borderStrong` is a surface-relative derived token, not a 
 
 - Focused Vitest on `src/themes/__tests__/adapter.test.ts`.
 - Manual: Settings Panel, a checkbox and a switch on the default theme, unthemed-enough to see the outline against `surface` / `surface2`.
+
+### Implementation Notes (2026-08-25)
+
+- **Verified the leftover against the adapter, not just the plan.** After P74-N and the P74-review NumberInput/ColorInput pass, `Checkbox.input.borderColor` and `Switch.track.borderColor` were still `rc.border`. Chip, Divider, Paper, Accordion, Card, and dropdown chrome stay on `rc.border` — left alone as decorative unless P75-E's spike reclassifies them.
+- **Fix.** Unchecked Checkbox outline and Switch track outline now use `rc.borderStrong` (`#577577` on Rig Cyan at the time of this commit; P75-G later corrected the token itself to `#648284`, so the shipped outline is that). Checkbox `&:checked` fill/border still `rc.primary[5]` — the `primaryShade` swap is P75-E/F, not this track. Switch has no explicit on-state override in this adapter; none was added.
+- **Test.** Extended the P74-review adapter test to cover Checkbox `input` and Switch `track`, plus an assertion that Checkbox checked styles still resolve to `primary[5]` so this track cannot silently retarget the fill.
+- **Validation.** `npx vitest run src/themes/__tests__/adapter.test.ts` — 13 passed. No browser MCP in this session, so the Settings Panel visual check was not run here.
+
+---
+
+## Hands-on QA follow-on (2026-08-26)
+
+The first hands-on pass over the plugin since the rebrand — run against a **fresh** install, on the WP-admin **Mullion › Spaces** screen — surfaced two user-visible failures that neither the eight tracks nor the [branch review](#branch-review-2026-08-25) touched. They are absorbed here as **P75-I** and **P75-J** rather than opened as a new phase: they were found during this phase's own QA, they are fixed on this branch, and [Phase 76](PHASE76_REPORT.md) / [Phase 77](PHASE77_REPORT.md) have not started — filing a Phase 78 ahead of two unstarted phases would put the queue out of order for no gain.
+
+Both are pre-existing defects rather than regressions from this phase's tracks: P75-I dates to Phase 53, P75-J to Phase 47. What this phase contributed is the fresh install that made them reachable — no legacy grants, no legacy spaces, every path walked for the first time.
+
+## Track P75-I - Space and campaign access grants rejected by the server
+
+### Problem
+
+In **Mullion › Spaces › Access**, filling in a user email and clicking **Grant** fails with:
+
+> Invalid parameter(s): access_level
+
+That is WordPress core's `rest_invalid_param`, raised before the handler runs.
+
+### Root cause
+
+[P53-D](archive/phases/PHASE53_REPORT.md#track-p53-d---access-grant-model-simplification-decided-2026-06-15-viewer-only) reduced every grant endpoint's `access_level` enum to `['viewer']`, because editing/managing now comes from the `mullion_editor` role plus space access rather than from a per-grant level:
+
+- `class-mullion-space-controller.php` (space grants), `class-mullion-access-controller.php` ×3 (campaign / approve-request / company grants).
+
+P53-D3 updated exactly one UI surface — the grant-form dropdown in `AccessTab.tsx`. Three others still offered all three levels:
+
+| Surface | What it sent | Result |
+|---|---|---|
+| `SpaceManagementView.tsx` — space grant form: `spaceRoleOptions` **and** a `grantRole` state that **defaulted to `'editor'`** | `access_level: 'editor'` on every default grant | **Always failed.** The reported bug: it needs no interaction with the dropdown at all. |
+| `SpaceManagementView.tsx` — inline role `Select` on the space grants table (P51-H) | `access_level: 'editor'\|'owner'` | Failed on any change away from `viewer`. |
+| `useAccessRows.tsx` — inline role `Select` on the campaign/company grants table (P51-H) | `access_level: 'editor'\|'owner'` | Same failure on the campaign **Access** tab. Not reported, same defect. |
+
+P51-H (Phase 51) added the two inline role dropdowns *before* P53-D (Phase 53) collapsed the model, and P53-D3's frontend sweep only covered the grant form it was looking at.
+
+The frontend tests did not catch it because they assert against a mocked `apiClient`, and one asserted the **broken** payload as expected behaviour — `SpaceManagementView.test.tsx` picked the `Owner` option and expected `{ userId: 42, access_level: 'owner' }` to be POSTed. The PHP side has the matching assertion in the other direction (`Mullion_P53D_Grant_Model_Test`: the endpoint rejects non-viewer levels); nothing tested the two against each other.
+
+### Decision
+
+**Narrow the UI, do not re-widen the enum.** P53-D deliberately collapsed grants to viewer-only, and no gate consults the level any more; re-widening would restore a dropdown whose values change nothing. Within that: the grants **tables** get a read-only badge (a dropdown that can only be re-set to its current value is noise, and the P51-H feature it belongs to has no meaning under P53-D), while the two grant **forms** keep their single-option `Select` — that is what P53-D3 shipped in `AccessTab`, and it states the level being granted at the moment of granting. Legacy `editor`/`owner` grants stored before P53-D still **display** their level, tooltipped as view-only, rather than being silently relabelled `viewer`.
+
+### Fix
+
+1. `SpaceManagementView.tsx` — `spaceRoleOptions` → `viewer` only; `grantRole` initial state and `onChange` fallback → `'viewer'`; grants-table role `Select` → read-only `Badge`; delete `handleChangeRole` / `roleSavingUserId`.
+2. `useAccessRows.tsx` — role `Select` → read-only `Badge` with the same label + tooltip; drop `ROLE_ORDER` / `roleSelectOptions` / the `onChangeRole` option.
+3. `AccessPanel.tsx` — drop the `onChangeRole` wiring; `useAdminAccessState.ts` — delete `handleChangeRole` and its export.
+4. Tests updated to assert the new contract, including the payload assertion that locked in the bug.
+
+### Acceptance criteria
+
+- On a fresh install, **Spaces › Access › Grant** with a valid user email returns 200 and the user appears in the grants table. No `Invalid parameter(s)` error.
+- No grant surface can emit an `access_level` other than `viewer`.
+- A stored grant with a legacy `editor` / `owner` level still shows that level in both grants tables.
+- The campaign/company **Access** tab no longer offers a role dropdown per row.
+
+### Validation
+
+- Vitest: `SpaceManagementView.test.tsx`, `useAccessRows.test.tsx`, `useAdminAccessState.coverage.test.tsx`, `AccessTab.test.tsx`.
+- PHPUnit (unchanged server side, must stay green): `Mullion_P53D_Grant_Model_Test`, `Mullion_P33B_Access_Level_Test`, `Mullion_P64A_Grants_Helper_Test`.
+- `npm run i18n:generate` after the string changes, then `npm run i18n:check`.
+- Manual QA: grant, then revoke, a space grant on the live instance.
+
+### Implementation Notes (2026-08-26)
+
+- **Confirmed the enum against the routes, not the plan.** All four grant endpoints declare `'enum' => ['viewer']`; `Mullion_Grants::validate_access_level()` still accepts all three levels, but it never runs for a rejected request — `rest_invalid_param` fires in the route-args validation ahead of the handler, which is why the error names the parameter and nothing else.
+- **Three UI surfaces fixed, one of them unreported.** `SpaceManagementView`'s grant form (the reported one — its `grantRole` state defaulted to `'editor'`, so the failure needed no interaction at all), `SpaceManagementView`'s grants-table dropdown, and `useAccessRows`'s campaign/company grants-table dropdown. The two tables now render a read-only `Badge`; both grant forms keep a single-option `Select`, matching what P53-D3 shipped in `AccessTab`.
+- **Legacy levels still display.** A grant stored before P53-D renders its own `editor` / `owner` label in a yellow badge, tooltipped "Legacy grant level — treated as view-only", rather than being relabelled `viewer`. Four i18n keys changed accordingly (`accessrow_tip_editor` / `accessrow_tip_owner` → `…_legacy`, plus `admin_space_role_viewer_tip` / `admin_space_role_legacy_tip`); `admin_space_role_updated` and `admin_space_role_fail` were deleted with the handler that used them.
+- **The tooltip named a role that does not exist.** The first draft said "the Mullion Editor role"; the role WordPress actually registers is `add_role('mullion_editor', __('Gallery Editor', …))`, so the copy pointed at a name no user can find in Users → Roles. Corrected to **Gallery Editor** in the English source, which also let each locale reuse the term it already translates (`Galerie-Editor`, `Editor de galería`, `Éditeur de galerie`, `Редактор галереи`, `图库编辑者`).
+- **Locale catalogs harvested surgically.** `npm run i18n:check:locales` failed on all 5 reference locales with the 3 new msgids. Rather than run `wp i18n make-pot` — which is [Phase 76](PHASE76_REPORT.md)'s **P76-A**, and would have pulled ~150 unrelated never-harvested strings into the catalogs and broken the same gate far worse — the three entries were appended to `mullion-gallery.pot` and the five `.po` files with real translations, then recompiled with `wp i18n make-mo` / `wp i18n make-php`. Same surgical treatment commit `60af5c6b` gave the Rig Cyan glow placeholder. Diff is +13 lines per catalog and a one-line change per `.l10n.php`. The four msgids orphaned by the deleted keys were left in place: hand-deleting them would lose translations, and P76-A's `msgmerge` marks obsoletes properly.
+- **Dead plumbing removed with the control:** `handleChangeRole` (`useAdminAccessState`), its `AccessPanel` wiring, the `onChangeRole` option on `useAccessRows`, and `roleSavingUserId` in `SpaceManagementView`.
+- **The test that locked in the bug is gone.** `SpaceManagementView.test.tsx` asserted `{ userId: 42, access_level: 'owner' }` as the expected POST body — the exact payload the server rejects. It is replaced by a test that the grant form POSTs `access_level: 'viewer'`, plus assertions that Editor/Owner are not offered and the table role has no combobox.
+- **Validation.** `npx tsc --noEmit` clean; `npx eslint` clean on the seven changed files; `npm run i18n:check` up to date; full Vitest **258 files / 3879 tests, 0 failures**. PHPUnit `Mullion_P53D_Grant_Model_Test` (9), `Mullion_P33B_Access_Level_Test` (9), `Mullion_P64A_Grants_Helper_Test` (20) all green — the server side needed no change. **Manual QA on the live instance passed 2026-08-26** — granting space access works.
+
+## Track P75-J - Re-creating a space with a deleted space's name fails ambiguously
+
+### Problem
+
+Create a space, delete it with the row's trash button, then create a space with the same name again:
+
+> Failed to create space
+
+No indication of what is wrong or what to do about it.
+
+### Root cause
+
+Two independent facts compose into the failure:
+
+1. **The trash button archives; it does not delete.** `delete_space_item()` only hard-deletes when `force=true` *and* the space has no campaigns; the UI's `handleArchiveSpace` sends a bare `DELETE`, so the row survives with `archived = 1` — correct soft-delete behaviour, and the button is even tooltipped "Archive space". But the Spaces table filters archived rows out and there is no restore UI, so from the user's seat the space is gone.
+2. **The archived row still owns the slug.** `wp_mullion_spaces` declares `UNIQUE KEY slug (slug)`, and the create form derives the slug from the name. Re-creating "Test" re-derives `test`, `$wpdb->insert()` fails on the duplicate key, `insert_space()` returns `0`, and `create_space()` maps that to a bare `Failed to create space` 500 that never mentions the slug.
+
+The same generic 500 also swallowed an over-long slug (`slug` is `varchar(100)`; `sanitize_title()` does not truncate).
+
+### Decisions
+
+| # | Decision | Resolution |
+|---|----------|------------|
+| a | How should a collision with an **archived** space resolve? | **Uniquify the new slug (`test` → `test-2`).** Rejected: rewriting the archived row's slug to free it (`Mullion_Embed` addresses spaces by slug via the `space="…"` shortcode attribute — archived slugs are not ours to rewrite), and a hard 409 (archived spaces are filtered out of the table and there is **no restore UI**, so the error would name a space the user cannot see or act on). Uniquifying matches WordPress's own behaviour for post slugs and mutates nothing that already exists. |
+| b | Should an **active** collision uniquify too? | **No — hard 409.** An active space with that slug is visible one row above the create form. Silently creating `test-2` beside a visible `test` hides a user mistake; naming the conflicting space lets them fix it. |
+| c | Is the ambiguous message worth fixing separately from the collision? | **No — same track.** The collision is the reported symptom; the reason it was reported as *ambiguous* is that `create_space()` maps every `$wpdb->insert()` failure to one generic 500. Fixing only the collision leaves the next DB-level failure equally unreadable. |
+
+### Fix
+
+In `create_space()`, resolve the slug before inserting instead of letting the unique key decide:
+
+1. Clamp the derived slug to the column width, falling back to `space` if sanitisation empties it (`Mullion_DB::clamp_space_slug()`).
+2. Look the slug up with `Mullion_DB::get_space_by_slug()`: an **active** holder → `409 mullion_space_slug_exists` naming the existing space; an **archived** holder → uniquify via `Mullion_DB::unique_space_slug()` and proceed, leaving the archived row untouched.
+3. If the insert still fails, surface `$wpdb->last_error` in the message. The endpoint is system-admin only (`spaces.create`), so the DB detail is not leaking to an untrusted audience.
+
+### Acceptance criteria
+
+- Create → delete → create with the same name succeeds; the new space appears with a `-2` suffixed slug.
+- Colliding with a **visible** space returns 409 naming that space, shown verbatim in the admin notification.
+- A name whose derived slug would exceed `varchar(100)` creates successfully with a clamped slug instead of failing.
+- A name past the `name` column's own `varchar(255)` returns a readable 400, not a 500.
+- Any remaining insert failure reports the database error rather than `Failed to create space`.
+
+### Validation
+
+- New PHPUnit file `Mullion_P75J_Space_Slug_Reuse_Test.php`: archived-collision → 201 + `-2` slug; repeated archive/re-create → `-3`; active-collision → 409 `mullion_space_slug_exists`; explicit colliding slug → 409; long name → 201 with a ≤100-char slug; over-long name → 400 `mullion_space_name_too_long`; name that sanitises to nothing → 201; archived row unchanged after the re-create; helper-level checks on `clamp_space_slug` / `unique_space_slug`.
+- PHPUnit regression: `Mullion_P47_Spaces_*`, `Mullion_P53D_Grant_Model_Test`, `Mullion_P50B_Space_Library_Test`.
+- Manual QA: the exact reported sequence on the live instance.
+
+### Implementation Notes (2026-08-26)
+
+- **Both halves of the root cause verified in code, not inferred.** `delete_space_item()` hard-deletes only on `force=true` with no campaigns, and the UI sends a bare `DELETE`; `wp_mullion_spaces` carries `UNIQUE KEY slug`. Together those make the archived row an invisible squatter on the name.
+- **Fix as planned:** `Mullion_DB::clamp_space_slug()` (fit `varchar(100)`, fall back to `space` when sanitisation empties the slug) and `Mullion_DB::unique_space_slug()` (first free `-N`, with the suffix accounted for in the width clamp) — `create_space()` 409s on an active holder and suffixes past an archived one. The archived row is never rewritten: `Mullion_Embed` resolves `space="…"` by slug.
+- **The test found a second overflow the plan missed.** `test_an_over_long_name_creates_with_a_clamped_slug` failed 500 even with the slug clamped — because the `name` column is `varchar(255)` and a 280-character name overflows *it*, not the slug. Slug and name are handled differently and deliberately: the slug is derived, so it is clamped silently; the name is the user's own text, so an over-long one now returns `400 mullion_space_name_too_long` naming the limit rather than being truncated behind their back. The test split into the two cases.
+- **Validation.** `php -l` clean on all three files. `Mullion_P75J_Space_Slug_Reuse_Test` — **11 tests, 39 assertions, 0 failures**. Regression filters green: `Mullion_P47_Spaces_(Isolation|Migration|Settings)_Test` (36), `Mullion_P53D_Grant_Model_Test` (9), `Mullion_P50B_Space_Library_Test` (6). Full suite **1323 tests / 13737 assertions**, the single failure being the pre-existing `Mullion_Package_Edition_Test::test_defaults_premium_without_marker_file`, which fails on a gitignored `assets/mullion-edition.json` left in the working tree by an earlier local `build:wp` — the test says so in its own assertion message, and it is unrelated to this track. **Manual QA on the live instance passed 2026-08-26** — create → delete → create with the same name works.
 
 ---
 
@@ -404,17 +680,108 @@ Proving both ZIPs come out correct end-to-end without running the real GitHub Ac
 |-----------|--------------------|
 | Reconcile the exact M2 SDK config (`premium_slug`, real `id`/`public_key`, and any other flags Freemius's generated snippet turns out to want that this phase didn't anticipate) | Genuinely blocked on M1 (Freemius account/dashboard product) — this phase resolves everything in the `NOTE (M2)` comment that *doesn't* need the dashboard; the rest stays exactly where P62-K left it. |
 | Adopt the official **"Deploy on Freemius" GitHub Action** to auto-upload premium builds on release | Named as an optional CI enhancement in P62-I; still optional and still blocked on having a real Freemius product to deploy to (M1). Nothing in this phase precludes adding it later — `release.yml`'s premium build+zip steps are untouched. |
-| Automated markdown link-checking / `actionlint` for the workflow YAML | No such tooling exists anywhere in this repo today; adding it is a repo-wide tooling decision, not scoped to this phase's docs/CI touch points. |
+| Automated markdown link-checking / `actionlint` for the workflow YAML | No such tooling exists anywhere in this repo today; adding it is a repo-wide tooling decision, not scoped to this phase's docs/CI touch points. **`actionlint` is now [PHASE77_REPORT.md](PHASE77_REPORT.md) track P77-B**; the link checker stays deferred there, as a separate tool with a much worse signal-to-noise profile against the archived phase reports. |
 | Removing the `Mullion_License::get_config()` / `mullion_fs()` default-bag duplication (already flagged, refuted-as-a-defect in Phase 62 PR Review #2, F3) | Still forced by bootstrap ordering (`mullion_fs()` is defined before `class-mullion-license.php` loads); fixing it would mean reordering `require_once`s in `mullion-gallery.php`, out of scope for a package-identity fix. |
+| **Restore / manage archived spaces in the UI** (from P75-J) | `list_spaces` already accepts `include_archived` and `format_space` already returns `archived`, but the admin has no way to see or restore an archived space — the reason P75-J's decision (a) could not send the user to the archived original. That is a feature (a filter toggle plus an unarchive endpoint), not a bug fix, and it is what makes the `-2` slug suffix a workaround rather than a resolution. **Filed as [FUTURE_TASKS.md](FUTURE_TASKS.md#spaces-admin--ux-pass-including-restore-archived-spaces)** (2026-08-26), widened there on user direction into a full Spaces-admin UX pass — the select-a-row-then-switch-tabs flow, the Settings tab that holds only a button, keyboard-inaccessible row selection, and the archive affordance that describes an archive you cannot visit all belong to the same redesign. |
+| **A contract test between the frontend grant payloads and the REST `access_level` enums** (from P75-I) | P75-I survived two phases because the Vitest suite asserts against a mock and the PHPUnit suite asserts against the route args, with nothing comparing them. A real fix means generating or asserting the enum from one source — too large to bolt onto a bug fix, and worth scoping against the other route-arg enums at the same time (there are 24 across 6 controllers). **Filed as [FUTURE_TASKS.md](FUTURE_TASKS.md#contract-tests--frontend-request-payloads-vs-rest-route-arg-enums)** (2026-08-26). |
 
 ## Implementation Notes
 
-Not started. This document currently reflects the **plan** only — see the Status header. Implementation cannot begin until Phase 74's P74-K (Freemius slug wiring) lands — every identifier in this document already assumes the post-rename codebase.
+Phase 74 (including P74-K) has landed, so this phase is unblocked. All eight tracks have landed — see each track's Implementation Notes.
+
+---
+
+## Branch Review (2026-08-25)
+
+Self-review of the whole branch (`main...HEAD`, 8 commits, 110 files) after all eight tracks landed, reading the diff rather than re-reading the track prose.
+
+**Every existing gate was re-run on the branch as delivered, before any change:** `npx tsc -b` clean, `npm run lint` clean, `npx vitest run` 3880/258 files, `node scripts/validate-themes.mjs` 23/23, `npm run i18n:check` up to date, and the full wp-env PHPUnit suite 1312 tests / 13,699 assertions green. Nothing below was caught by a gate — that is the point of the pass. Seven defects found; all seven fixed here (R7 followed a round of follow-up questions on this review). Post-fix: 3881 Vitest tests (one new regression test), same PHP suite green, `php -l` clean.
+
+| # | Track | Class | Finding |
+|---|-------|-------|---------|
+| R1 | P75-D | Correctness | `AdminChromeProvider` stamped `data-mantine-color-scheme` on the host page's `<body>` |
+| R2 | P75-E | Accessibility | Focus-ring `color-mix()` had no fallback, so the ring can vanish entirely |
+| R3 | P75-A | Efficiency | Edition marker re-read from disk on every entitlement check |
+| R4 | P75-E/G | Robustness | `deriveBorderStrong` guaranteed fewer grounds than the 1.4.11 audit asserts |
+| R5 | P75-F | Docs | `THEME_AUTHORING_GUIDE.md` still described the ramp as LAB |
+| R6 | P75-H | Docs | Track notes still quote the superseded `borderStrong` `#577577` |
+| R7 | P75-G | Exposure | The store-assets manifest was itself published to the public WordPress.org `/assets/` area |
+
+### R1 — `AdminChromeProvider` wrote a global attribute onto `document.body`
+
+`src/components/Admin/AdminChromeProvider.tsx` resolved its Mantine root element with `document.querySelector('.mullion-admin-chrome')`, falling back to `document.body`. `document.querySelector` does not pierce shadow roots, and the Settings Panel renders inside one — `SettingsPanel`'s own shadow sentinel (`root instanceof ShadowRoot`) is the proof. So the lookup returned `null` and Mantine's `useProviderColorScheme` wrote `data-mantine-color-scheme="dark"` onto the wp-admin / front-end page's `<body>`, where nothing ever removes it. The scope element P75-D actually intended to target never received it. In light-DOM mounts the selector was also non-deterministic: with a panel open, the first `.mullion-admin-chrome` in document order can be another provider's portaled Drawer part rather than this provider's sentinel.
+
+**Rationale for the fix:** a ref resolves the real node in both light and shadow DOM, and Mantine calls `getRootElement()?.setAttribute(...)`, so returning `undefined` is a safe no-op rather than a fallback onto an element this provider does not own. Dropping the `document.body` fallback restores pre-P75-D behaviour for `<body>` (before this track nothing wrote to it) — it does not remove styling the chrome was relying on, because a node portaled directly under `<body>` was never a descendant of the shadow host that the outer `ThemedApp` provider marks either.
+
+Regression test added to `AdminChromeProvider.test.tsx`: render the provider into a container inside a real `attachShadow` root and assert `<body>` stays clean while the sentinel carries the brand scheme. Verified it fails against the previous implementation (`expected true to be false`) before the fix, so it locks the actual defect and not just the new code path. The two pre-existing tests in that file render in the light DOM, which is exactly why the bug got through.
+
+### R2 — focus rings could disappear instead of getting the repaired stroke colour
+
+P75-E retargeted two `:focus-visible` rings to `--mullion-color-primary-stroke` with no fallback:
+
+```scss
+box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary-stroke) 60%, transparent);
+```
+
+An undefined custom property inside `color-mix()` invalidates the whole declaration, so the ring does not degrade to a wrong colour — it is not painted at all. `MediaCard` renders inside the Layout Builder `Modal`, which Mantine portals to a shared node under `document.body`; the theme's variables live either on the shadow root's `:host` rule or, in non-shadow mounts, on a `[data-mullion-theme-scope]` rule matching the mount host. Neither is an ancestor of that portal node. The two sibling sites changed in the same commit (`useMediaDnd`, `SpotlightGallery`) *did* get layered fallbacks; these two were the inconsistent pair.
+
+**Rationale:** `var(--mullion-color-primary-stroke, var(--mantine-primary-color-filled))` — Mantine's own `styles.css` defines that token on `:root`, so it resolves wherever Mantine is loaded at all. Chaining through `--mullion-color-primary` first would be dead weight: both variables are emitted by the same `generateCssVariables` block, so either both are present or neither is. `CampaignCard` is always inside the themed gallery and was not actually exposed; it changed for symmetry, so the rule reads the same at every 1.4.11 stroke site. This was pre-existing (the old `--mullion-color-primary` had the same hole) but it sits inside the track whose whole subject is non-text contrast, which is why it is fixed rather than deferred.
+
+### R3 — the edition marker was re-read from disk on every entitlement check
+
+`mullion_fs()` caches its result in a global guarded by `isset()`, and `isset(null)` is `false` — so in the normal no-credentials state the function never short-circuits and re-runs its body on every call. P75-A put `mullion_is_premium_package()` inside that body, turning each `Mullion_License::is_sdk_active()` / `can_use_premium_code()` / `can_use_feature()` call into an `is_readable()` + `file_get_contents()` + `json_decode()`. `enforce_license_gates()` alone calls it twice per template write, and `Mullion_Embed` once per rendered embed.
+
+**Rationale:** memoize in a `static` array **keyed by the resolved marker path**, not a bare boolean. A flat static would break `Mullion_Package_Edition_Test`, which repoints `mullion_edition_marker_path` at a fresh `uniqid()` fixture per case; keying on the path keeps the filter meaningful and the tests honest. The `mullion_fs()` null-caching problem itself is pre-existing and out of scope for a review pass — **and this fix masks it**, since the remaining per-call work is now cheap enough that nothing would prompt a second look. Scheduled as [PHASE77_REPORT.md](PHASE77_REPORT.md) track P77-C so it is not lost. Confirmed with the full PHP suite (1312 tests) and the 22 edition + license tests specifically.
+
+### R4 — `deriveBorderStrong` guaranteed fewer grounds than the audit checks
+
+P75-G taught `deriveBorderStrong(surface, alsoAgainst[])` to satisfy 3:1 against extra grounds and `intendedUiContrastChecks` to sample `borderStrong` on `surface`, `surface2`, **and** `surfaceRaised` — but `resolveColors` only passed `[surfaceRaised]`. For the 21 bundled themes that let `borderStrong` derive, `surface2` is a LAB interpolation between `surface` and `surfaceRaised`, so its luminance is bracketed by the two grounds already checked and the omission is invisible. A theme that *authors* a `surface2` outside that bracket would fail a blocking CI audit on a value the engine derived for it.
+
+**Rationale:** pass `[surface2, surfaceRaised]` so the deriver's guarantee is exactly the audit's assertion. Verified against every bundled theme before committing: **0 of 21 derived values change**, so this is a pure invariant fix with no palette movement.
+
+### R5 — the theme authoring guide still described the ramp as LAB
+
+P75-F's own notes open with "HSL comment was always wrong" and it fixed the stale header in `colorGen.ts` — but `docs/guides/THEME_AUTHORING_GUIDE.md` still told theme authors the shade array is "generated using `chroma.js` in LAB color space". That is the exact class of stale-doc bug the track existed to correct, one file over. Updated to describe OKLCH with chroma-reduction gamut mapping (and to keep the true LAB caveat for `deriveDarkTuple`).
+
+While in that file, three further gaps from this phase were closed, because they change what an author is supposed to write: `primaryShade` is now documented as **optional and criterion-derived** rather than "typically 5/6" (with the warning that a ramp change invalidates every authored index — the coupling P75-F is built on), `primaryStroke` is documented as engine-derived and not authorable, and a new "Non-text contrast (WCAG 1.4.11)" subsection names `auditUiContrast` as a blocking gate alongside `auditThemeContrast`. Without that last one, a theme author's first signal that 1.4.11 is enforced is a red CI run.
+
+### R6 — P75-H's notes quote a value P75-G superseded
+
+P75-H's acceptance criteria and Implementation Notes both cite Rig Cyan `borderStrong` as `#577577`, which was accurate when that commit landed and wrong three commits later once P75-G corrected the token to `#648284`. Both lines now say what shipped and point at the correcting track. `PHASE74_REPORT.md` and the designer correspondence keep `#577577` on purpose — those are historical records of what was true at the time.
+
+### R7 — the store-assets manifest was itself published to the public listing
+
+P75-G moved the design specs out of `.wordpress-org/` because `svn-deploy.yml` runs `10up/action-wordpress-plugin-deploy@v2` with `ASSETS_DIR` unset, and left `README.md` behind on the grounds that a manifest is a listing artefact. It is not — it is an internal spec, and it was the *only* file in that directory, so the first SVN deploy would have published a design brief to `https://plugins.svn.wordpress.org/mullion-gallery/assets/` and nothing else. The initial review recorded this as a documented trade-off; on a second look the reasoning does not hold, so it is fixed rather than accepted.
+
+Read the action's `deploy.sh` rather than assuming its behaviour. Two facts settled the fix:
+
+```sh
+if [[ -d "$GITHUB_WORKSPACE/$ASSETS_DIR/" ]]; then
+    rsync -rc "$GITHUB_WORKSPACE/$ASSETS_DIR/" assets/ --delete
+else
+    echo "ℹ︎ No assets directory found; skipping asset copy"
+fi
+```
+
+`--delete` means the directory's contents *are* the published listing assets, and the `[[ -d ]]` guard means an absent directory is skipped cleanly — `trunk/` still deploys.
+
+**Rationale:** the file moved to `docs/design/STORE_ASSETS.md`, next to `DESIGN_BRIEF.md` (which its own opening line names as its companion) and `COLOR-SPEC.md` — the home P75-G already established for designer-facing specs. `.wordpress-org/` is now absent from the repo entirely rather than kept alive with a placeholder, because any placeholder would also be published; the moved doc says to create the directory when the first artwork lands and to put image files in it and nothing else, and quotes the guard above so the absence does not read as an accident. Four inbound links updated (`MARKETPLACE_READINESS.md` ×2, `GO_LIVE_PUNCH_LIST.md`, `DESIGN_BRIEF.md` ×2). `PHASE74_REPORT.md`'s references stay as written — they record what was true during the rebrand, the same treatment R6 gives the superseded hex.
+
+### Reviewed and deliberately not changed
+
+- **`e2e/theme-qa.spec.ts` "changing theme in Display Settings persists to localStorage" is vacuous.** Its assertion (`typeof saved === 'string' || saved === null`) is a tautology over `localStorage.getItem`'s own return type, and P75-D additionally made the save click conditional. The test never changes a theme and cannot fail. It was already vacuous before this branch, and rewriting a Playwright test that cannot be executed in this session would be worse than leaving it visibly flagged. Deferred to [FUTURE_TASKS.md](FUTURE_TASKS.md#vacuous-e2e-test--theme-qa-changing-theme--persists-to-localstorage) (Code Quality & Refactoring).
+- **`AdminChromeProvider` toggling remounts the Drawer subtree.** Switching `applyThemeEverywhere` swaps between "no provider" and "provider", which changes the element tree and unmounts the panel's children (resetting scroll and accordion state; the draft settings live in the parent and survive). That follows directly from P75-D's stated "passthrough so chrome is pixel-identical" decision. **Scheduled as [PHASE76_REPORT.md](PHASE76_REPORT.md) track P76-F**, which keeps the guarantee while stabilising the element tree — always render the nested provider and feed it the parent's own theme override when following, rather than removing the provider.
+- **Mantine's `light-dark()` CSS cannot reach the locked chrome.** `cssVariablesSelector` scopes the nested `--mantine-*` block to `.mullion-admin-chrome`, but Drawer/Modal parts are portaled under `document.body` while that `<style>` renders in the shadow tree, and no ancestor of the portal carries the chrome's `data-mantine-color-scheme`. The brand lock still works, because it is carried by the adapter's JS component styles through React context. Making the CSS layer follow too would mean putting the scheme attribute on the portaled parts (Mantine 9's `attributes` prop) — a visual change that needs a browser to verify, so it is a follow-on, not a review fix. **Scheduled as [PHASE76_REPORT.md](PHASE76_REPORT.md) track P76-D**, which starts by verifying P75-D's acceptance criteria in a browser — they were never checked — before choosing a mechanism.
+- **`--mullion-color-primary-6` / `-8` in `src/styles/_tokens.scss`** are hardcoded ramp rungs that P75-E's "no hardcoded index" sweep did not cover. A follow-up grep found the whole legacy bridge has **zero** consumers — 23 of its 24 aliases are defined and never read, `--z-header` being the sole survivor — so the right fix is deleting the file rather than correcting the rungs. **Scheduled as [PHASE76_REPORT.md](PHASE76_REPORT.md) track P76-E.**
 
 ## Outcome
 
-**Planned, not yet implemented.** P75-A/B/C are code-only and require no live Freemius credentials to build or test; P75-D/E/F originated from a separate color-system design collaboration (six rounds, `.wordpress-org/response-to-designer.md` / `color-response-from-designer.md.md` / `COLOR-SPEC.md`) that closed out on round 6 with the palette, the schema extensions, and the two known-risky mechanisms (the `primaryShade`-hardcoding bug, the OKLCH data-migration coupling) all resolved to a specific, verified plan — nothing further needed from the designer to *start* implementing.
+**Complete.** P75-G landed (designer-supplied Rig Cyan light overwrites `default-light.json`; `primaryShade` re-derived against the light palette, not copied; dark `borderStrong` corrected `#577577` → `#648284` after the same review found it at 2.58:1 on `surfaceRaised`; `deriveBorderStrong` and `uiContrastAudit` now both cover the raised ground). P75-H landed (Checkbox/Switch outlines on `borderStrong`). P75-A landed (edition marker + Freemius `is_premium` / `has_premium_version` / `is_org_compliant`). P75-B landed (dual-channel `release.yml` + lite `svn-deploy.yml`; no live Freemius credentials required). P75-C landed (`PACKAGING_RELEASE.md` documents the split as A/B shipped). P75-D landed (Settings Panel + Layout Builder chrome lock to Mullion by default, `applyThemeEverywhere` restores today's behavior; public gallery untouched). P75-F landed (OKLCH ramp + sRGB chroma gamut-map; all 23 `primaryShade` indices re-derived by criterion; Rig Cyan dark fill `#007870`). P75-E landed (authored `primaryFill` replaces hardcoded `[5]`; `primaryStroke` is the nearest 3:1 rung — two roles, 13/23 dark-ish themes split; `uiContrastAudit` is the 1.4.11 CI gate).
 
-**The design collaboration's next step is gated on this phase, not the reverse.** The designer is holding on trademark clearance for "Mullion" as the only remaining external gate on their side; on ours, P75-D (chrome-locking toggle), P75-E (non-text contrast spike + repair), P75-F (OKLCH migration, including Rig Cyan's `primaryShade` — moved here from P74-N so Phase 74 can close), and P75-G (Rig Cyan light companion, blocked on a light spec from them) are the concrete, now fully-scoped work that stands between "design is settled" and "the plugin actually looks like this." P75-H (Checkbox/Switch outlines) does not need the designer. Once P75-D/E/F/G land, the collaboration can resume if anything from the built result needs designer review — otherwise it's closed.
+**The design collaboration is closed on the colour system.** The designer supplied the light 11-role spec, which landed in P75-G along with the dark `borderStrong` defect they found while cross-checking it. Their only remaining external gate is trademark clearance for "Mullion"; nothing in the colour system is waiting on either side.
 
-Once implemented, this phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist, and its §F (freemium launch) checklist item "Build the free ZIP" should be updated to point at the `Release` workflow's new lite-ZIP output instead of a manual `npm run build:wp:free` run.
+A branch-wide self-review followed the eight tracks and fixed six defects none of the existing gates caught — see [Branch Review](#branch-review-2026-08-25) for each finding and its rationale.
+
+**P75-I and P75-J landed after that**, from the first hands-on pass on a fresh install (see [Hands-on QA follow-on](#hands-on-qa-follow-on-2026-08-26)). Both were pre-existing defects — a Phase 53 model change that three grant UIs never caught up with, and a Phase 47 unique-slug collision with soft-deleted spaces — reachable only because a fresh install walks every path for the first time. That is the gap worth noting for future phases: the automated suites passed throughout, because the Vitest side asserts against mocks and the PHPUnit side against route args, with nothing comparing the two — now filed as a [FUTURE_TASKS](FUTURE_TASKS.md#contract-tests--frontend-request-payloads-vs-rest-route-arg-enums) entry, alongside a [Spaces-admin UX pass](FUTURE_TASKS.md#spaces-admin--ux-pass-including-restore-archived-spaces) that carries the restore-archived-spaces gap P75-J had to work around. Both fixes passed manual QA on the live instance (2026-08-26), closing the phase.
+
+This phase should also be re-validated against the Go-Live Punch List's §A/§B (M1-M2) to confirm the reconciled `mullion_fs()` defaults still hold once real credentials exist. P75-B already flipped §F's dual-channel and "Build the free ZIP" items to 💻 (Release workflow lite ZIP + `svn-deploy.yml` scan).

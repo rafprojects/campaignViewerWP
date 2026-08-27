@@ -6,6 +6,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useBuilderOverlayColors } from './useBuilderOverlayColors';
 import { useBuilderShellColors } from './useBuilderShellColors';
+import { resolveColors } from '@mullion/theme-engine';
+import { getTheme } from '@/themes/index';
 
 // Spy on useTheme to control colorScheme
 const useThemeMock = vi.hoisted(() => vi.fn());
@@ -38,7 +40,7 @@ describe('useBuilderOverlayColors', () => {
 describe('useBuilderShellColors', () => {
   it('computes scrollbar opacity with dark factor when colorScheme is dark (line 45)', () => {
     useThemeMock.mockReturnValue(darkTheme);
-    const { result } = renderHook(() => useBuilderShellColors());
+    const { result } = renderHook(() => useBuilderShellColors(true));
     // scrollbar uses 0.35 for dark — just check it returns a string without throwing
     expect(typeof result.current.scrollbar).toBe('string');
     expect(result.current.scrollbar.length).toBeGreaterThan(0);
@@ -46,7 +48,22 @@ describe('useBuilderShellColors', () => {
 
   it('computes scrollbar opacity with light factor when colorScheme is light (line 45 else)', () => {
     useThemeMock.mockReturnValue(lightTheme);
-    const { result } = renderHook(() => useBuilderShellColors());
+    const { result } = renderHook(() => useBuilderShellColors(true));
     expect(typeof result.current.scrollbar).toBe('string');
+  });
+
+  it('locks to Mullion brand chrome when applyThemeEverywhere is false (default)', () => {
+    useThemeMock.mockReturnValue({ themeId: 'tokyo-night', colorScheme: 'dark' as const });
+    const locked = renderHook(() => useBuilderShellColors(false));
+    const following = renderHook(() => useBuilderShellColors(true));
+    expect(locked.result.current.surface).not.toBe(following.result.current.surface);
+  });
+
+  it('uses primaryStroke for builder accent, not hardcoded primary[5] (P75-E)', () => {
+    useThemeMock.mockReturnValue({ themeId: 'tokyo-night', colorScheme: 'dark' as const });
+    const { result } = renderHook(() => useBuilderShellColors(true));
+    const tokyo = getTheme('tokyo-night');
+    const rc = resolveColors(tokyo.definition.colors, 'dark');
+    expect(result.current.accent).toBe(rc.primaryStroke);
   });
 });

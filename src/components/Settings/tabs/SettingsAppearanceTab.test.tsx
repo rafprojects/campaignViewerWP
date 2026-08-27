@@ -14,4 +14,15 @@ describe('SettingsAppearanceTab', () => {
     );
     expect(screen.getByText('Theme & Layout')).toBeInTheDocument();
   });
+
+  it('renders the apply-theme-everywhere switch off by default', () => {
+    render(
+      <SettingsAppearanceTab
+        settings={DEFAULT_SETTINGS_DATA}
+        updateSetting={vi.fn()}
+      />,
+    );
+    const toggle = screen.getByRole('switch', { name: /Apply gallery theme to editor/i });
+    expect(toggle).not.toBeChecked();
+  });
 });

@@ -26,6 +26,7 @@ class Mullion_Settings_Registry {
         'auth_provider'              => 'wp-jwt',
         'api_base'                   => '',
         'theme'                      => 'default-dark',
+        'apply_theme_everywhere'     => false,
         'allow_user_theme_override'  => true,
         'debug_component_markers'    => false,
         'gallery_layout'             => 'grid',
@@ -440,6 +441,7 @@ class Mullion_Settings_Registry {
     private static $space_overridable_fields = [
         // ── Core display ─────────────────────────────────────────────────────
         'theme',
+        'apply_theme_everywhere',
         'gallery_layout',
         'items_per_page',
         'enable_lightbox',

@@ -2068,6 +2068,14 @@ msgstr "Theme und Layout"
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr "Wählen Sie ein Farb-Theme. Die Vorschau wird sofort angewendet; gespeichert, wenn Sie auf Speichern klicken."
 
+#: includes/i18n/class-mullion-frontend-strings.php:509
+msgid "Apply gallery theme to editor"
+msgstr "Galerie-Theme auf den Editor anwenden"
+
+#: includes/i18n/class-mullion-frontend-strings.php:510
+msgid "When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme."
+msgstr "Wenn deaktiviert, bleiben Einstellungen und Layout-Builder in der Mullion-Markenpalette. Aktivieren, um diese Editor-Oberflächen mit dem gewählten Galerie-Theme zu gestalten."
+
 #: includes/i18n/class-wpsg-frontend-strings.php:509
 #: includes/settings/class-wpsg-settings-renderer.php:161
 msgid "Default Layout"
@@ -10638,3 +10646,16 @@ msgstr "Datum"
 #: includes/class-wpsg-embed.php:519
 msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr "Mullion: Diese Shortcode-Referenz konnte nicht aufgelöst werden (%s) — stattdessen wird der Standardbereich angezeigt. Nur Website-Administratoren sehen diesen Hinweis."
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr "Kann diesen Bereich ansehen"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr "Veraltete Berechtigungsstufe — wird als reiner Lesezugriff behandelt. Die Verwaltung ergibt sich aus der Rolle „Galerie-Editor“."
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr "Veraltete Berechtigungsstufe — wird als reiner Lesezugriff behandelt. Die Bearbeitung ergibt sich aus der Rolle „Galerie-Editor“."

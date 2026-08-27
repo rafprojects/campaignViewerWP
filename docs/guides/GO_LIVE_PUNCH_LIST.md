@@ -27,7 +27,7 @@ Legend: ⬜ to do · 🔒 blocked on a prior item · 💻 has code already done,
 - 💻 Confirm [PRIVACY.md](../PRIVACY.md) §8 (Freemius checkout + SDK opt-in) matches the final config.
 
 ## D. Store artwork — design (P62-I)
-- ⬜ Commission per the [`.wordpress-org/README.md`](../../.wordpress-org/README.md) spec: **banner** (772×250 + 1544×500), **icon** (128/256 + optional svg), **screenshots 1–5** (caption-synced with `readme.txt`). Needed for both the Freemius and WP.org listings.
+- ⬜ Commission per the [`docs/design/STORE_ASSETS.md`](../design/STORE_ASSETS.md) spec (finals drop into `.wordpress-org/`): **banner** (772×250 + 1544×500), **icon** (128/256 + optional svg), **screenshots 1–5** (caption-synced with `readme.txt`). Needed for both the Freemius and WP.org listings.
 
 ## E. Premium launch validation — flips P62-A/B to "shipped"
 - 💻 Automated gates green: Vitest, PHPUnit license/gating suites, `i18n:check:locales`, the theme-contrast + component-axe a11y gates, `check:free-build`.
@@ -37,9 +37,9 @@ Legend: ⬜ to do · 🔒 blocked on a prior item · 💻 has code already done,
 - ⬜ Release via the **Release** workflow; version SoT in sync; ZIP contains production `vendor/`.
 
 ## F. Freemium (free WP.org "lite") launch — P62-G done; P62-I remaining
-- 💻 Build the free ZIP: `npm run build:wp:free` (strips all Pro code; the `check:free-build` CI gate asserts it).
+- 💻 Build the free ZIP: the **Release** workflow attaches `mullion-gallery-lite-v${VERSION}.zip` (or manually: `npm run build:wp:free`). `check:free-build` (every PR) plus a static re-scan in `release.yml` / `svn-deploy.yml` assert Pro code is stripped (P75-B).
 - ⬜ **Plugin Check (PCP)** green on the *stripped* free build; keep `Tested up to` current.
-- ⬜ Wire **dual-channel release**: `release.yml` also emits a free ZIP; point `svn-deploy.yml` at the free ZIP; **remove the P62-G guard** that currently blocks SVN deploy.
+- 💻 Wire **dual-channel release** (P75-B): `release.yml` emits `mullion-gallery-v*.zip` (premium) and `mullion-gallery-lite-v*.zip` (free); `svn-deploy.yml` downloads the lite ZIP and re-scans it before SVN push. The P62-G hard-fail guard is gone.
 - 🔒 Submit the free build to the **WP.org review** (~1–10 days); on approval, SVN-deploy it; confirm Freemius serves the premium build via `is_premium`.
 
 ## G. Quality bars — recommended, decouplable (NOT hard WP.org gates)

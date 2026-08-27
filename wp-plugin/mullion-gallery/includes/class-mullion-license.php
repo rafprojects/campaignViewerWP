@@ -50,7 +50,10 @@ final class Mullion_License {
         $config = apply_filters('mullion_freemius_config', [
             'id'         => '',   // Freemius Plugin ID.
             'public_key' => '',   // Freemius public API key.
-            'is_premium' => false,
+            // P75-A: same default as mullion_fs(); duplication is bootstrap-order-forced
+            // (mullion_fs() is defined before this file is required). Missing function
+            // falls back to premium, matching vite.config.ts and the SDK default.
+            'is_premium' => function_exists('mullion_is_premium_package') ? mullion_is_premium_package() : true,
         ]);
         return is_array($config) ? $config : [];
     }

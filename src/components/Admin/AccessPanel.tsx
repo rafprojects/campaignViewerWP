@@ -120,7 +120,6 @@ export function AccessPanel({
   const accessRows = useAccessRows({
     accessEntries, accessViewMode,
     onRevokeAccess: accessState.handleRevokeAccess,
-    onChangeRole: accessState.handleChangeRole,
   });
 
   return (

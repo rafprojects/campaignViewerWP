@@ -2068,6 +2068,14 @@ msgstr "Tema y diseño"
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr "Elija un tema de color. La vista previa se aplica al instante; se guarda al hacer clic en Guardar."
 
+#: includes/i18n/class-mullion-frontend-strings.php:509
+msgid "Apply gallery theme to editor"
+msgstr "Aplicar el tema de la galería al editor"
+
+#: includes/i18n/class-mullion-frontend-strings.php:510
+msgid "When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme."
+msgstr "Si está desactivado, el panel de ajustes y el Layout Builder se mantienen en la paleta de marca Mullion. Actívalo para aplicar el tema de la galería a esas superficies del editor."
+
 #: includes/i18n/class-wpsg-frontend-strings.php:509
 #: includes/settings/class-wpsg-settings-renderer.php:161
 msgid "Default Layout"
@@ -10638,3 +10646,16 @@ msgstr "Fecha"
 #: includes/class-wpsg-embed.php:519
 msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr "Mullion: no se ha podido resolver esta referencia del shortcode (%s); se muestra el espacio predeterminado en su lugar. Solo los administradores del sitio ven este aviso."
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr "Puede ver este espacio"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr "Nivel de concesión heredado — se trata como solo lectura. La gestión proviene del rol Editor de galería."
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr "Nivel de concesión heredado — se trata como solo lectura. La edición proviene del rol Editor de galería."

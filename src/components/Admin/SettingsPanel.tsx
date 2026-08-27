@@ -54,6 +54,8 @@ import { SettingsIntegrationsTab } from '../Settings/tabs/SettingsIntegrationsTa
 import { SettingsSystemAdminTab } from '../Settings/tabs/SettingsSystemAdminTab';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
+import { AdminChromeProvider } from '@/components/Admin/AdminChromeProvider';
+import { adminChromeClassNames } from '@/themes/chromeTheme';
 import { useRootId } from '@mullion/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
@@ -595,14 +597,17 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   // onExited synchronously, so it still closes instantly.
   const handleClose = () => { revertThemePreview(); setInternalOpened(false); };
 
+  const applyThemeEverywhere = settings.applyThemeEverywhere === true;
+
   return (
-    <>
+    <AdminChromeProvider applyThemeEverywhere={applyThemeEverywhere}>
       {/* P57-B: inline sentinel (lives in the shadow tree) used to resolve the
           shadow-DOM portal target for the Drawer below. */}
       <span ref={shadowSentinelRef} style={{ display: 'none' }} aria-hidden="true" />
       <Drawer
       opened={internalOpened}
       onClose={handleClose}
+      classNames={adminChromeClassNames(applyThemeEverywhere)}
       title={
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="sm">
@@ -697,7 +702,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         </>
       )}
       </Drawer>
-    </>
+    </AdminChromeProvider>
   );
 }
 

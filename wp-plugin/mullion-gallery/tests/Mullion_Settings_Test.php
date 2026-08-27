@@ -26,6 +26,7 @@ class Mullion_Settings_Test extends WP_UnitTestCase {
         $this->assertEquals('wp-jwt', $settings['auth_provider']);
         $this->assertEquals('', $settings['api_base']);
         $this->assertEquals('default-dark', $settings['theme']);
+        $this->assertFalse($settings['apply_theme_everywhere']);
         $this->assertEquals('grid', $settings['gallery_layout']);
         $this->assertEquals(12, $settings['items_per_page']);
         $this->assertTrue($settings['enable_lightbox']);
@@ -318,6 +319,30 @@ class Mullion_Settings_Test extends WP_UnitTestCase {
         $this->assertFalse($sanitized['allow_user_theme_override']);
         $this->assertFalse($sanitized['debug_component_markers']);
         $this->assertEquals('unified', $sanitized['gallery_config']['mode'] ?? null);
+    }
+
+    /**
+     * P75-D: apply_theme_everywhere defaults false and sanitizes as a boolean.
+     */
+    public function test_apply_theme_everywhere_defaults_false_and_sanitizes_bool() {
+        delete_option(Mullion_Settings::OPTION_NAME);
+        $settings = Mullion_Settings::get_settings();
+        $this->assertFalse($settings['apply_theme_everywhere']);
+
+        $this->assertContains(
+            'apply_theme_everywhere',
+            Mullion_Settings_Registry::get_space_overridable_fields()
+        );
+
+        $sanitized = Mullion_Settings::sanitize_settings([
+            'apply_theme_everywhere' => true,
+        ]);
+        $this->assertTrue($sanitized['apply_theme_everywhere']);
+
+        $sanitized = Mullion_Settings::sanitize_settings([
+            'apply_theme_everywhere' => '0',
+        ]);
+        $this->assertFalse($sanitized['apply_theme_everywhere']);
     }
 
     /**

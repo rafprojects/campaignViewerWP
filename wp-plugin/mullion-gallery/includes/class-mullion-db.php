@@ -1333,6 +1333,46 @@ class Mullion_DB {
         )) ?: null;
     }
 
+    /** Width of the `slug` column in the spaces table (varchar(100)). */
+    private const SPACE_SLUG_MAX = 100;
+
+    /**
+     * P75-J: fit a slug into the `slug` column, and never return an empty one.
+     *
+     * sanitize_title() does not truncate, so a long space name produced a slug
+     * the INSERT rejected — which create_space() reported as a bare
+     * "Failed to create space". A name that sanitises to '' (all punctuation)
+     * has the same problem, from the other end.
+     */
+    public static function clamp_space_slug(string $slug): string {
+        $slug = sanitize_title($slug);
+        if (strlen($slug) > self::SPACE_SLUG_MAX) {
+            $slug = rtrim(substr($slug, 0, self::SPACE_SLUG_MAX), '-');
+        }
+        return $slug !== '' ? $slug : 'space';
+    }
+
+    /**
+     * P75-J: return $slug, or the first free `$slug-N` if it is taken.
+     *
+     * The spaces table has UNIQUE KEY slug, and archived spaces keep their slug
+     * (they are soft-deleted rows, and Mullion_Embed still addresses spaces by
+     * slug), so re-using the name of a deleted space collided. Callers decide
+     * whether a collision should suffix or be rejected — see
+     * Mullion_Space_Controller::create_space().
+     */
+    public static function unique_space_slug(string $slug): string {
+        $base = self::clamp_space_slug($slug);
+        $slug = $base;
+        $n    = 2;
+        while (self::get_space_by_slug($slug) !== null) {
+            $suffix = '-' . $n;
+            $slug   = rtrim(substr($base, 0, self::SPACE_SLUG_MAX - strlen($suffix)), '-') . $suffix;
+            $n++;
+        }
+        return $slug;
+    }
+
     public static function list_spaces(array $args = []): array {
         global $wpdb;
         $table = self::get_spaces_table();

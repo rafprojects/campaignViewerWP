@@ -9,7 +9,12 @@
   }
 
   &:focus-visible {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary) 60%, transparent);
+    // Fallback matters: MediaCard renders inside the Layout Builder Modal,
+    // which Mantine portals to a node under document.body — outside both the
+    // shadow root's :host var block and the light-DOM [data-mullion-theme-scope]
+    // one. color-mix() with an undefined var invalidates the whole declaration,
+    // so without a fallback the focus ring disappears entirely.
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--mullion-color-primary-stroke, var(--mantine-primary-color-filled)) 60%, transparent);
     border-radius: var(--mantine-radius-md);
   }
 }

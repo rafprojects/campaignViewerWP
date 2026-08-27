@@ -2068,6 +2068,14 @@ msgstr "Thème et mise en page"
 msgid "Choose a color theme. Preview applies instantly; saved when you click Save."
 msgstr "Choisissez un thème de couleur. L’aperçu s’applique instantanément ; enregistré lorsque vous cliquez sur Enregistrer."
 
+#: includes/i18n/class-mullion-frontend-strings.php:509
+msgid "Apply gallery theme to editor"
+msgstr "Appliquer le thème de la galerie à l’éditeur"
+
+#: includes/i18n/class-mullion-frontend-strings.php:510
+msgid "When off, the Settings panel and Layout Builder stay on the Mullion brand palette. Turn on to restyle those editor surfaces with the selected gallery theme."
+msgstr "Lorsque cette option est désactivée, le panneau Réglages et le Layout Builder restent sur la palette de marque Mullion. Activez-la pour habiller ces surfaces d’éditeur avec le thème de galerie sélectionné."
+
 #: includes/i18n/class-wpsg-frontend-strings.php:509
 #: includes/settings/class-wpsg-settings-renderer.php:161
 msgid "Default Layout"
@@ -10638,3 +10646,16 @@ msgstr "Date"
 #: includes/class-wpsg-embed.php:519
 msgid "Mullion: this shortcode reference could not be resolved (%s) — showing the default space instead. Only site administrators see this notice."
 msgstr "Mullion : cette référence du shortcode n'a pas pu être résolue (%s) — l'espace par défaut est affiché à la place. Seuls les administrateurs du site voient cet avis."
+
+#: includes/i18n/class-mullion-frontend-strings.php:1761
+msgid "Can view this space"
+msgstr "Peut consulter cet espace"
+
+#: includes/i18n/class-mullion-frontend-strings.php:1762
+msgid "Legacy grant level — treated as view-only. Managing comes from the Gallery Editor role."
+msgstr "Niveau d’autorisation hérité — traité en lecture seule. La gestion provient du rôle Éditeur de galerie."
+
+#: includes/i18n/class-mullion-frontend-strings.php:2628
+#: includes/i18n/class-mullion-frontend-strings.php:2629
+msgid "Legacy grant level — treated as view-only. Editing comes from the Gallery Editor role."
+msgstr "Niveau d’autorisation hérité — traité en lecture seule. La modification provient du rôle Éditeur de galerie."

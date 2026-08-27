@@ -16,7 +16,7 @@
     "border": "#e0e0e0",
 
     "primary": "#6200ee",
-    "primaryShade": { "light": 7, "dark": 5 },
+    "primaryShade": { "light": 5, "dark": 4 },
 
     "success": "#4caf50",
     "warning": "#ff9800",

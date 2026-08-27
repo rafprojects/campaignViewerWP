@@ -191,7 +191,7 @@ class Mullion_Settings_Core_Fields {
         return [
             __('Default', 'mullion-gallery') => [
                 'default-dark'  => __('Mullion', 'mullion-gallery'),
-                'default-light' => __('Default Light', 'mullion-gallery'),
+                'default-light' => __('Mullion Light', 'mullion-gallery'),
             ],
             __('Material', 'mullion-gallery') => [
                 'material-dark'  => __('Material Dark', 'mullion-gallery'),
