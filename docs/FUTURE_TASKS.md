@@ -322,6 +322,38 @@ The **manual** assistive-tech audit ([guides/ACCESSIBILITY_MANUAL_AUDIT.md](guid
 
 ---
 
+### Two-Tone ("Halo") Focus Ring — revisit as a layer on top of P76-I-2 Option A
+
+**Origin:** [PHASE76_REPORT.md](PHASE76_REPORT.md) Track **P76-I-2**, deferred 2026-08-28. Option A (re-point Mantine's global focus ring at `primaryStroke`) was chosen; this was Option D in that decision, and the two are **complementary, not alternatives**.
+
+**Context:** Mantine draws every non-input focus ring as a single flat outline:
+
+```css
+.mantine-focus-auto:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: 2px;
+}
+```
+
+A single-colour ring can only ever be as visible as its contrast against whatever sits behind it, which is why 13 of 23 bundled themes measured below the 3:1 WCAG 1.4.11 floor before Option A. Option A fixes that by choosing a better colour, but it remains a **one-colour** ring: any future theme, or any surface it was not measured against, can put it back under the floor.
+
+The two-tone technique used by Chrome, Firefox and GitHub sidesteps the problem entirely — a brand-coloured inner ring plus a contrasting outer halo, so at least one of the two always contrasts with the background regardless of the surface:
+
+```css
+outline: 2px solid var(--ring-core);
+box-shadow: 0 0 0 4px var(--ring-halo);
+```
+
+**What to implement:** Add the halo to the focus-ring rule Option A already introduces, with `--ring-halo` resolved per colour-scheme (a light halo on dark themes, dark on light). Then decide what `uiContrastAudit` should assert — the halo changes the guarantee from "the ring contrasts with the surface" to "the ring pair contrasts with itself and the surface", so `KNOWN_FOCUS_RING_GAPS` and the `primaryFill`/`primaryStroke` checks would need re-modelling rather than simple deletion.
+
+**Rationale for deferring:** Option A alone brings all 23 bundled themes over 3:1 (minimum 3.64 on `surface`, 3.01 on `surfaceRaised`), so the compliance problem is solved without it. The halo's value is **robustness for themes that do not exist yet** — including user-authored themes via `registerCustomTheme`, which no build-time audit can see. That is a real but non-urgent benefit, and it is much easier to judge once Option A's brighter rings have been seen in the product.
+
+**Dependencies / risk:** Depends on P76-I-2 Option A having landed. Main risks: the thicker footprint interacts with `outline-offset` and tight layouts (toolbars, table cells, segmented controls) and needs a visual pass; `box-shadow` on a focused element can be clipped by an ancestor's `overflow: hidden`, which single outlines are immune to. Both are why this deserves its own look rather than being bolted on during I-2.
+
+**Effort:** Small–Medium (one CSS rule plus a visual sweep and an audit re-model) | **Impact:** Medium — converts focus-ring contrast from "measured correct for the themes we ship" into "structurally correct for any theme".
+
+---
+
 ## Monetization & Distribution
 
 Nothing yet.
@@ -679,3 +711,5 @@ When promoting future tasks to an active phase:
 *Updated: July 23, 2026 (Phase 72 planning) — Created [PHASE72_REPORT.md](PHASE72_REPORT.md) (Planned, 7 mixed-domain tracks). **Promoted and removed from this backlog:** "WordPress Core Privacy Integration (DSAR Export/Erase)" → P72-B, "Retention / Auto-Purge for Email & Audit-Log Tables" → P72-F, "Admin Notice on Unresolved Shortcode Space Reference" → P72-D, "Unify settings-write authorization behavior" → P72-C (Settings & Admin UI is now an empty placeholder), "`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns" → P72-E, and the `LayoutTemplateList`-fix half of "Structural a11y (axe) gate — grow coverage + fix found issues" → P72-G (the "extend coverage further" half stays here, retitled). **Backfilled** (Follow-On Candidates from Phases 68-70 that were never recorded here — found while verifying the backlog is current, cross-checked every archived phase report's Follow-On Candidates table against this doc): "Full Server-Driven `CardGallery` Host Pagination" (PHASE68_REPORT.md, under Campaign Management), "Google Fonts Self-Host Variant" (PHASE69_REPORT.md, under Privacy & Compliance), "`ApiClient` Facade → Namespaces" and "Promote Inline Sub-Components" (both PHASE70_REPORT.md, under Code Quality & Refactoring) — none of the four were promoted into Phase 72, since each is explicitly conditional/opportunistic in its own origin phase's deferral rationale, not bounded phase-shaped work.*
 
 *Updated: August 27, 2026 (P76-I-1) — Added Code Quality & Refactoring entry "Three e2e specs fail on a clean tree", found while verifying P76-I-1 and confirmed pre-existing against an unmodified tree. Not deferred work from Phase 76; filed so a permanently-red e2e floor has an owner.*
+
+*Updated: August 28, 2026 (P76-I-2 decision) — Added Accessibility entry "Two-Tone (Halo) Focus Ring", deferred from P76-I-2 after Option A (re-point the ring at `primaryStroke`) was selected. Recorded as a complementary layer on top of A, not a competing option; Options B (lift `primaryFill`) and C (accept the gap) were dropped outright and are deliberately not carried here.*

@@ -922,13 +922,13 @@ Verified in a browser, transitions disabled — resting unchanged, focus now mov
 
 `rgb(0,142,133)` is `#008e85` — `primaryStroke`, which is what `adapter.ts` always intended (`'&:focus': { borderColor: stroke }`). This restores the existing intent rather than choosing a new one, so it is not a decision taken on I-2's behalf.
 
-The other **nine** dead blocks were deleted rather than repaired. Deletion is provably zero-visual-change — they never emitted anything — whereas *restoring* their intent would change appearance and is properly I-2's call. `fillHover` went with them: it existed only to serve the dead Anchor hover.
+The other **nine** dead blocks were deleted rather than repaired. Deletion is provably zero-visual-change — they never emitted anything — whereas *restoring* their intent would change appearance and is properly I-2's call. `fillHover` went with them: it existed only to serve the dead Anchor hover — and it turns out that was the right call for a second reason, since one-rung-lighter lowers contrast on every light theme.
 
 **Intent lost to those deletions, for I-2 to decide on:**
 
 | Component | Lost intent | What happens now |
 |---|---|---|
-| Anchor | `&:hover { color: fillHover }` | **No hover feedback on links** — the flat `color: fill` pins it. The one genuine defect in this group. |
+| Anchor | `&:hover { color: fillHover }` | ~~No hover feedback on links.~~ **RETRACTED — see the I-2 notes.** Mantine's `Anchor` defaults to `underline="hover"`, so hover feedback works. Only the colour shift was lost, and restoring it would *reduce* contrast on 9 of 23 themes. |
 | Table `tr` | `&:hover` row highlight | Mantine only highlights with `highlightOnHover`; likely no row hover at all. |
 | Tabs, Menu, Accordion, Select option | themed hover backgrounds | Mantine's own defaults apply, reading adapter variables. Cosmetic drift only. |
 | Checkbox | `&:checked` fill + border | Mantine's `--checkbox-color` still fills the box; the flat `borderColor` pins the border, so checked state is visible but the border does not follow. |
@@ -984,7 +984,7 @@ The audit header now says outright that it covers **theme-derived chrome only**.
 
 1. **The focus ring token.** Inputs now use `primaryStroke` (clears 3:1 on all 23). Everything else uses Mantine's `primaryFill` ring (fails on 13). Options: re-point the global ring at `primaryStroke` for consistency and instant compliance; lift `primaryFill` on the 13 dark themes; or accept the gap on record. **Note this is no longer "which token is correct" — the product now uses two different tokens for the same affordance, which is its own inconsistency.**
 2. **The Switch track.** Still `border-width: 0`, so its `borderStrong` declaration remains inert. Pinned by a deliberately-named test so either resolution is a conscious edit.
-3. **The nine deleted intents**, above — Anchor hover is a real defect; the rest are cosmetic drift.
+3. **The nine deleted intents**, above — two are real (Checkbox checked border, Table row hover); Anchor turned out not to be. See the I-2 notes.
 
 #### Verification
 
@@ -996,6 +996,36 @@ The audit header now says outright that it covers **theme-derived chrome only**.
 - **Not verified:** the deleted hover intents were not measured individually in a browser — the theme-qa result covers resting appearance, and hover/checked states have no snapshot coverage. The table above is reasoned from Mantine's stylesheet, not measured. Flagged rather than asserted.
 
 Three e2e specs fail on a clean tree (`mantine8-runtime-qa` ×2, `accessibility` login modal). Confirmed pre-existing by stashing all I-1 changes and re-running at `13598e13` — identical failures. Filed in [FUTURE_TASKS.md](FUTURE_TASKS.md) rather than left as a note here, since a permanently-red e2e floor trains everyone to ignore failures.
+
+
+### Implementation Notes — I-2 decision (2026-08-28)
+
+**Decision: Option A — re-point Mantine's global focus ring at `primaryStroke`.** Options B (lift `primaryFill` on 13 dark themes) and C (accept the gap) are **dropped outright** and should not resurface. Option D (two-tone halo ring) is deferred to [FUTURE_TASKS.md](FUTURE_TASKS.md) § Accessibility as a *complementary layer on top of A*, not a competing choice.
+
+Why A: `primaryStroke` already clears 3:1 on all 23 bundled themes (minimum **3.64** on `surface`, **3.01** on `surfaceRaised`); on **10 of 23 themes it is the same hex as `primaryFill`**, so those change not at all; it restores P75-E's stated intent; and it collapses the two-token split I-1 introduced, where inputs ring in `primaryStroke` and everything else in `primaryFill`. Once A lands, `KNOWN_FOCUS_RING_GAPS` should empty out and the gate return to zero exceptions — which removes the sign-off question I-1 raised rather than answering it.
+
+#### A correction to I-1's findings, found by photographing them
+
+The user asked for rendered examples of the three remaining gaps rather than reasoning from code. Doing that immediately falsified one of them.
+
+**Anchor hover was never broken.** Mantine's `Anchor` ships `defaultProps = { underline: 'hover' }`, implemented as:
+
+```css
+.m_849cf0da:where([data-underline='hover']):hover { text-decoration: underline; }
+```
+
+Screenshots of the real component confirm it: no underline at rest, underline on hover. I-1 reported "no hover feedback on links" because a stylesheet grep for `anchor` never matched a rule keyed on `[data-underline]`. What the dead adapter rule actually cost was a *colour* shift layered on the underline — and restoring that naively would be harmful, because it used `primary[fillIndex - 1]` (one rung lighter), which **lowers** contrast on all 9 light themes (`default-light` 5.85 → 4.20). Recommendation: leave Anchor alone.
+
+**Two gaps survive, both confirmed visually:**
+
+| Gap | Confirmed behaviour | Fix |
+|---|---|---|
+| Checkbox checked border | Mantine's checked rule sets background *and* border from `--checkbox-color`; the adapter's inline style pins only the border, leaving a grey ring around the filled box. | Move the resting border to `classNames` + a CSS rule — the pattern already used for Tabs / Select option / SegmentedControl. Deleting the declaration outright is **not** an option: Mantine's base is `border: 1px solid transparent`, so unchecked boxes would lose their border entirely. |
+| Table row hover | No hover at all — `highlightOnHover` is never set. | `Table.defaultProps = { highlightOnHover: true }` plus `vars: { '--table-hover-color': rc.surfaceRaised }`. Fully Mantine-native, no override. |
+
+**A second thing photography caught:** restoring the Table rule's original intent would have looked like a no-op. It used `surface2` at 30% alpha, and on `default-dark` `surface` is `#102530` against `surface2` `#132a36` — three points apart, imperceptible even at full opacity. "Put the rule back" was the wrong instinct; the hover colour has to be chosen, and `surfaceRaised` is the legible token that already exists on every theme.
+
+**Method note.** These renders were captured by temporarily adding real `Anchor` / `Checkbox` / `Table` components to the Display Settings drawer, screenshotting at 3× with transitions disabled, then reverting — the admin surfaces render no `Anchor` at all. The specimens were removed and the working tree verified clean. Twice now in this track, reading Mantine's CSS produced a confident wrong conclusion that a single screenshot overturned; **render it before reporting it.**
 
 
 ---
