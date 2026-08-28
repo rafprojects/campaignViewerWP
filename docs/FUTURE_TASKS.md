@@ -195,82 +195,6 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-### Vacuous e2e test — `theme-qa` "changing theme … persists to localStorage"
-
-**Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Branch Review, "Reviewed and deliberately not changed" (2026-08-25). Pre-existing before Phase 75; P75-D touched the test but did not cause the defect.
-
-**Context:** `e2e/theme-qa.spec.ts`'s `changing theme in Display Settings persists to localStorage` cannot fail. Three compounding problems:
-
-1. Its only assertion is `expect(typeof saved === 'string' || saved === null).toBe(true)` — a tautology over `localStorage.getItem`'s own return type. It is true whether or not the theme was written.
-2. The test never changes a theme. It opens Display Settings, asserts the combobox is visible, and saves. The removed comment said as much: *"may be default-dark if unchanged."*
-3. P75-D additionally made the save conditional (`if (await save.isEnabled()) await save.click()`), because the panel's Save button is disabled until the draft is dirty — which, given (2), it never is. So the test now usually does not even click Save.
-
-Net effect: a green test asserting nothing, sitting in the suite that is supposed to protect theme persistence. The adjacent behavioral test (`Display Settings shows the active theme`) is real and does assert a value; this one is the only vacuous case in the file.
-
-**What to implement:** Make the test do what its name says — select a *different* theme in the combobox (the P75-D-era locator is the display name, e.g. `Tokyo Night`, not the id), wait for the Save button to enable, click it, then assert `localStorage.getItem('mullion-theme-id')` equals the newly selected **id**. Drop the conditional click: if Save is disabled after changing the theme, that is the failure the test exists to catch. Consider a second assertion after a reload, since "persists" is the claim.
-
-**Dependencies / risk:** needs a working Playwright run against wp-env (`npx playwright test theme-qa`) to author — the Phase 75 branch review flagged rather than fixed it precisely because rewriting an unexecutable browser test is worse than leaving it visibly marked. Pairs naturally with any track that already has to recapture theme-qa baselines.
-
-**Effort:** Small (one test body, ~15 lines) | **Impact:** Medium — theme persistence is currently unguarded end-to-end despite appearing covered, which is worse than a known gap.
-
----
-
-### `global.scss` rules aimed at portaled admin chrome are dead in shadow mode
-
-**Origin:** [PHASE76_REPORT.md](PHASE76_REPORT.md) Track **P76-I-2**, found 2026-08-28 while implementing the focus-ring override. Pre-existing; confirmed by direct measurement, not inference.
-
-**Context:** `main.tsx` loads `styles/global.scss` into the document **only when the app mounts without a shadow root**:
-
-```ts
-if (!useShadowDom) { import('./styles/global.scss') }
-```
-
-In the shipped default — shadow DOM — it is concatenated into the shadow root by `shadowStyles.ts` instead. But Mantine's `Portal` appends its target to `document.body`, so every Drawer, Modal, Menu and Popover renders *outside* that shadow root. Any `global.scss` rule meant to style portaled admin chrome therefore never applies in the configuration we actually ship.
-
-Measured in a browser with the Display Settings drawer open (shadow mount, shipped default) — whether each selector is present in `document.styleSheets`:
-
-| Rule | Reaches portaled chrome |
-|---|---|
-| `.mullion-mantine-select-option[data-selected]` | **No** |
-| `.mullion-mantine-tabs-tab` | **No** |
-| `.mantine-focus-auto…` (P76-I-2, `chrome-portable.scss`) | Yes |
-| `.mullion-mantine-checkbox-input` (P76-I-2, `chrome-portable.scss`) | Yes |
-
-The select-option rule is the sharpest case, because its own comment states the reason it exists: *"Select dropdowns may render in a portal, so selected option styling cannot rely on the `.mullion-gallery` ancestor being present."* The ancestor problem was correctly identified; the delivery problem underneath it was not. The selected-option highlight in every themed dropdown has been falling back to Mantine's default.
-
-**Why the snapshots never caught it:** `theme-qa`'s `theme selector dropdown` captures exist and pass — they simply baked the unstyled appearance in as correct from the beginning.
-
-**What to implement:** Audit `global.scss` for every rule that targets a Mantine class (`.mullion-mantine-*`) or otherwise expects to style portaled chrome, and move those into `src/styles/chrome-portable.scss`, which P76-I-2 added precisely for this and which is imported unconditionally in `main.tsx` *and* concatenated into `shadowStyles.ts`. Keep genuinely gallery-scoped structural rules where they are — `chrome-portable.scss` leaks into the host WordPress page, so it must stay small and contain only Mantine class overrides, never element selectors or resets.
-
-**Dependencies / risk:** Moving these rules makes currently-dead styling live, so it **will** change appearance — the `theme selector dropdown` baselines will need deliberate recapture, and the diff should be reviewed rather than auto-accepted. That is the whole reason this is filed rather than folded into P76-I-2, which was scoped to the focus ring and two specific control fixes.
-
-**Effort:** Small (a move plus a baseline review) | **Impact:** Medium — restores theming that the code already claims to apply, and removes a class of silently-dead CSS that has now bitten twice in Phase 76 (P76-H's variables, P76-I-2's focus ring).
-
----
-
-### Three e2e specs fail on a clean tree (`mantine8-runtime-qa` x2, `accessibility` login modal)
-
-**Origin:** [PHASE76_REPORT.md](PHASE76_REPORT.md) § Track I, found while verifying **P76-I-1** (2026-08-27). Pre-existing — reproduced on a stashed, unmodified tree at `13598e13`, so nothing in Phase 76 caused them.
-
-**Context:** Three browser tests fail against the Vite dev server on a clean checkout, and none were tracked anywhere:
-
-1. `mantine8-runtime-qa.spec.ts:173` — *shadow DOM settings drawer and nested gallery editor remain usable*
-2. `mantine8-runtime-qa.spec.ts:230` — *campaign viewer nested overlays stay usable in shadow DOM*
-
-   Both wait on `[data-mullion-component="…"][data-mullion-slot="overlay"]` locators. Those attributes are **debug-gated**: `src/utils/mullionDebug.ts` only emits them when the debug-markers setting is on (see `AdvancedSettingsSection.tsx`, `set_adv_debug_markers_desc`). The tests assume they are always present, so they cannot pass unless the flag is enabled in the fixture. A selector/fixture problem, not a product defect — but as written these two specs have no chance of guarding the shadow-DOM behaviour they are named for.
-
-3. `accessibility.spec.ts:65` — *login modal has no critical/serious axe violations*, reporting ~187 `color-contrast` violations (e.g. ratio **1.23** on `#10242f`). Order-dependent: it fails when the spec runs alone and passed in one combined run, which suggests the modal is being sampled before its theme resolves rather than genuinely shipping 187 violations. Needs confirming before it is treated as a real contrast bug.
-
-Also observed: `accessibility.spec.ts:258` (*settings panel*) is **flaky** — it failed in one combined run and passed in the next with identical code. Worth stabilising alongside the above.
-
-**What to implement:** For (1)/(2), either enable the debug-marker flag in the e2e fixture or re-point the locators at stable roles/test ids. For (3), determine whether the violations are real or a timing artifact (wait for the themed mount before running axe), then fix or re-baseline. For the flake, identify the cross-spec interference — all four share one dev server via `reuseExistingServer`.
-
-**Dependencies / risk:** none blocking; needs a Playwright run. Low risk, but until it is done the e2e suite has a permanently red floor, which trains everyone to ignore failures — the reason this is filed rather than mentioned in passing.
-
-**Effort:** Small–Medium | **Impact:** Medium — three specs currently guard nothing, and a red baseline erodes the value of every other e2e test.
-
----
-
 ### Contract Tests — Frontend Request Payloads vs. REST Route-Arg Enums
 
 **Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-I** (2026-08-26).
@@ -298,100 +222,11 @@ Scope decision worth settling first: whether the manifest is **hand-maintained a
 
 ---
 
-### Spike — One Canonical Style-Delivery Seam
-
-**Origin:** Phase 76 retrospective (2026-08-28), raised by the user after Track I. Not deferred work from a track — an architectural finding that Phase 76's bug pattern made visible.
-
-**Context:** Phase 76 fixed five separate visual defects. Every one of them was the *same* failure in a different costume: **a style was written through a channel that does not reach where the component actually renders.**
-
-| # | Defect | Channel used | Why it didn't reach |
-|---|---|---|---|
-| P76-D/H | Input borders collapsed in follow mode | Mantine scheme-keyed CSS | attribute absent on the portaled tree |
-| P76-I-1 | No focus indicator on inputs; 18 dead style blocks | Mantine `styles` | emits inline styles; pseudo-selectors dropped |
-| P76-I-2 | Focus ring stayed `primaryFill` | `global.scss` | shadow-root only; Drawer portals to `document.body` |
-| pre-existing | Select-option highlight, Tabs tab styling | `global.scss` | same |
-| pre-P76 | Dockview theming | 22 `--mullion-builder-*` inline properties | the workaround, paid earlier |
-
-There are currently **about seven** delivery channels with materially different reach: Mantine `styles` (inline), Mantine `vars` (custom properties), Mantine `classNames` + SCSS, `global.scss` (shadow-root under a shadow mount, document under a light mount), `chrome-portable.scss` (both), `adminChromeStyles()` inline variable blocks, and `ThemeContext`'s injected `cssVars`. Roughly 40 files touch this plumbing.
-
-Nothing states which channel is correct for a given job, and nothing verifies the choice. That is the actual defect — not any individual bug. Each fix so far has added a channel rather than reducing the count.
-
-**What to implement:** A written, enforced contract for style delivery.
-
-1. **Inventory and classify** every channel by reach: shadow tree only, document only, both, or per-element inline.
-2. **Name one canonical channel per job** — state colour and pseudo-state, static layout, third-party-library variables, per-theme tokens — and say plainly which channels are legacy.
-3. **Enforce it.** Phase 76 shows what works here: a unit test that walks all 23 themes and fails on any nested selector in `styles` (P76-I-1), and an e2e test that tabs the live panel and asserts the *painted* result (P76-I-2). Both caught real regressions the source could not reveal. Extend that pattern — e.g. a test asserting that every selector intended for admin chrome is present in `document.styleSheets` with the Drawer open.
-4. **Collapse the count.** `chrome-portable.scss` exists because `global.scss` cannot reach portaled chrome; if the mount-strategy spike below removes that boundary, one of them should disappear rather than both persisting.
-
-**Rationale for a spike rather than a fix:** the individual bugs are already fixed. What remains is a decision about which seams the project keeps, and that decision wants an inventory and a written rule, not another patch. This is the highest-value and lowest-risk of the three spikes here — it is mostly documentation plus enforcement, and it does not depend on either of the others.
-
-**Dependencies / risk:** none blocking. Low risk. Pairs naturally with the mount-strategy spike, whose outcome decides whether two of the channels can merge.
-
-**Effort:** Small–Medium (inventory + contract + two or three enforcement tests) | **Impact:** High — directly targets the "bandaid" pattern; every Phase 76 defect was an instance of the gap this closes.
-
----
-
-### Spike — Re-evaluate the Shadow-DOM Mount Strategy
-
-**Origin:** Phase 76 retrospective (2026-08-28). Supersedes the *architectural* half of [Portal Admin Chrome Into the Shadow Root](#portal-admin-chrome-into-the-shadow-root-remove-the-css-variable-boundary) below, which remains the tactical version of one option.
-
-**Context:** The app mounts into a shadow root by default (`main.tsx:30`, `useShadowDom = windowFlag ?? query.get('shadow') !== '0'`) for isolation from arbitrary WordPress themes and plugins. Mantine's `Portal` appends overlay targets to `document.body`, so Drawers, Modals, Menus and Popovers render **outside** that shadow root. Style isolation and overlay portaling are in direct tension, and **four of the five Phase 76 defects live exactly on that seam.**
-
-This is worth stating precisely, because it is easy to misattribute: the tension is not a Mantine limitation. Portaling overlays to the body is what every component library does, and for good reason — it escapes ancestor `overflow`, `transform` and stacking contexts. A hand-written `Modal` would portal for the same reasons and inherit the same problem on day one.
-
-Mantine, in fact, already exposes the seams to cross the boundary:
-
-- `Portal` accepts a `target` (`Portal.mjs:17-19`), and `useProps('Portal', …)` means `theme.components.Portal.defaultProps` can set it **globally, in one place**.
-- `MantineProvider` accepts `getRootElement` and `cssVariablesSelector`.
-
-So the dominant bug class is **configurable, not inherent** — the project has been working around a boundary the library gives it a documented way to cross.
-
-**What to implement:** Evaluate, with a prototype for the leading option:
-
-- **(a) Portal into the shadow root** — set a global Portal target. Removes the boundary entirely; `chrome-portable.scss`, `adminChromeStyles()` and the `--mullion-builder-*` bridge likely all become deletable. **The real cost is validation, not code**: the Drawer portals to `document.body` specifically to escape the host page's stacking context, so this changes z-index behaviour against wp-admin and arbitrary customer plugins, plus focus trapping and click-outside detection. That failure mode shows up in support tickets, not CI.
-- **(b) Split the mount** — shadow root for public gallery content (where isolation from the site's theme genuinely matters), light DOM for admin chrome (which lives in wp-admin, already a controlled surface). Removes the tension where it costs the most and keeps isolation where it earns its keep.
-- **(c) Drop shadow DOM for scoped light DOM** — CSS `@layer` plus a scoping class or `@scope`. Modern, simpler, no portal problem at all; weaker isolation against hostile host CSS, which is the reason shadow DOM was chosen.
-- **(d) Status quo** — keep the boundary and keep paying the per-consumer tax, now that the style-delivery contract above makes the tax explicit and testable.
-
-Decide with evidence: how much host-CSS hostility does the shadow root actually protect against in practice, and is that worth what the boundary costs?
-
-**Dependencies / risk:** (a) and (b) need real wp-admin testing across plugin combinations — that is the gating cost, and the reason P76-H shipped a workaround instead. Do the style-delivery spike first so the channels being removed are inventoried before anything is moved.
-
-**Effort:** Medium (evaluation + prototype) / Large if (a) or (c) is chosen and rolled out | **Impact:** High — this is the single root cause behind most of Phase 76's visual defects.
-
----
-
-### Spike — UI Component Dependency: Mantine, Alternative, or In-House
-
-**Origin:** Phase 76 retrospective (2026-08-28), requested explicitly by the user: *"look into getting away from the Mantine system and developing our own which is built from the ground up to support everything we actually need, rather than building infrastructure around Mantine because it doesn't fully support us."*
-
-**Context and honest starting position.** This deserves a real evaluation, and the entry should not pretend the answer is already known. But it should also record what the Phase 76 evidence actually shows, so the spike starts from facts rather than from the frustration that prompted it:
-
-- **Coupling is deep.** 44 distinct Mantine components across **153 of 434** source files (~35%). Replacing it is not a refactor; it is a second product built while the first keeps shipping.
-- **Most of the pain was not Mantine's.** Four of five Phase 76 defects were the shadow/portal boundary (see the spike above), which no component library would have avoided and which Mantine actually exposes seams to fix.
-- **One genuine Mantine footgun did cost real money**: the `styles` prop looks like CSS-in-JS but emits inline styles, silently dropping every `&:focus`, `&:checked` and `&::placeholder`. That produced 18 dead style blocks and a WCAG 2.4.7 failure. It is now guarded by a mutation-tested check across all 23 themes, so the cost is capped — but it is a fair mark against the library's API design.
-- **The counter-evidence is uncomfortable and belongs on the record.** In P76-I-1, Mantine's focus mechanism worked correctly and *our adapter broke it* — an inline `border-color` suppressing a working `:focus` rule. Our custom layer also shipped 18 inert style blocks and two tests that were green while asserting a code path that never rendered. The components we would have to rebuild — combobox/listbox semantics, focus trapping, portal and overlay management, date pickers — are precisely where correctness is hardest and where this project has demonstrated it gets things wrong.
-
-**What to implement:** A decision document, not a migration.
-
-1. **Define criteria first, before looking at options**: accessibility guarantees, keyboard/focus management, theming model (does it expose CSS variables for every affordance — the `primaryFill` focus ring did not), shadow-DOM friendliness, portal control, bundle size, maintenance burden, and migration cost against the 153-file coupling.
-2. **Score the real options**: stay on Mantine as-is; stay but wrap it; migrate to another library (Radix/Ark + own styling is the obvious comparison, since it inverts the trade — unstyled primitives, styling entirely ours); build in-house.
-3. **Cost the middle path seriously, because it is the likely winner.** A thin facade — `src/ui/*` re-exporting the ~44 components with our own prop surface — means consumers stop importing `@mantine/core` directly. That is a mechanical, incremental change (strangler pattern) that can proceed component-by-component without a freeze, and it converts "replace Mantine" from a rewrite into a swap behind a boundary. It also gives a natural home for the theming contract from the first spike.
-4. **State an exit condition.** The spike should end with a written recommendation and, if the answer is "stay", the specific conditions that would change it — e.g. a second API-design footgun of the `styles` class, or a Mantine major version that breaks the theming model.
-
-**Rationale for deferring rather than acting:** the frustration behind this is legitimate and the pattern it points at is real, but the evidence gathered so far attributes that pattern mostly to the mount strategy rather than to the component library. Running the two spikes above first will materially change this one's inputs: if the shadow/portal boundary is removed, most of the "building infrastructure around Mantine" work disappears, and the remaining case for replacement is much narrower. Doing this spike first risks a very expensive answer to a misdiagnosed question.
-
-**Dependencies / risk:** should run **after** the style-delivery and mount-strategy spikes. Main risk is scope: it must produce a decision document with criteria, not a prototype migration — a half-migrated component layer is worse than either endpoint.
-
-**Effort:** Medium (evaluation and costing) / Very Large if a migration is chosen | **Impact:** High — determines whether the theming layer keeps growing around a dependency or behind a boundary we control.
-
----
-
 ### Portal Admin Chrome Into the Shadow Root (remove the CSS-variable boundary)
 
 **Origin:** Deferred from [PHASE76_REPORT.md](PHASE76_REPORT.md) **P76-H** Key Decision B (2026-08-27). P76-H ships option (b) — inlining the variables — and explicitly keeps this option open rather than rejecting it.
 
-> **See also:** this is the *tactical* form of option (a) in **Spike — Re-evaluate the Shadow-DOM Mount Strategy** above. Take that spike first: it asks whether the shadow boundary should exist at all, which is the question this entry assumes an answer to. Since this entry was written, P76-I-2 confirmed the boundary also blocks plain stylesheets (not just CSS variables) from reaching portaled chrome, which widens the problem it describes.
+> **SUPERSEDED 2026-08-28 — retained for its risk analysis, not as independently actionable work.** This is now **option (a) of Track P77-B** in [PHASE77_REPORT.md](PHASE77_REPORT.md), which decides the mount strategy as a whole rather than assuming the boundary should stay and only asking how to cross it. Do not action this entry on its own; take the track. Since it was written, P76-I-2 confirmed the boundary blocks plain stylesheets as well as CSS variables from reaching portaled chrome, and that the app also mounts inside **wp-admin** (`add_submenu_page`), not only the front end — both of which widen the problem described below.
 
 **Context:** The Settings Panel `Drawer` and Layout Builder `Modal` are portaled by Mantine to `document.body` (`Portal.mjs:17-32`, `reuseTargetNode` default `true`). In a shadow mount — the shipped default (`main.tsx:30`) — that puts the chrome in the light DOM while every stylesheet that should theme it lives in the shadow root. A `<style>` inside a shadow root only styles that shadow tree, so nothing scoped there reaches the chrome: not Mantine's `.mullion-admin-chrome[data-mantine-color-scheme="…"]` block, and not `ThemeContext`'s `--mullion-color-*` at `:host`.
 
@@ -841,3 +676,5 @@ When promoting future tasks to an active phase:
 *Updated: August 28, 2026 (P76-I-2 implementation) — Added Code Quality & Refactoring entry "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode", found while implementing the focus-ring override and confirmed by measuring which selectors reach `document.styleSheets`. Two rules are affected (`select-option[data-selected]`, `tabs-tab`); fixing them changes appearance, so it is deliberately not folded into P76-I-2.*
 
 *Updated: August 28, 2026 (Phase 76 retrospective) — Added three architectural spikes to Code Quality & Refactoring after the user challenged the project's visual architecture as accumulating workarounds: "One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", and "UI Component Dependency: Mantine, Alternative, or In-House". They are sequenced deliberately — the dependency question runs last, because Phase 76's evidence attributes most of the pain to the shadow/portal boundary rather than to Mantine, and resolving that first materially narrows the case for replacement. The existing "Portal Admin Chrome Into the Shadow Root" entry is retained as the tactical version of one mount-strategy option.*
+
+*Updated: August 28, 2026 (Phase 77/78/79 planning) — **Promoted and removed:** the three architecture spikes added earlier today ("One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", "UI Component Dependency") became [PHASE77_REPORT.md](PHASE77_REPORT.md) tracks A, B and E; "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode" became P77-C; "Three e2e specs fail on a clean tree" and "Vacuous e2e test — theme-qa persists to localStorage" merged into P77-D. The UI facade became [PHASE78_REPORT.md](PHASE78_REPORT.md), and the former Phase 77 (release pipeline hygiene) was renumbered to [PHASE79_REPORT.md](PHASE79_REPORT.md) — the user chose to settle the visual architecture before release rather than ship on top of it. "Portal Admin Chrome Into the Shadow Root" is **not** promoted: it is retained, marked superseded, as the risk analysis behind option (a) of P77-B.*
