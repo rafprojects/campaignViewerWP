@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-08-27T02:59:44+00:00\n"
-"PO-Revision-Date: 2026-07-18T21:05:14+00:00\n"
+"PO-Revision-Date: 2026-08-28T00:00:00+00:00\n"
 "Language: zh_CN\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 "X-Domain: mullion-gallery\n"
@@ -10651,12 +10651,12 @@ msgstr "旧版授权级别 — 按仅查看处理。编辑权限来自“图库�
 #. Author URI of the plugin
 #: mullion-gallery.php
 msgid "https://github.com/rafprojects/mullion-gallery"
-msgstr ""
+msgstr "https://github.com/rafprojects/mullion-gallery"
 
 #: includes/settings/class-mullion-settings-core-fields.php:194
 msgid "Mullion Light"
-msgstr ""
+msgstr "Mullion 浅色"
 
 #: includes/settings/class-mullion-settings-renderer.php:45
 msgid "Mullion Settings"
-msgstr ""
+msgstr "Mullion 设置"

@@ -146,7 +146,8 @@ function main() {
     console.error(
       '\n✗ i18n locale coverage incomplete. After adding front-end strings, run:\n' +
       '    npm run i18n:generate\n' +
-      '    wp i18n make-pot wp-plugin/mullion-gallery wp-plugin/mullion-gallery/languages/mullion-gallery.pot --domain=mullion-gallery --exclude=node_modules,vendor,tests,build\n' +
+      '    wp i18n make-pot wp-plugin/mullion-gallery wp-plugin/mullion-gallery/languages/mullion-gallery.pot --domain=mullion-gallery --exclude=node_modules,vendor,tests,build --skip-js\n' +
+      '      (--skip-js is required: make-pot OOMs on the built Vite bundles, and loses nothing.)\n' +
       '  then translate the new msgstr in each languages/mullion-gallery-*.po and recompile:\n' +
       '    wp i18n make-mo  wp-plugin/mullion-gallery/languages\n' +
       '    wp i18n make-php wp-plugin/mullion-gallery/languages\n' +

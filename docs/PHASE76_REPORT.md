@@ -9,7 +9,7 @@
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P76-A | Run a real `wp i18n make-pot` harvest, `msgmerge` into the 5 reference locales, compile `.mo` / `.l10n.php` | **Done** (2026-08-26) | Medium |
-| P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | Planned | Medium |
+| P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | **Done** (2026-08-28) — 15 strings, not the ~750 planned; see notes | Small |
 | P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
 | P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | **Done** (2026-08-27) — remainder split into H and I | Medium |
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | **Done** (2026-08-26) | Small |
@@ -191,6 +191,44 @@ Until this track lands, non-English sites keep falling through to English for (2
 
 - `npm run i18n:check` + `npm run i18n:check:locales`.
 - Spot-check one non-English locale in wp-env (`WPLANG=de_DE`): Plugins screen shows Mullion, not the old name; a previously-backlogged settings string renders translated rather than English.
+
+### Implementation Notes (2026-08-28)
+
+**Punch list re-derived independently, not taken from P76-A.** Parsed all five `.po` files into `(msgid, msgid_plural) -> msgstr[]` maps rather than trusting the scope-correction note above: exactly **3 msgids x 5 locales = 15 empty msgstr**, zero fuzzy, zero `#~` obsoletes, 2 525 entries per locale. A's numbers hold. Also confirmed first-hand that none of the three appears in `src/i18n-strings.en.json` -- that is *why* `i18n:check:locales` stayed green through A, and it means **this track's own headline gate cannot prove it landed.** The structural parse and the runtime probe below are the real checks.
+
+**The 15 strings, and where each translation came from**
+
+| msgid | de_DE | es_ES | fr_FR | ru_RU | zh_CN |
+|-------|-------|-------|-------|-------|-------|
+| `Mullion Settings` | Mullion-Einstellungen | Ajustes de Mullion | Paramètres de Mullion | Настройки Mullion | Mullion 设置 |
+| `Mullion Light` | Mullion Hell | Mullion claro | Mullion clair | Mullion светлая | Mullion 浅色 |
+| `https://github.com/rafprojects/mullion-gallery` | *identity* | *identity* | *identity* | *identity* | *identity* |
+
+House style was read off sibling entries already in the catalogs, not invented:
+
+- **`Mullion Light` follows the theme-name pattern, not the dropped `Default Light` one.** The catalogs already translate `Material Light` -> `Material Hell` / `Material claro` / `Material clair` / `Material светлая` / `Material 浅色`, and `Solarized Light` identically: **brand token verbatim, descriptor translated, descriptor case per locale** (German capitalises, the Romance locales do not). The dropped `Default Light` translations (`Standard Hell`, `Claro predeterminado`, `Clair par défaut`, `По умолчанию светлая`, `默认浅色`) are *not* the precedent -- "Default" was an adjective, "Mullion" is a proper noun, so reusing that shape produces word-order nonsense. Worth noting the catalogs deliberately leave upstream-named themes (`Gruvbox Dark`, `Tokyo Night`, `Catppuccin Latte`) untranslated in all five locales; `Mullion Light` is our own name plus our own descriptor, so it is translated like `Material Light`.
+- **The standalone `Light` msgid is a trap.** It resolves to `Leicht` / `Ligera` / `Léger` / `细` -- font *weight*, not luminance. Reusing it would have shipped "Mullion Thin" in Chinese.
+- **`Mullion Settings` is a token swap of the dropped `Super Gallery Settings`, with one deliberate French departure.** de/es/ru/zh keep the old structure exactly (`Super Gallery-Einstellungen` -> `Mullion-Einstellungen`, `Ajustes de Super Gallery` -> `Ajustes de Mullion`, and so on). French does not: the old entry was `Réglages de Super Gallery`, but A dropped it, and in the *surviving* catalog "Paramètres" outnumbers "Réglages" 12 : 1 -- including the translation of the adjacent submenu label `Settings`, which `add_submenu_page()` renders directly beside this page title. `Réglages de Mullion` would have put two different French words for "Settings" side by side in one menu. Chose `Paramètres de Mullion`.
+- **The URI is an identity translation**, matching what the dropped `.../wp-super-gallery` entry did in all five locales. It must be a real entry rather than left empty, or `make-mo` omits it and the Plugins-screen URI falls through to the untranslated header.
+
+`PO-Revision-Date` bumped to `2026-08-28` in all five headers -- P76-A deliberately left that field alone as the translator timestamp belonging to this track.
+
+**Validation**
+
+- **Structural parse, all five catalogs: `total=2525 empty=0 fuzzy=0 oldbrand_in_msgstr=0`.** The last column greps every `msgstr` for `WP Super Gallery` / `wp-super-gallery` / `Super Gallery` / `wpsg` -- this track's second acceptance criterion, now proven rather than inherited from A's assertion.
+- **The `.po` diff is exactly 20 lines: 15 `msgstr` + 5 `PO-Revision-Date`.** Nothing else in ~1.9 MB of catalog text moved.
+- **Runtime probe, 5 locales x both compiled formats.** `load_textdomain()` (which prefers the `.l10n.php` fast format) and a direct `MO::import_from_file()` return the **same** string for each of the three msgids in every locale -- no format skew. `.mo` entry count went **2 522 -> 2 525** exactly as predicted, since `make-mo` omits untranslated entries and there are none left. Control probe `Asset Library` still resolves to its pre-existing translation everywhere.
+- **The track's browser spot-check, settled at the data layer instead.** `get_plugin_data($file, false, true)` under a forced `de_DE` / `fr_FR` / `zh_CN` locale returns Name `Mullion`, both URIs `https://github.com/rafprojects/mullion-gallery`, and a translated Description (`Einbettbare Kampagnengalerie mit Shadow-DOM-Rendering.` / `Galerie de campagnes intégrable avec rendu Shadow DOM.` / `可嵌入的活动图库，采用 Shadow DOM 渲染。`). That is precisely what the Plugins screen renders.
+- `php -l` clean on all five regenerated `.l10n.php`.
+- `npm run i18n:check` green; `npm run i18n:check:locales` green (2 380/2 380 in all five).
+- **No test regression surface, checked rather than assumed.** A grep of `wp-plugin/mullion-gallery/tests/` finds **zero** PHP tests referencing `languages/`, `.po`, `l10n`, `textdomain` or `gettext`; the only JS consumers of the catalogs are `src/i18n.ts` and the two `scripts/*i18n*.mjs`. A full PHPUnit run would only re-confirm P76-A's pre-existing `Mullion_Package_Edition_Test` failure -- the gitignored `assets/mullion-edition.json` build marker, still present locally from 2026-08-26 -- and would say nothing about this track, so it was not re-run.
+
+**Two more copies of the broken `make-pot` command, fixed here**
+
+P76-A found that the documented `make-pot` invocation OOMs on any built checkout without `--skip-js`, and fixed [TRANSLATING.md](guides/TRANSLATING.md). It missed two other live copies of the same command. Both are this track's natural property, and both are two-line fixes:
+
+- **`scripts/check-i18n-locales.mjs`** printed the flagless command as its *failure* remediation -- read by exactly the person about to run it, at the moment they need it to work. Added `--skip-js` and a one-line reason.
+- **[PRO_FEATURES.md](guides/PRO_FEATURES.md)** "Mandatory i18n locale step" carried the same command with the same omission. Added the flag.
 
 ---
 

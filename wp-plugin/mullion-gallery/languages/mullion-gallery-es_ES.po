@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-08-27T02:59:44+00:00\n"
-"PO-Revision-Date: 2026-07-18T21:05:14+00:00\n"
+"PO-Revision-Date: 2026-08-28T00:00:00+00:00\n"
 "Language: es_ES\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Domain: mullion-gallery\n"
@@ -10651,12 +10651,12 @@ msgstr "Nivel de concesión heredado — se trata como solo lectura. La edición
 #. Author URI of the plugin
 #: mullion-gallery.php
 msgid "https://github.com/rafprojects/mullion-gallery"
-msgstr ""
+msgstr "https://github.com/rafprojects/mullion-gallery"
 
 #: includes/settings/class-mullion-settings-core-fields.php:194
 msgid "Mullion Light"
-msgstr ""
+msgstr "Mullion claro"
 
 #: includes/settings/class-mullion-settings-renderer.php:45
 msgid "Mullion Settings"
-msgstr ""
+msgstr "Ajustes de Mullion"

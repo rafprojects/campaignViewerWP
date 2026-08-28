@@ -8,7 +8,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "POT-Creation-Date: 2026-08-27T02:59:44+00:00\n"
-"PO-Revision-Date: 2026-07-18T21:05:14+00:00\n"
+"PO-Revision-Date: 2026-08-28T00:00:00+00:00\n"
 "Language: ru_RU\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
 "X-Domain: mullion-gallery\n"
@@ -10651,12 +10651,12 @@ msgstr "Устаревший уровень доступа — работает 
 #. Author URI of the plugin
 #: mullion-gallery.php
 msgid "https://github.com/rafprojects/mullion-gallery"
-msgstr ""
+msgstr "https://github.com/rafprojects/mullion-gallery"
 
 #: includes/settings/class-mullion-settings-core-fields.php:194
 msgid "Mullion Light"
-msgstr ""
+msgstr "Mullion светлая"
 
 #: includes/settings/class-mullion-settings-renderer.php:45
 msgid "Mullion Settings"
-msgstr ""
+msgstr "Настройки Mullion"
