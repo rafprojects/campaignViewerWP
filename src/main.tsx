@@ -10,6 +10,9 @@ import i18n from './i18n'
 import { Notifications } from '@mantine/notifications'
 import { ModalsProvider } from '@mantine/modals'
 import '@mantine/core/styles.css'
+// P76-I-2: must be unconditional. Portaled admin chrome (Drawer/Modal/Menu)
+// renders outside the shadow root, where global.scss never reaches it.
+import './styles/chrome-portable.scss'
 import '@mantine/notifications/styles.css'
 import 'dockview/dist/styles/dockview.css'
 import './styles/builder.css'

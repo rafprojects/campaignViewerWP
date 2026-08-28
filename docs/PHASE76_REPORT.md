@@ -1028,6 +1028,54 @@ Screenshots of the real component confirm it: no underline at rest, underline on
 **Method note.** These renders were captured by temporarily adding real `Anchor` / `Checkbox` / `Table` components to the Display Settings drawer, screenshotting at 3× with transitions disabled, then reverting — the admin surfaces render no `Anchor` at all. The specimens were removed and the working tree verified clean. Twice now in this track, reading Mantine's CSS produced a confident wrong conclusion that a single screenshot overturned; **render it before reporting it.**
 
 
+### Implementation Notes — I-2 implementation (2026-08-28)
+
+**All three landed: Option A, the Checkbox checked border, and Table row hover.** Every claim below was measured in a browser, not read off a stylesheet.
+
+#### Option A — and the delivery problem that nearly sank it
+
+The token change itself is one declaration: override `outline-color` on Mantine's focus-ring selectors with `--mullion-color-primary-stroke`, leaving Mantine to own the ring's width, style and offset so a future geometry change still lands.
+
+Two things had to be solved first, and a permanent test found both.
+
+**1. Specificity.** Mantine's focus rules are not uniform. `.mantine-focus-auto:focus-visible` is (0,2,0), but the sibling-drawn rings — `.m_926b4011:focus-visible + .m_9307d992` for the Switch track — are (0,3,0). A like-for-like selector only *ties* those and loses on source order. The first run of the new test failed with exactly one entry, `sibling:mantine-Switch-track`, still painting `primaryFill`. Every selector now doubles its first class to sit one step clear of Mantine's.
+
+**2. The rules never reached the chrome at all.** `main.tsx` loads `global.scss` into the document **only when `!useShadowDom`**; under the shipped shadow mount it goes into the shadow root via `shadowStyles.ts`. Mantine's `Portal` appends to `document.body`, so the Drawer renders outside that shadow root and none of our CSS applied to it. This is the same portal-escape class of defect as P76-H, in a different delivery channel.
+
+Fixed by adding **`src/styles/chrome-portable.scss`** — imported unconditionally in `main.tsx` (so it is in the document, like Mantine's own stylesheet) *and* concatenated into `shadowStyles.ts` (so shadow content gets it too). Its header states the constraint: it leaks into the host WordPress page, so it must stay small and hold only Mantine class overrides — never element selectors or resets.
+
+Verified by tabbing 45 stops through the real panel: **every painted ring is now `rgb(0, 142, 133)` (`primaryStroke`), none is `primaryFill`.**
+
+The audit follows: the two `primaryFill` focus checks I-1 added are removed (they no longer describe anything painted), and **`KNOWN_FOCUS_RING_GAPS` is deleted entirely**. The gate is strict again with zero exceptions across all 23 themes — which retires I-1's request for a documented threshold exception rather than answering it.
+
+#### The regression test is the real deliverable
+
+`e2e/theme-qa.spec.ts` → `focus ring colour › no painted focus ring uses primaryFill` tabs the live panel and asserts on the **painted** result, not the stylesheet. That distinction is load-bearing: the override is a *list of selectors*, and a list can be incomplete. Several components (Switch, Checkbox, Chip, SegmentedControl) draw their ring on a sibling, so a component missing from the list keeps the old colour silently. The test caught the Switch immediately. It also asserts it found more than five rings, so it cannot pass by walking a panel with nothing focusable in it.
+
+#### Checkbox and Table
+
+| | Before | After |
+|---|---|---|
+| Checkbox unchecked | border `rgb(100,130,132)`, inline style | border `rgb(100,130,132)`, **no inline style** |
+| Checkbox checked | border `rgb(100,130,132)` — grey ring | border + fill `rgb(0,120,112)` = `--checkbox-color` |
+| Table row | rest and hover both transparent | rest transparent → hover `rgb(26,53,66)` = `surfaceRaised` |
+
+The Checkbox colour moved to a `vars` entry (`--mullion-checkbox-bd`) consumed by a class rule, because deleting the declaration was not an option: Mantine's base is `border: 1px solid transparent`, so unchecked boxes would have lost their border entirely. The Table needed `defaultProps: { highlightOnHover: true }` plus `--table-hover-color`; `surfaceRaised` rather than the deleted rule's `surface2`, which sits three points from `surface` and is imperceptible.
+
+**A measurement note.** The first checked-state reading came back as `rgba(0,120,112,0.576)` with border `rgb(42,124,120)` — values that sit exactly on the interpolation line from `borderStrong` to `--checkbox-color` at 57.6%. It was a transition captured mid-flight: `page.addStyleTag` injects into `document.head`, which the shadow root does not inherit, so the transition-disabling never applied to that element. Worth remembering — the same trap that corrupted I-1's first before/after read, in a new disguise.
+
+#### A pre-existing defect this surfaced
+
+Measuring which selectors reach `document.styleSheets` showed two `global.scss` rules have been dead for portaled chrome all along: `.mullion-mantine-select-option[data-selected]` and `.mullion-mantine-tabs-tab`. The select-option rule is the pointed one — its own comment says it exists *because* dropdowns portal, so the ancestor problem was spotted while the delivery problem beneath it was not, and the selected-option highlight has been falling back to Mantine's default. `theme-qa` has dropdown captures that pass; they baked the unstyled appearance in as correct. Filed in [FUTURE_TASKS.md](FUTURE_TASKS.md) rather than fixed here, because making dead styles live changes appearance and needs a deliberate baseline review.
+
+#### Verification
+
+- `npx vitest run` — **3913 passed** (3925 − 13 exception-table staleness tests + 1 new Table test).
+- `npx tsc --noEmit`, `npx eslint src packages e2e`, `npm run build` — clean.
+- `npx playwright test theme-qa` — **21/21, zero baseline changes.** Expected: snapshots capture resting state, and nothing about the resting appearance moved. Focus, hover and checked states are covered by the new assertions instead.
+- Checkbox, table-row and focus-ring behaviour each measured in the running app against the real admin surfaces.
+
+
 ---
 
 ## Follow-On Candidates

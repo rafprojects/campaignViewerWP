@@ -215,6 +215,39 @@ Net effect: a green test asserting nothing, sitting in the suite that is suppose
 
 ---
 
+### `global.scss` rules aimed at portaled admin chrome are dead in shadow mode
+
+**Origin:** [PHASE76_REPORT.md](PHASE76_REPORT.md) Track **P76-I-2**, found 2026-08-28 while implementing the focus-ring override. Pre-existing; confirmed by direct measurement, not inference.
+
+**Context:** `main.tsx` loads `styles/global.scss` into the document **only when the app mounts without a shadow root**:
+
+```ts
+if (!useShadowDom) { import('./styles/global.scss') }
+```
+
+In the shipped default — shadow DOM — it is concatenated into the shadow root by `shadowStyles.ts` instead. But Mantine's `Portal` appends its target to `document.body`, so every Drawer, Modal, Menu and Popover renders *outside* that shadow root. Any `global.scss` rule meant to style portaled admin chrome therefore never applies in the configuration we actually ship.
+
+Measured in a browser with the Display Settings drawer open (shadow mount, shipped default) — whether each selector is present in `document.styleSheets`:
+
+| Rule | Reaches portaled chrome |
+|---|---|
+| `.mullion-mantine-select-option[data-selected]` | **No** |
+| `.mullion-mantine-tabs-tab` | **No** |
+| `.mantine-focus-auto…` (P76-I-2, `chrome-portable.scss`) | Yes |
+| `.mullion-mantine-checkbox-input` (P76-I-2, `chrome-portable.scss`) | Yes |
+
+The select-option rule is the sharpest case, because its own comment states the reason it exists: *"Select dropdowns may render in a portal, so selected option styling cannot rely on the `.mullion-gallery` ancestor being present."* The ancestor problem was correctly identified; the delivery problem underneath it was not. The selected-option highlight in every themed dropdown has been falling back to Mantine's default.
+
+**Why the snapshots never caught it:** `theme-qa`'s `theme selector dropdown` captures exist and pass — they simply baked the unstyled appearance in as correct from the beginning.
+
+**What to implement:** Audit `global.scss` for every rule that targets a Mantine class (`.mullion-mantine-*`) or otherwise expects to style portaled chrome, and move those into `src/styles/chrome-portable.scss`, which P76-I-2 added precisely for this and which is imported unconditionally in `main.tsx` *and* concatenated into `shadowStyles.ts`. Keep genuinely gallery-scoped structural rules where they are — `chrome-portable.scss` leaks into the host WordPress page, so it must stay small and contain only Mantine class overrides, never element selectors or resets.
+
+**Dependencies / risk:** Moving these rules makes currently-dead styling live, so it **will** change appearance — the `theme selector dropdown` baselines will need deliberate recapture, and the diff should be reviewed rather than auto-accepted. That is the whole reason this is filed rather than folded into P76-I-2, which was scoped to the focus ring and two specific control fixes.
+
+**Effort:** Small (a move plus a baseline review) | **Impact:** Medium — restores theming that the code already claims to apply, and removes a class of silently-dead CSS that has now bitten twice in Phase 76 (P76-H's variables, P76-I-2's focus ring).
+
+---
+
 ### Three e2e specs fail on a clean tree (`mantine8-runtime-qa` x2, `accessibility` login modal)
 
 **Origin:** [PHASE76_REPORT.md](PHASE76_REPORT.md) § Track I, found while verifying **P76-I-1** (2026-08-27). Pre-existing — reproduced on a stashed, unmodified tree at `13598e13`, so nothing in Phase 76 caused them.
@@ -713,3 +746,5 @@ When promoting future tasks to an active phase:
 *Updated: August 27, 2026 (P76-I-1) — Added Code Quality & Refactoring entry "Three e2e specs fail on a clean tree", found while verifying P76-I-1 and confirmed pre-existing against an unmodified tree. Not deferred work from Phase 76; filed so a permanently-red e2e floor has an owner.*
 
 *Updated: August 28, 2026 (P76-I-2 decision) — Added Accessibility entry "Two-Tone (Halo) Focus Ring", deferred from P76-I-2 after Option A (re-point the ring at `primaryStroke`) was selected. Recorded as a complementary layer on top of A, not a competing option; Options B (lift `primaryFill`) and C (accept the gap) were dropped outright and are deliberately not carried here.*
+
+*Updated: August 28, 2026 (P76-I-2 implementation) — Added Code Quality & Refactoring entry "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode", found while implementing the focus-ring override and confirmed by measuring which selectors reach `document.styleSheets`. Two rules are affected (`select-option[data-selected]`, `tabs-tab`); fixing them changes appearance, so it is deliberately not folded into P76-I-2.*

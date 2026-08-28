@@ -18,6 +18,7 @@ import { resolveColors, withAlpha } from '@mullion/theme-engine';
 const TABS_TAB_CLASS = 'mullion-mantine-tabs-tab';
 const SEGMENTED_CONTROL_LABEL_CLASS = 'mullion-mantine-segmented-control-label';
 const SELECT_OPTION_CLASS = 'mullion-mantine-select-option';
+const CHECKBOX_INPUT_CLASS = 'mullion-mantine-checkbox-input';
 // 'md' is intentionally larger than Mantine 9's default 'sm' to match the
 // PHASE26 design decision (see docs/PHASE26_REVIEW.md Track P26-B).
 const DEFAULT_RADIUS = 'md';
@@ -186,7 +187,17 @@ function generateComponentOverrides(
       }),
     },
 
+    // P76-I-2: rows had no hover state at all — Mantine only highlights when
+    // `highlightOnHover` is set, which nothing did. The deleted adapter rule
+    // used `surface2`, which is three points from `surface` on default-dark
+    // (#132a36 vs #102530) and is imperceptible even at full opacity, so
+    // restoring it verbatim would have looked like a no-op. `surfaceRaised`
+    // is the token that actually reads on both schemes.
     Table: {
+      defaultProps: { highlightOnHover: true },
+      vars: () => ({
+        table: { '--table-hover-color': rc.surfaceRaised },
+      }),
       styles: () => ({
         table: { color: rc.text },
         thead: { borderBottom: `2px solid ${rc.border}` },
@@ -281,11 +292,21 @@ function generateComponentOverrides(
       }),
     },
 
+    // P76-I-2: the resting border travels as a CSS variable read by a class
+    // rule, not as an inline `borderColor`. Mantine's checked rule sets
+    // background AND border from `--checkbox-color`; an inline border-color
+    // outranks it, which left a `borderStrong` ring around every checked box.
+    // Deleting the declaration is not an option either — Mantine's base is
+    // `border: 1px solid transparent`, so unchecked boxes would lose their
+    // border entirely. See global.scss for the rule that consumes this.
     Checkbox: {
+      classNames: {
+        input: CHECKBOX_INPUT_CLASS,
+      },
+      vars: () => ({
+        root: { '--mullion-checkbox-bd': rc.borderStrong },
+      }),
       styles: () => ({
-        input: {
-          borderColor: rc.borderStrong,
-        },
         label: { color: rc.text },
       }),
     },
@@ -555,4 +576,5 @@ export const themeStateClasses = {
   tabsTab: TABS_TAB_CLASS,
   segmentedControlLabel: SEGMENTED_CONTROL_LABEL_CLASS,
   selectOption: SELECT_OPTION_CLASS,
+  checkboxInput: CHECKBOX_INPUT_CLASS,
 } as const;

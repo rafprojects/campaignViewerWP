@@ -128,7 +128,22 @@ function chromeVars(themeId: string): CSSProperties {
   // scheme blocks can ever apply — pick it here rather than emitting both and
   // letting the later key win by accident.
   const scheme = entry.meta.colorScheme === 'dark' ? dark : light;
-  const vars = { ...variables, ...scheme } as CSSProperties;
+
+  // P76-I-2: the focus ring resolves its colour from
+  // `--mullion-color-primary-stroke`. That variable is injected onto the
+  // gallery root by ThemeContext, but portaled admin chrome escapes the
+  // gallery root entirely — so it has to travel with the chrome's own
+  // variable block or the ring silently falls back inside every Drawer,
+  // Modal and Menu. `defaultCssVariablesResolver` only emits `--mantine-*`,
+  // so it is added here explicitly.
+  const stroke = (entry.mantine.other as { colors?: { primaryStroke?: string } } | undefined)
+    ?.colors?.primaryStroke;
+
+  const vars = {
+    ...variables,
+    ...scheme,
+    ...(stroke ? { '--mullion-color-primary-stroke': stroke } : {}),
+  } as CSSProperties;
 
   chromeVarCache.set(themeId, vars);
   return vars;

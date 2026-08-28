@@ -24,16 +24,20 @@
  *     adapter used to pin the border with an inline style, so the focus colour
  *     never reached a pixel.
  *   - Everything else (Button, ActionIcon, Checkbox, Switch, Chip,
- *     SegmentedControl) takes Mantine's global focus ring:
+ *     SegmentedControl) takes Mantine's global focus ring, which Mantine
+ *     draws from `--mantine-primary-color-filled`:
  *       .mantine-focus-auto:focus-visible {
  *         outline: 2px solid var(--mantine-primary-color-filled);
  *         outline-offset: 2px;
  *       }
- *     That is `primaryFill`, not `primaryStroke`, and it was never audited.
- *     Because of the 2px offset the ring sits on the *container* surface, so
- *     it is checked against `surface` / `surfaceRaised` and not `surface2`
- *     (an input's own fill, where no outline ring is ever drawn — Mantine
- *     sets `outline: none` on focused inputs).
+ *     That is `primaryFill`, and measured across the bundled themes it fell
+ *     below 3:1 on 13 of 23. **P76-I-2 re-pointed that ring at
+ *     `primaryStroke`** (see the focus-ring block in `src/styles/global.scss`),
+ *     so both families of affordance now resolve to the same audited token and
+ *     the checks below cover the ring as painted. Because of the ring's 2px
+ *     offset it sits on the *container* surface, which is why `surface` and
+ *     `surfaceRaised` are the grounds that matter for it; `surface2` is an
+ *     input's own fill, where no outline ring is ever drawn.
  */
 import { resolveColors, UI_CONTRAST_MIN } from './colorGen';
 import { contrastRatio } from './validation';
@@ -74,20 +78,6 @@ export function intendedUiContrastChecks(
     {
       label: `primaryStroke on surfaceRaised (menus / drop targets)`,
       fg: rc.primaryStroke,
-      bg: rc.surfaceRaised,
-      minRatio,
-    },
-    // Mantine's global focus ring — see the header note. `primaryFill` is the
-    // painted colour here; `primaryStroke` above governs input borders only.
-    {
-      label: 'primaryFill on surface (Mantine focus ring: buttons, checkbox, switch, chip)',
-      fg: rc.primaryFill,
-      bg: rc.surface,
-      minRatio,
-    },
-    {
-      label: 'primaryFill on surfaceRaised (focus ring inside menus, modals, popovers)',
-      fg: rc.primaryFill,
       bg: rc.surfaceRaised,
       minRatio,
     },

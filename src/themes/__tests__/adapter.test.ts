@@ -164,14 +164,42 @@ describe('adaptTheme', () => {
       expect(comp?.styles?.()['input']).toBeUndefined();
     }
 
-    // Checkbox is not an Input-family control; its border is still a painted
-    // inline style.
-    const checkboxBorder = (
-      result.components?.Checkbox as
-        | { styles?: () => Record<string, { borderColor?: string }> }
-        | undefined
-    )?.styles?.()['input']?.borderColor;
-    expect(checkboxBorder).toBe(colors['borderStrong']);
+    // P76-I-2: Checkbox is not an Input-family control, but it had the same
+    // defect — an inline `borderColor` outranking Mantine's checked rule,
+    // which sets background AND border from `--checkbox-color`. The colour now
+    // travels as a variable consumed by a class rule, so the checked state can
+    // paint its own border.
+    const checkbox = result.components?.Checkbox as
+      | {
+          vars?: () => { root?: Record<string, string> };
+          classNames?: Record<string, string>;
+          styles?: () => Record<string, Record<string, unknown>>;
+        }
+      | undefined;
+    expect(checkbox?.vars?.().root?.['--mullion-checkbox-bd']).toBe(colors['borderStrong']);
+    expect(checkbox?.classNames?.['input']).toBe(themeStateClasses.checkboxInput);
+    // The inline border-color is what broke it; it must not come back.
+    expect(checkbox?.styles?.()['input']?.['borderColor']).toBeUndefined();
+  });
+
+  // P76-I-2: rows had no hover state at all, because Mantine only highlights
+  // when `highlightOnHover` is set. Restoring the deleted rule verbatim would
+  // have been imperceptible — it used `surface2`, three points from `surface`
+  // on default-dark — so the hover colour is `surfaceRaised`.
+  it('gives table rows a hover state that is actually distinguishable', () => {
+    const result = adaptTheme(makeThemeDef());
+    const colors = (result.other as Record<string, unknown>)['colors'] as Record<string, string>;
+    const table = result.components?.Table as
+      | {
+          defaultProps?: { highlightOnHover?: boolean };
+          vars?: () => { table?: Record<string, string> };
+        }
+      | undefined;
+
+    expect(table?.defaultProps?.highlightOnHover).toBe(true);
+    expect(table?.vars?.().table?.['--table-hover-color']).toBe(colors['surfaceRaised']);
+    // The token it must NOT be: surface2 is within a few points of surface.
+    expect(table?.vars?.().table?.['--table-hover-color']).not.toBe(colors['surface2']);
   });
 
   // P76-I / Finding D: the Switch declares `borderColor: borderStrong` on its
