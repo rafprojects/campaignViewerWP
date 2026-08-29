@@ -40,7 +40,7 @@ Legend: ⬜ to do · 🔒 blocked on a prior item · 💻 has code already done,
 - 💻 Build the free ZIP: the **Release** workflow attaches `mullion-gallery-lite-v${VERSION}.zip` (or manually: `npm run build:wp:free`). `check:free-build` (every PR) plus a static re-scan in `release.yml` / `svn-deploy.yml` assert Pro code is stripped (P75-B).
 - ⬜ **Plugin Check (PCP)** green on the *stripped* free build; keep `Tested up to` current.
 - 💻 Wire **dual-channel release** (P75-B): `release.yml` emits `mullion-gallery-v*.zip` (premium) and `mullion-gallery-lite-v*.zip` (free); `svn-deploy.yml` downloads the lite ZIP and re-scans it before SVN push. The P62-G hard-fail guard is gone.
-- 🔒 Submit the free build to the **WP.org review** (~1–10 days); on approval, SVN-deploy it; confirm Freemius serves the premium build via `is_premium`.
+- 🔒 Submit the free build to the **WP.org review** (~1–10 days); on approval, SVN-deploy it; confirm Freemius serves the premium build via `is_premium`. Needs a live WordPress.org account first — see [WORDPRESS_ORG_ACCOUNT_SETUP.md](WORDPRESS_ORG_ACCOUNT_SETUP.md).
 
 ## G. Quality bars — recommended, decouplable (NOT hard WP.org gates)
 - ⬜ **Manual assistive-tech audit** — run the QA script: [ACCESSIBILITY_MANUAL_AUDIT.md](ACCESSIBILITY_MANUAL_AUDIT.md) (keyboard / screen-reader / Shadow-DOM / reflow). Record the launch-blocking-vs-follow-on decision.

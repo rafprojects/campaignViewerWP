@@ -244,7 +244,7 @@ The handle appears only in `readme.txt` today (plus this phase's FROM-map in PHA
 
 ### Fix
 
-1. **Human gate, first.** Create or rename the WordPress.org account that will own the listing (or transfer the existing `wpsupergallery` profile). Confirm the live username at [wordpress.org/plugins](https://wordpress.org/plugins/) profile URL. Do not pick a slug in this plan — see Key Decision E.
+1. **Human gate, first.** Create the WordPress.org account that will own the listing. **`wpsupergallery` is not an existing account to transfer** — checked live 2026-08-29, `profiles.wordpress.org/wpsupergallery/` is a 404. It was never a valid handle, on top of being off-brand; this is a fresh registration, not a rename. Full walkthrough, including the 2FA/SVN-password requirements and a submission-time slug gotcha specific to this repo, in [WORDPRESS_ORG_ACCOUNT_SETUP.md](guides/WORDPRESS_ORG_ACCOUNT_SETUP.md). Confirm the live username at its `profiles.wordpress.org/<username>/` URL. Do not pick a slug in this plan — see Key Decision E.
 2. **Code.** `Contributors: <that-username>` in `wp-plugin/mullion-gallery/readme.txt`. If the listing will have more than one contributor, list them comma-separated per the [readme standard](https://developer.wordpress.org/plugins/wordpress-org/how-your-readme-txt-works/).
 3. **Do not** rewrite `readme.txt` changelog history, the P74-K license-test negative assertion, or archive docs.
 

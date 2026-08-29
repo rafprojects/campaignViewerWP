@@ -14,7 +14,9 @@
 #
 # Requires repository secrets:
 #   SVN_USERNAME — WordPress.org username
-#   SVN_PASSWORD — WordPress.org password
+#   SVN_PASSWORD — the account's SVN-specific password (Account & Security tab
+#                  → SVN Password), NOT the login password. See
+#                  docs/guides/WORDPRESS_ORG_ACCOUNT_SETUP.md.
 # ──────────────────────────────────────────────────────────────────────────────
 
 name: SVN Deploy
