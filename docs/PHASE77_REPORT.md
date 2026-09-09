@@ -14,7 +14,7 @@
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test | Planned | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
-| P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Proposed** — found by P77-A on 2026-09-09, awaiting the user's decision | Small |
+| P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done in code** (2026-09-09); production check pending a redeploy | Small |
 
 ---
 
@@ -58,6 +58,7 @@
    through the canonical channel once it exists rather than adding another delivery-channel
    customer first and migrating it later.
 6. **P77-E** last. Gated on A and B by construction.
+7. **P77-G** slots in as soon as it is accepted: it is small, it is a production delivery bug rather than architecture, and A's contract already describes the mechanism it repairs.
 
 ---
 
@@ -316,6 +317,33 @@ so the `primaryStroke`-on-ground checks need re-derivation rather than deletion.
 
 ---
 
+## Track P77-G - Enqueue every stylesheet the entry needs
+
+### Problem
+
+`class-mullion-embed.php` registers and enqueues `$manifest['index.html']['css']` and nothing else. With `cssCodeSplit` and the vendor `manualChunks`, Vite attaches Mantine's base stylesheet (`vendor-mantine-core-*.css`, 221 KB, core plus notifications) and Dockview's to the vendor chunks they belong to. Vite's own `dist/index.html` links three stylesheets; the plugin links one.
+
+Measured on the production site (2026-09-09, signed out, no campaigns): `document.styleSheets` held no sheet containing Mantine's `.mantine-focus-auto:focus-visible` at page load. The shadow root had its own copy from `shadowStyles.ts`, so the gallery looked right. The two vendor sheets appeared only when a dynamic chunk whose preload list includes them was fetched: every gallery adapter and every admin chunk lists `vendor-mantine-core-*.css` in `__vite__mapDeps`. Signed in with campaigns present the adapter chunk loads immediately and the gap closes within the first paint or two; the exposure is the window before that, and any page where no such chunk ever loads, on which portaled chrome rendered from the entry chunk (the auth bar's admin `Menu`) has no Mantine base rules at all.
+
+This is a delivery bug in what the P77-A contract calls mechanism M1, not a new channel. It is the same shape as the P76 defects: a rule present in the source, absent from the tree that paints.
+
+### Fix
+
+Walk the manifest the way Vite's HTML generation does: for the entry, the CSS of every statically imported chunk (recursively, depth first, each chunk once) and then the entry's own CSS. Register a `mullion-gallery-app-style-N` handle per file in that order and enqueue the same list on render. Dynamic-only chunks stay with Vite's preload helper, which already handles them. The wp-admin renderers already enqueue every registered handle by index, so they need no change.
+
+### Acceptance criteria
+
+- `Mullion_Embed::get_entry_css_files()` returns, for the real manifest, exactly the stylesheets `dist/index.html` links, in the same order.
+- PHPUnit covers the walk (order, deduplication, cycles, dynamic chunks excluded) and the registration and enqueue of every handle.
+- On the production site, `document.styleSheets` contains Mantine's base sheet at page load, signed out, before any dynamic chunk is fetched.
+
+### Validation
+
+- `Mullion_Embed_Test.php` and the full PHPUnit suite through wp-env.
+- A rebuilt and redeployed plugin checked in the browser as above.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -363,6 +391,17 @@ so the `primaryStroke`-on-ground checks need re-derivation rather than deletion.
 The e2e spec also pins `global.scss` to exactly one tree per mode, which is the reach claim the guide makes for it.
 
 **Two environment notes for P77-D.** Port 5173 was serving an unrelated project, and `playwright.config.ts` has `reuseExistingServer: true`, so the suite would have driven the wrong app and reported a locator timeout rather than a clear error. Validation for this track ran against a gallery dev server on 5174 with `E2E_BASE_URL`. Separately, the project pins Playwright 1.61 (Chromium build 1228) while the user's general-purpose Playwright is 1.62 (build 1234); only the 262 MB headless shell for 1228 was kept.
+
+### P77-G (2026-09-09)
+
+**Status: fix and tests landed; the production acceptance check waits on a redeploy of the plugin, which needs the `sudo`-based `update_dev_plugin.sh`.**
+
+`Mullion_Embed::get_entry_css_files()` walks the manifest from `index.html`: each statically imported chunk's CSS first, depth first, every chunk visited once (the walk tolerates cycles), then the entry's own CSS. Both `register_assets()` and the shortcode enqueue use it, so the `mullion-gallery-app-style-N` handles the wp-admin renderers already iterate now cover every sheet. Run against the real manifest the result is exactly the three files `dist/index.html` links, in the same order: `vendor-mantine-core`, `vendor-dockview`, `index`. Dynamic-only chunks are left to Vite's preload helper, which already injects their CSS.
+
+Four PHPUnit tests cover the walk (order, deduplication, a deliberate cycle, a dynamic chunk excluded), the empty and bare-manifest cases, registration of one handle per file, and enqueueing on render. `Mullion_Embed_Test.php` passes 30 of 30. The full suite reported three failures, none in this area: the edition-marker test fails whenever a local build leaves `assets/mullion-edition.json` behind (its own message says so), and two `Mullion_REST_Extended_Test` analytics cases returned 403. Re-running that file against a tree with this change stashed produced an error in a third test on one run and a clean 63 of 63 on the next, so it is order-dependent and predates this track. Worth a line in P77-D's list even though that track is scoped to the e2e suite.
+
+**Sizing, from the signed-in production check.** With campaigns present a gallery adapter chunk loads immediately and its preload list pulls both vendor sheets into the document within the first paints, so the drawer and modals were never visibly broken for a signed-in admin. The exposure was the window before that first dynamic chunk, and any page that never loads one: signed-out visitors on a page with no adapter, where the auth bar's admin `Menu` portals to a document with no Mantine base rules. Small, but the class of defect this phase exists to remove.
+
 
 ## Outcome
 
