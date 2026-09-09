@@ -281,41 +281,61 @@ The **manual** assistive-tech audit ([guides/ACCESSIBILITY_MANUAL_AUDIT.md](guid
 
 ---
 
-### Two-Tone ("Halo") Focus Ring — revisit as a layer on top of P76-I-2 Option A
+### ~~Two-Tone ("Halo") Focus Ring~~ — ⬆ PROMOTED to Phase 77 (P77-F)
 
-**Origin:** [PHASE76_REPORT.md](PHASE76_REPORT.md) Track **P76-I-2**, deferred 2026-08-28. Option A (re-point Mantine's global focus ring at `primaryStroke`) was chosen; this was Option D in that decision, and the two are **complementary, not alternatives**.
+*Promoted 2026-09-01 to [PHASE77_REPORT.md](PHASE77_REPORT.md) track **P77-F**, which absorbs
+this entry's full write-up. The trigger was the designer's response to the v2 design docs
+([`docs/design/correspondences/designer-response-v2-notes.md`](design/correspondences/designer-response-v2-notes.md) §4),
+which endorsed building it and settled the two open design questions: the halo is a
+**neutral drawn from the theme's own grounds** (never a second brand colour), and **ring
+geometry stays constant across themes** (only the colours resolve). Original origin:
+P76-I-2, Option D, deferred 2026-08-28 as complementary to the chosen Option A.*
 
-**Context:** Mantine draws every non-input focus ring as a single flat outline:
+---
 
-```css
-.mantine-focus-auto:focus-visible {
-  outline: 2px solid var(--mantine-primary-color-filled);
-  outline-offset: 2px;
-}
-```
+## Design & Brand
 
-A single-colour ring can only ever be as visible as its contrast against whatever sits behind it, which is why 13 of 23 bundled themes measured below the 3:1 WCAG 1.4.11 floor before Option A. Option A fixes that by choosing a better colour, but it remains a **one-colour** ring: any future theme, or any surface it was not measured against, can put it back under the floor.
+### Move the Plugin Header `Author:` / `Author URI:` to Astragal
 
-The two-tone technique used by Chrome, Firefox and GitHub sidesteps the problem entirely — a brand-coloured inner ring plus a contrasting outer halo, so at least one of the two always contrasts with the background regardless of the surface:
+**Origin:** Designer's endorsement-placement guidance ([`docs/design/correspondences/designer-response-2026-09-09.md`](design/correspondences/designer-response-2026-09-09.md) §3), adopted into [`DESIGN_BRIEF.md`](design/DESIGN_BRIEF.md) → House brand. Unblocked by the `astragal` WordPress.org account registration (P76-C, 2026-09-09), but deliberately not done with it.
 
-```css
-outline: 2px solid var(--ring-core);
-box-shadow: 0 0 0 4px var(--ring-halo);
-```
+**Context:** The house brand publishes the product, and the designer's placement rules put Astragal on exactly the provenance surfaces: the WP.org account (done), the Freemius seller of record, the GitHub organisation, and the plugin header's `Author:` / `Author URI:`. `wp-plugin/mullion-gallery/mullion-gallery.php` still reads `Author: Mullion` with `Author URI:` pointing at the GitHub repo. WordPress renders `Author:` as "By Mullion" in the plugins list, so today the product credits itself as its own vendor.
 
-**What to implement:** Add the halo to the focus-ring rule Option A already introduces, with `--ring-halo` resolved per colour-scheme (a light halo on dark themes, dark on light). Then decide what `uiContrastAudit` should assert — the halo changes the guarantee from "the ring contrasts with the surface" to "the ring pair contrasts with itself and the surface", so `KNOWN_FOCUS_RING_GAPS` and the `primaryFill`/`primaryStroke` checks would need re-modelling rather than simple deletion.
+**Why it is deferred rather than done:** `Author URI:` needs a real destination. `astragalsoftware.com` is owned but the brief does not record a live site there, and pointing the field at a domain that does not resolve is worse than leaving it on the repo URL. Do this when the Astragal site (or a placeholder page) exists. The `Author:` string alone could move independently if preferred, but the pair reads oddly split.
 
-**Rationale for deferring:** Option A alone brings all 23 bundled themes over 3:1 (minimum 3.64 on `surface`, 3.01 on `surfaceRaised`), so the compliance problem is solved without it. The halo's value is **robustness for themes that do not exist yet** — including user-authored themes via `registerCustomTheme`, which no build-time audit can see. That is a real but non-urgent benefit, and it is much easier to judge once Option A's brighter rings have been seen in the product.
+**Also in the same family, when each surface is set up:** the Freemius seller of record (§A of the [Go-Live Punch List](guides/GO_LIVE_PUNCH_LIST.md)) and the GitHub organisation, per the designer's list. Neither is a code change in this repo.
 
-**Dependencies / risk:** Depends on P76-I-2 Option A having landed. Main risks: the thicker footprint interacts with `outline-offset` and tight layouts (toolbars, table cells, segmented controls) and needs a visual pass; `box-shadow` on a focused element can be clipped by an ancestor's `overflow: hidden`, which single outlines are immune to. Both are why this deserves its own look rather than being bolted on during I-2.
+**Effort:** Small (a two-line header edit) | **Impact:** Low-Medium — completes the vendor identity that the WP.org account started, and it is the field users actually see in wp-admin.
 
-**Effort:** Small–Medium (one CSS rule plus a visual sweep and an audit re-model) | **Impact:** Medium — converts focus-ring contrast from "measured correct for the themes we ship" into "structurally correct for any theme".
+### Hover-Glow Default Over Hostile Imagery — designer verification screenshots
+
+**Origin:** Designer response to the v2 design docs ([`docs/design/correspondences/designer-response-v2-notes.md`](design/correspondences/designer-response-v2-notes.md) §3), 2026-09-01. Non-blocking; nothing gates on it.
+
+**Context:** The per-gallery hover-glow effect defaults to the brand teal `#1ad1c4` (`tileGlowColor` in `src/types/gallerySettings.ts`). The designer has no objection to the colour but notes the glow sits over **user photography** — the one place the brand colour meets content nobody controls. Rig Cyan is high-chroma and light: over a cyan-toned or pale image it may read as a wash rather than a glow; over a busy image, as an artefact. Per-image outcome, user-configurable, so not a palette fault — but unverified.
+
+**What to implement:** Capture the default glow over three deliberately hostile cases — (1) a pale beach/sky image, (2) a teal-dominant image, (3) a very dark low-key image — in a seeded wp-env instance, and send the screenshots to the designer. If it survives those it is fine everywhere. Pairs naturally with the store screenshot capture pass (`STORE_ASSETS.md`), which needs the same seeded environment.
+
+**Effort:** Small (an hour with a seeded environment) | **Impact:** Low-Medium — closes the last open designer sign-off on the shipped palette's defaults.
 
 ---
 
 ## Monetization & Distribution
 
-Nothing yet.
+### Naming Defense — Trademark Filings + Fallback Domains (human gate, no code)
+
+**Origin:** Designer's naming review, 2026-09-01, completed 2026-09-09. **The full findings now live in [`docs/design/BRAND-CLEARANCE.md`](design/BRAND-CLEARANCE.md)** — a standalone reference card with both register tables, the trading namesakes, the domains, and an explicit list of what the check does not cover. That is the file to hand a solicitor; this entry is just the action list. All product-owner actions: nothing here is a repo change and none of it gates the release.
+
+**Where it stands.** Both names were searched on the **official USPTO register** on 2026-09-09 (the earlier JS-gated gap is closed) and both are **clear: zero marks in Class 9, zero in Class 42.** Mullion's only live exact-word mark is a Japanese medical-catheter registration (independently re-verified here against TSDR, serial 79350332 / reg. 7296060, exact match). Astragal's only bare-word registration is dead. Each name has one unregistered trading namesake in an unrelated vertical.
+
+**Actions, in priority order:**
+
+1. **File intent-to-use in US Classes 9 and 42 for both names.** Both classes are empty for both marks; this closes essentially all the tail risk and is the highest-value single action. Add CIPO (Canada) for Astragal — that namesake prices in CAD.
+2. **Do not file Astragal in Class 41.** ASTRAGAL PRESS (book publishing) is live there. Keep "publisher" as descriptive prose in `BRAND.md`, not as a service claim.
+3. **Register `astragal.dev` and `getastragal.com`.** (`astragal.com` is unobtainable, held since 1999 with transfer locks; `astragalsoftware.com` is already ours.)
+4. **Date-stamp first use in commerce** for both names — common-law rights accrue from use, and a dated record makes them provable.
+5. **For a solicitor**, the two highest-value items: whether **Mullion, Inc.** (Bedford, NH) still trades, and the **first-use date of the astragalhq.com operator** (Cloudflare-shielded, unindexed, so a standard knockout search would miss them entirely). Plus EUIPO / UKIPO / IP Australia if those territories matter — all three were JS-gated and remain unsearched.
+
+**Effort:** Small (human/administrative) | **Impact:** Medium — closes a slow-moving tail risk on both names before the first public release.
 
 ---
 
@@ -678,3 +698,9 @@ When promoting future tasks to an active phase:
 *Updated: August 28, 2026 (Phase 76 retrospective) — Added three architectural spikes to Code Quality & Refactoring after the user challenged the project's visual architecture as accumulating workarounds: "One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", and "UI Component Dependency: Mantine, Alternative, or In-House". They are sequenced deliberately — the dependency question runs last, because Phase 76's evidence attributes most of the pain to the shadow/portal boundary rather than to Mantine, and resolving that first materially narrows the case for replacement. The existing "Portal Admin Chrome Into the Shadow Root" entry is retained as the tactical version of one mount-strategy option.*
 
 *Updated: August 28, 2026 (Phase 77/78/79 planning) — **Promoted and removed:** the three architecture spikes added earlier today ("One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", "UI Component Dependency") became [PHASE77_REPORT.md](PHASE77_REPORT.md) tracks A, B and E; "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode" became P77-C; "Three e2e specs fail on a clean tree" and "Vacuous e2e test — theme-qa persists to localStorage" merged into P77-D. The UI facade became [PHASE78_REPORT.md](PHASE78_REPORT.md), and the former Phase 77 (release pipeline hygiene) was renumbered to [PHASE79_REPORT.md](PHASE79_REPORT.md) — the user chose to settle the visual architecture before release rather than ship on top of it. "Portal Admin Chrome Into the Shadow Root" is **not** promoted: it is retained, marked superseded, as the risk analysis behind option (a) of P77-B.*
+
+*Updated: September 1, 2026 (designer response to the v2 design docs) — **Promoted:** "Two-Tone ('Halo') Focus Ring" to [PHASE77_REPORT.md](PHASE77_REPORT.md) track P77-F, on the designer's build-it sign-off plus the two constraints that were its open design questions (neutral halo from the theme's own grounds; constant ring geometry across themes). **Added:** new Design & Brand section with "Hover-Glow Default Over Hostile Imagery" (three verification screenshots for the designer, non-blocking), and Monetization & Distribution entry "Naming Defense — Trademark Filings + Fallback Domains" (product-owner actions from the designer's §0, none gating design or release). The remaining code/doc items from the same response — `accentPurple: #923bde` on `default-light`, ΔE unit labels, the v1 criterion-wording record, the screenshot-manifest reorder — went to [PHASE76_REPORT.md](PHASE76_REPORT.md) as tracks P76-J and P76-K rather than here, since Phase 76 is the in-progress colour-follow-ons phase.*
+
+*Updated: September 9, 2026 (second designer response; Mullion trademark check completed) — **Updated:** "Naming Defense" entry with the completed Mullion register check (clear in US Classes 9/42, cleaner than Astragal; one detail — the Mullion Group's FLINTPRO cancellation/ownership transfer — reported by the designer but not independently confirmable, two lookup paths blocked) and the two named gaps carried forward (USPTO phonetic search, UK/EU Class 9 exposure from an unrelated "Mullion" safety-gear mark). The Mizuho Class 010 catheter registration the designer cited was independently verified against a live TSDR fetch and matches exactly (serial 79350332, reg. 7296060). No new FUTURE_TASKS entries this round — the remaining items (two brand-kit corrections, the `accentPurple` fix, the Archivo typography question, the WP.org account vendor-slug recommendation) went to [PHASE76_REPORT.md](PHASE76_REPORT.md) P76-J (closed) and P76-L (in progress), since Phase 76 already owns that thread.*
+
+*Updated: September 9, 2026 (P76-C closed) — **Added:** Design & Brand entry "Move the Plugin Header `Author:` / `Author URI:` to Astragal", deferred out of P76-C because `Author URI:` needs a live destination to point at. The WordPress.org account (`astragal`) is registered and the `Contributors:` field now credits it; the naming-defense entry was also rewritten to point at the new [`docs/design/BRAND-CLEARANCE.md`](design/BRAND-CLEARANCE.md) reference card rather than restating the findings.*

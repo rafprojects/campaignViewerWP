@@ -40,6 +40,10 @@ Legend: ⬜ to do · 🔒 blocked on a prior item · 💻 has code already done,
 - 💻 Build the free ZIP: the **Release** workflow attaches `mullion-gallery-lite-v${VERSION}.zip` (or manually: `npm run build:wp:free`). `check:free-build` (every PR) plus a static re-scan in `release.yml` / `svn-deploy.yml` assert Pro code is stripped (P75-B).
 - ⬜ **Plugin Check (PCP)** green on the *stripped* free build; keep `Tested up to` current.
 - 💻 Wire **dual-channel release** (P75-B): `release.yml` emits `mullion-gallery-v*.zip` (premium) and `mullion-gallery-lite-v*.zip` (free); `svn-deploy.yml` downloads the lite ZIP and re-scans it before SVN push. The P62-G hard-fail guard is gone.
+- 💻 **WordPress.org account registered: [`astragal`](https://profiles.wordpress.org/astragal/)** (the house brand, per the designer's recommendation and Key Decision E). `readme.txt` `Contributors:` updated to match — **P76-C done**.
+- ⬜ **Enable 2FA on the `astragal` account** — mandatory since 2024-10-01 for any account with plugin commit access. Save the backup codes durably; losing both the method and the codes makes recovery very hard.
+- ⬜ **Generate the SVN password** (`profiles.wordpress.org/me/profile/edit/` → Account & Security). This is a separate randomly-generated credential, **not** the login password, because SVN auth cannot carry 2FA. It is what goes into the `SVN_USERNAME` / `SVN_PASSWORD` GitHub secrets that `svn-deploy.yml` consumes.
+- ⬜ **At submission, correct the proposed slug to `mullion-gallery`.** The header reads `Plugin Name: Mullion`, so WordPress.org will propose `mullion`, but `svn-deploy.yml`'s `SLUG:`, the text domain, every `languages/mullion-gallery-*` catalog and the POT `X-Domain` are hardcoded to `mullion-gallery`. One edit window before review opens; **the slug cannot be changed after approval.**
 - 🔒 Submit the free build to the **WP.org review** (~1–10 days); on approval, SVN-deploy it; confirm Freemius serves the premium build via `is_premium`. Needs a live WordPress.org account first — see [WORDPRESS_ORG_ACCOUNT_SETUP.md](WORDPRESS_ORG_ACCOUNT_SETUP.md).
 
 ## G. Quality bars — recommended, decouplable (NOT hard WP.org gates)

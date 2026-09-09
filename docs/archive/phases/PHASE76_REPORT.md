@@ -1,8 +1,8 @@
 # Phase 76 - Post-rebrand catalogs + Phase 75 colour-system follow-ons
 
-**Status:** In progress — P76-A, P76-D, P76-E, P76-F, P76-G, P76-H landed
+**Status:** Complete — all 12 tracks landed
 **Created:** 2026-08-25
-**Last updated:** 2026-08-27 (P76-H complete — both toggle states now themed in both mount modes)
+**Last updated:** 2026-09-09 (P76-C closed: the `astragal` WordPress.org account was registered and the `Contributors:` field updated. Designer sign-off received and verified the same day, closing J, K and L)
 
 ### Tracks
 
@@ -10,13 +10,16 @@
 |-------|-------------|--------|--------|
 | P76-A | Run a real `wp i18n make-pot` harvest, `msgmerge` into the 5 reference locales, compile `.mo` / `.l10n.php` | **Done** (2026-08-26) | Medium |
 | P76-B | Translate every new or orphaned msgid across de_DE, es_ES, fr_FR, ru_RU, zh_CN so `npm run i18n:check:locales` is green again | **Done** (2026-08-28) — 15 strings, not the ~750 planned; see notes | Small |
-| P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | Planned — blocked on the.org account existing | Small (code) / human gate |
+| P76-C | Replace `Contributors: wpsupergallery` in `readme.txt` with a live Mullion WordPress.org account — required before the first WP.org upload | **Done** (2026-09-09) — account `astragal` registered and verified live; field updated | Small (code) / human gate |
 | P76-D | Verify P75-D's admin-chrome lock in a real browser (it never was), then close the CSS-variable / colour-scheme gap into portaled chrome | **Done** (2026-08-27) — remainder split into H and I | Medium |
 | P76-E | Delete the dead legacy `--color-*` / `--radius-*` / `--shadow-*` token bridge (`src/styles/_tokens.scss`), including its three hardcoded ramp rungs | **Done** (2026-08-26) | Small |
 | P76-F | Make the `applyThemeEverywhere` toggle instantaneous — always render `AdminChromeProvider`'s nested provider so flipping it stops remounting the Settings Panel | **Done** (2026-08-27) | Small |
 | P76-G | Delete `scripts/validate-adapter-settings-parity.mjs` and its npm script — broken since a refactor, and superseded by a Vitest guard that says so in its own header | **Done** (2026-08-26) | Small |
 | P76-H | Reach theme CSS variables into portaled admin chrome — P76-D fixed light-DOM mounts; shadow (the shipped default) still resolves nothing | **Done** (2026-08-27) — widened mid-track to cover both toggle states | Small-Medium |
-| P76-I | The contrast audit measures tokens the product does not paint — the real focus ring is `primaryFill`, failing 3:1 on 11 of 23 themes, and inputs have no focus indicator at all | Planned — **premise corrected 2026-08-27**, see notes | Medium |
+| P76-I | The contrast audit measures tokens the product does not paint — the real focus ring is `primaryFill`, failing 3:1 on 11 of 23 themes, and inputs have no focus indicator at all | **Done** (2026-08-28) — premise corrected 2026-08-27; I-1 + I-2 (decision A) landed, see notes | Medium |
+| P76-J | Designer-response colour follow-ons — author `accentPurple: #923bde` on `default-light`, pin ΔE units in the design docs, record the v1 criterion-wording error, and land the designer's spec edits that never reached this repo | **Done** (2026-09-09) | Small |
+| P76-K | Screenshot manifest reorder — Layout Builder leads, per the designer's sign-off; `readme.txt` captions + `STORE_ASSETS.md` + `DESIGN_BRIEF.md` in one commit | **Done** (2026-09-09) | Small |
+| P76-L | Astragal brand-kit intake — fix the retired `#007A70` in the light endorsement SVG, correct two BRAND.md contrast figures, reconcile `DESIGN_BRIEF.md` with the kit's typography claims, and settle the vendor-line question | **Done** (2026-09-09) — widened mid-track: the brief's icon motif and tagline were also stale, not just typography, see notes | Small |
 
 ---
 
@@ -38,7 +41,7 @@ Runtime English is already Mullion: gettext only matches identical msgids, so th
 | B | One mechanical harvest track vs. harvest + translation in the same commit | **Two tracks.** P76-A is deterministic toolchain (pot + merge + compile). P76-B is the human translation pass that restores the coverage gate. Splitting them keeps a green compile even if translation lags a commit. |
 | C | What to do with fuzzy/`#| msgid` leftovers after msgmerge | **Resolve in P76-B, do not ship fuzzies.** `i18n:check:locales` already treats fuzzy as untranslated. Identity strings (product name, URIs, "Mullion — …" labels) are mechanical token swaps, same as P74-B's six-string hand pass. The ~150 never-harvested feature strings need real translations. |
 | D | Write a guessed `Contributors` slug vs. wait for a real.org account | **Wait for the account, then write that exact username.** Plugin Check and wp.org SVN ingest validate contributor slugs against live WordPress.org users. Committing `mullion` (or any other invented slug) before the account exists fails the listing. P74-B/Q were right to leave `wpsupergallery` rather than invent; P76-C is when the account is created (or renamed/transferred) and the field is updated. |
-| E | Contributor handle vs. plugin slug | **Not necessarily the same string.** Plugin slug is already `mullion-gallery` (Phase 74 Decision C). The.org *user* can be `mullion`, `mulliongallery`, the existing account renamed, or whatever username we actually register. Confirm the live username at implementation time; do not bake a guess into this plan. |
+| E | Contributor handle vs. plugin slug | **Not necessarily the same string.** Plugin slug is already `mullion-gallery` (Phase 74 Decision C). The.org *user* can be `mullion`, `mulliongallery`, the existing account renamed, or whatever username we actually register. Confirm the live username at implementation time; do not bake a guess into this plan. **New input, 2026-09-09:** the designer recommends the account be `astragal` (the house brand), not `mullion` (the product) — the handle is effectively permanent and accumulates reputation across every future plugin, and registering it per-product means product two starts from zero. Reasoned recommendation, not yet a decision; still a human gate at implementation time, but the human now has an opinion on record to weigh. |
 | F | P76-D: fix the CSS-var reach blind, or verify first? | **Verify first, as the track's own step 1.** P75-D's Implementation Notes state plainly that no visual check of either toggle state was run. Its acceptance criteria ("chrome always renders in the Mullion brand palette", "pixel-identical with the toggle on") are therefore unconfirmed, and the portal gap below is a *predicted* symptom derived from reading Mantine's source, not an observed one. Writing a fix before looking is how P75-E's spike found the designer's 8-theme list was measured against the wrong code. |
 | G | P76-E: delete the token bridge, or migrate the hardcoded rungs to `primaryFill` / `primaryStroke`? | **Delete.** The migration question is moot — a full grep of `src/` and `packages/` finds **zero** consumers of any `--color-*`, `--radius-*`, or `--shadow-*` alias, so the three hardcoded rungs are not painting anything. Rewriting dead declarations to use the correct token would be busywork that keeps a file whose own header has said "migrate, then delete this file" since Phase 9. Only `--z-header` has live consumers and only that survives. |
 | H | P76-F: stabilise the element tree, or read the *saved* `applyThemeEverywhere` instead of the live draft? | **Stabilise the tree.** Reading the saved value would also stop the remount — the panel reads the live draft today, which is exactly why the switch applies instantly — but it buys that by making the toggle *not* instantaneous, which is the behaviour worth keeping. Always rendering the nested provider keeps both properties. |
@@ -250,17 +253,42 @@ The handle appears only in `readme.txt` today (plus this phase's FROM-map in PHA
 
 Blocked on step 1. The file edit is a one-liner once the account exists.
 
-### Acceptance criteria
+### Done 2026-09-09
 
-- `Contributors:` in `readme.txt` is a username that loads as a real WordPress.org profile (HTTP 200 on `https://profiles.wordpress.org/<username>/`).
-- Zero `wpsupergallery` in `readme.txt` outside changelog history lines.
-- Plugin Check / the WP.org header validator accept the field (same check [TESTING_QA.md](testing/TESTING_QA.md) already names for headers).
+The account is registered: **`astragal`**, live at
+[profiles.wordpress.org/astragal](https://profiles.wordpress.org/astragal/) (verified by
+fetch; member since 2026-09-01, zero contributions, which is expected for a fresh account).
+The handle follows Key Decision E and the designer's recommendation: the house brand rather
+than the product, because the slug is permanent, is account-wide for SVN, and accumulates a
+portfolio across every future plugin.
 
-### Validation
+`readme.txt` line 2 is now `Contributors: astragal`. Nothing else in the shipped plugin
+referenced `wpsupergallery`, so that string is gone from `wp-plugin/` entirely.
 
-- Open the profiles.wordpress.org URL for the new slug before committing.
-- `grep -n wpsupergallery wp-plugin/mullion-gallery/readme.txt` — only historical changelog, if it appears there at all (today it does not; only line 2).
-- This is a release blocker for `svn-deploy.yml` / the Go-Live punch list, not for Phase 74 merge.
+### Acceptance criteria — met
+
+- ✔ `Contributors:` is `astragal`, which loads as a real profile (HTTP 200, fetched).
+- ✔ Zero `wpsupergallery` anywhere in `readme.txt` (it appeared only on line 2; there was no
+  changelog reference to preserve).
+- ✔ Field is a single valid live slug, which is what Plugin Check validates.
+
+### Still required before submission — not P76-C, but gated on the same account
+
+Recorded here because the account is what unblocks them, and all three are human steps. Full
+detail in [WORDPRESS_ORG_ACCOUNT_SETUP.md](guides/WORDPRESS_ORG_ACCOUNT_SETUP.md).
+
+1. **Enable 2FA on the account.** Mandatory since 2024-10-01 for any account with plugin
+   commit access. Save the backup codes durably; losing both the method and the codes makes
+   the account very hard to recover.
+2. **Generate the SVN password** (Account & Security tab). It is a separate, randomly
+   generated credential, *not* the login password, because SVN auth cannot carry 2FA. That
+   value is what goes into the `SVN_USERNAME` / `SVN_PASSWORD` GitHub secrets that
+   `svn-deploy.yml` consumes.
+3. **Correct the proposed slug at submission time.** The header reads `Plugin Name: Mullion`,
+   so WordPress.org will propose `mullion` while `svn-deploy.yml`'s `SLUG:`, the text domain,
+   every `languages/mullion-gallery-*` catalog, and the POT `X-Domain` are all hardcoded to
+   `mullion-gallery`. The submission flow allows one slug edit before review begins. **The
+   slug cannot be changed after approval.**
 
 ---
 
@@ -1116,6 +1144,325 @@ Measuring which selectors reach `document.styleSheets` showed two `global.scss` 
 
 ---
 
+## Track P76-J - Designer-response colour follow-ons
+
+Added 2026-09-01 from the designer's reply to the v2 design docs
+([`docs/design/correspondences/designer-response-v2-notes.md`](design/correspondences/designer-response-v2-notes.md)). Every
+number in that reply was independently re-verified against the shipped engine before this
+track was filed; all of them reproduce exactly.
+
+### Problem
+
+Four small items, one of them a latent hazard:
+
+1. **`default-light`'s `accentPurple` fallback is not text-safe.** The theme authors none of
+   the three optional accents, so `accentPurple` resolves to the engine default `#a855f7` —
+   a leftover from the retired Instrument Blue palette. Measured as text on the light
+   grounds: **3.38 / 3.77 / 3.96** (background / surface / surfaceRaised), all below 4.5:1.
+   It is harmless today only because **no component reads the role** (`grep`: schema,
+   resolver, and the adapter's `theme.other.colors` passthrough only) — which is exactly the
+   condition that changes without anyone noticing, and no gate would catch it because the
+   audits only model painted pairings.
+2. **ΔE values in the design docs are unit-ambiguous.** `LIGHT-THEME-SPEC.md` and the
+   correspondence note say "ΔE ≈ 3.5" for `#006e66` vs `#007870` — that is CIE Lab; on the
+   OKLab scale used elsewhere in the docs the same pair is **0.032**. The two scales differ
+   by ~100×, so an unlabelled ΔE is worse than no ΔE (designer's request).
+3. **The v1 criterion wording error is unrecorded.** v1 `COLOR-SPEC.md` said *"first rung
+   from the **dark** end"*, which selects index 9 (`#002825`, near-black) against the shipped
+   ramp. The implementation walks from the light end and is correct, and v2 documents the
+   correct wording — but nothing records that archived v1 copies carry the wrong version
+   (the designer counts it as v1 error number four).
+4. **The designer's own repo edits never arrived.** Their response lists four file changes
+   (`astragal-brand/BRAND.md`, `astragal-brand/astragal-tokens.json`, an appended designer
+   response in `LIGHT-THEME-SPEC.md`, the criterion note in `COLOR-SPEC.md`) plus an
+   `archive/2026-09-01-pre-designer-review/` directory. **None exist in this repo**, and no
+   `astragal-brand/` directory exists here at all — they edited a different copy.
+
+### Fix — all four items closed 2026-09-09
+
+- ~~Author `accentPurple: "#923bde"` in `default-light.json` only.~~ **Done.** Verified
+  hue-locked to `#a855f7` (OKLCH 303.9°, 0.0° delta), **4.60 / 5.13 / 5.38** on the light
+  grounds. `info` and `accentGreen` left on their fallbacks (both already text-safe:
+  4.58+ / 4.60+). `resolveColors()` confirmed to resolve the new value; both contrast audits
+  re-run and stay green on all 23 themes; `npx vitest run packages/theme-engine` — 411/411.
+- ~~Label every ΔE in `docs/design/` with its scale.~~ **Done** — satisfied by the appendix
+  below; no unlabelled ΔE exists anywhere else in `docs/design/`.
+- ~~Add the criterion-wording history note to `COLOR-SPEC.md` §2.~~ **Done 2026-09-01.**
+- ~~Replicate the designer's `LIGHT-THEME-SPEC.md` appendix.~~ **Resolved 2026-09-09** — not
+  a replication after all. The user obtained the actual file from the designer's copy and
+  replaced `LIGHT-THEME-SPEC.md` with it directly; the appended "Designer response —
+  2026-09-01" section matches this track's description exactly (fill-split confirmation,
+  the CIE-Lab-vs-OKLab ΔE note, the `accentPurple` table recommending `#923bde`) and every
+  number in it re-verified. The earlier theory — "the designer edited a different copy and
+  it never synced" — was right about the mechanism, wrong only in assuming the content was
+  lost; it was recoverable once actually fetched. The `astragal-brand/` intake findings are
+  **P76-L**, which the same sync gap affected a second time.
+
+**The dark side of the same problem — raised, answered, and fixed 2026-09-09.** The caveat
+originally recorded here was that the *dark* theme's authored `#a855f7` is also not
+text-safe on two of its three grounds (3.99 on `surface`, 3.25 on `surfaceRaised`), so the
+light-side fix closed only half of it. Put to the designer in the calibration reply, on the
+grounds that it is the same "harmless only because nothing paints it" condition they used to
+justify the light fix. They agreed, and supplied a value.
+
+**Dark now authors `accentPurple: "#bb7eff"`.** Measured and confirmed exactly as they
+specified: **6.70 / 5.67 / 4.62** as text on `background` / `surface` / `surfaceRaised`, hue
+303.8° — 0.1° from both `#a855f7` and the light theme's `#923bde`, so all three read as one
+purple with only lightness moving. Note the fix is *not* symmetric in value: `#923bde` on
+the dark grounds measures 3.47 / 2.94 / 2.39, so copying the light value across would have
+made it worse. Dark needed a lighter purple, not a darker one.
+
+The other two dark optional accents were checked in the same pass and need nothing: `info`
+`#1ad1c4` at 9.73 / 8.25 / 6.72, `accentGreen` `#56b93e` at 7.46 / 6.32 / 5.15.
+
+Why it was worth doing rather than leaving as a caveat, in the designer's framing: `#a855f7`
+was inherited from the retired Instrument Blue palette and survived into Rig Cyan unexamined
+in *both* themes. The light side only surfaced because the fallback made someone look.
+Authoring both closes the last unexamined value in the palette. The durable rule still
+stands: **the day any component paints an optional accent as text, that pairing goes into
+`auditThemeContrast`** — the difference is that both themes would now pass it.
+
+### Acceptance criteria — met
+
+- `default-light.json` authors `accentPurple: "#923bde"`, `default-dark.json` authors
+  `"#bb7eff"`; both contrast audits green on all 23 themes; `npx vitest run
+  packages/theme-engine` 411/411; zero visual change (nothing paints the role).
+- No ΔE appears in `docs/design/` without a scale label.
+
+---
+
+## Track P76-K - Screenshot manifest reorder (designer sign-off received)
+
+### Problem
+
+The designer signed off (2026-09-01) on the brief's recommendation: **screenshot 1 is the
+Layout Builder**, because it is the shot no competitor can take, and the classic grid — the
+current manifest's lead — is the shot every competitor already has. The order lives in two
+places that WordPress.org matches by number: the `== Screenshots ==` captions in
+`wp-plugin/mullion-gallery/readme.txt` and the manifest table in
+`docs/design/STORE_ASSETS.md`. They mismatch silently if updated separately.
+
+### Fix
+
+In **one commit**: reorder both to the brief's sequence — 1 Layout Builder canvas (layer
+panels docked), 2 front-end gallery on a distinctive adapter, 3 admin campaign management
+panel, 4 lightbox viewer, 5 theme/adapter variety — and update `DESIGN_BRIEF.md`'s
+"pending sign-off" note and What's-open bullet to record the decision. No image files exist
+yet (`.wordpress-org/` is not created until finals arrive), so this is caption/manifest text
+only; the capture pass later inherits the agreed order.
+
+### Done 2026-09-09
+
+All three files updated together. Final captions, identical in `readme.txt` and
+`STORE_ASSETS.md`:
+
+1. Visual layout builder with layer panels docked.
+2. Campaign gallery with the hexagonal adapter.
+3. Admin campaign management panel.
+4. Lightbox viewer with keyboard navigation.
+5. Theme and adapter variety.
+
+**Worth noting this was not purely a reorder.** Slot 5 changed subject as well as position:
+the old manifest's "Advanced settings accordion" is gone, replaced by theme/adapter variety,
+which sells configurability better than a settings panel does. Anyone capturing from the old
+list would otherwise shoot a screen that no longer has a slot. `STORE_ASSETS.md` carries a
+dated note recording both the reorder and that substitution.
+
+Still no image files: `.wordpress-org/` is created when the designer's finals arrive. The
+capture pass inherits this order.
+
+---
+
+## Track P76-L - Astragal brand-kit intake
+
+Added 2026-09-01 after the Astragal house-brand kit (BRAND.md, tokens, mark/wordmark/lockup
+SVGs, rasterised icons) was copied into `docs/design/astragal-brand/`. The kit is the
+designer's deliverable for the publisher brand ("Astragal signs the work. It never competes
+with it."). Intake verification found three defects and two reconciliation items.
+
+### Problem
+
+1. **`astragal-endorsement-light.svg` still carries the retired accent `#007A70`.** The
+   designer's response says BRAND.md and `astragal-tokens.json` were aligned to `#007870`
+   (both verified: they were) — but the light endorsement lockup, the asset whose whole job
+   is setting "Mullion" in the product accent, kept the old hand-derived hex. ΔE(Lab) ≈ 1,
+   invisible — but this is exactly the "wrong number in a shipping file is worse than a
+   wrong number in a message, because the file is what someone copies" class the designer
+   themselves named in round 5. (`astragal-endorsement-dark.svg` correctly uses `#1AD1C4`.)
+2. **Two BRAND.md contrast figures do not reproduce.** `#626A6E` on Bone `#ECEAE4` is
+   stated as 4.66:1, measures **4.59**; `#98A0A4` on Graphite `#16181A` is stated as 6.9:1,
+   measures **6.70**. Both still pass their bars, but these are pure-math numbers — the
+   category that has matched to two decimals every previous time — so the figures should be
+   corrected rather than left as the collaboration's first unreproducible claims.
+3. **Observation, no action required:** `#007870` on Bone `#ECEAE4` measures **4.45:1** —
+   a hair under the 4.5 text bar (it was tuned for Mullion's own grounds, where it clears
+   4.58+; on Astragal's Chalk `#F8F7F3` it is 5.00). The endorsement lockup is a logotype,
+   which WCAG 1.4.3 exempts, so this is a note for the designer, not a defect.
+4. **BRAND.md asserts typography decisions `DESIGN_BRIEF.md` still lists as open.** §3:
+   *"Mullion's brand layer is Archivo and its interface layer is Inter. That separation is
+   already decided."* The brief's What's-open list still carries "Wordmark treatment" as
+   undecided and its typography section says Inter for everything. If Archivo is agreed
+   (product-owner confirmation needed — the decision, if made, happened outside this repo),
+   the brief needs updating; if not, BRAND.md is asserting ahead of the decision and the
+   designer needs to hear that.
+5. **The brief does not mention the house brand at all.** The endorsement lockup ("Mullion ·
+   BY ASTRAGAL") is now a real deliverable that interacts with listing identity: the plugin
+   header says `Author: Mullion` today, and P76-C is about the WordPress.org account. Whether
+   the author/vendor line becomes Astragal is a product-owner decision that should be taken
+   alongside P76-C, not discovered during the upload.
+
+### Fix
+
+- ~~Change `#007A70` → `#007870` in `astragal-endorsement-light.svg`.~~ **Done 2026-09-09.**
+- ~~Correct the two BRAND.md figures.~~ **Done 2026-09-09** — 4.66 → 4.59, 6.9 → 6.70.
+- ~~Reconcile `DESIGN_BRIEF.md` with the kit once the Archivo question is answered~~ **Still
+  open — see "The Archivo citation" below.** Not done, and not yet safe to do.
+- Record the `Author:` / vendor-line decision (human gate, pairs with P76-C) — **the
+  designer supplied a specific recommendation 2026-09-09**, see below.
+- Done during intake evaluation: the stray Windows `Zone.Identifier` artifact that rode in
+  with the copy was deleted.
+
+### Round 2 (2026-09-09) — a second designer response, and a pattern worth naming
+
+The `open-items-for-designer-2026-09-09.md` note (sent after this track was first filed)
+came back as `docs/design/correspondences/designer-response-2026-09-09.md`, five sections
+answering §1-5 of that note plus a completed Mullion trademark check. Findings:
+
+**1 and 2 above: independently re-confirmed by the designer, but their claimed fix did not
+land here — a third instance of the same sync gap.** Their response states both were fixed
+in this repo, with a specific "before/after" byte count for context. Checked directly: the
+SVG still had `#007A70` and BRAND.md still had `4.66` / `6.9` at the time their response
+arrived — file mtimes on both predate this exchange entirely (2026-08-30/31). **Applied the
+fixes directly here** rather than wait on a transfer path that has now failed three times
+across two rounds (the original brand-kit delivery, the `LIGHT-THEME-SPEC.md` appendix, and
+these two edits). Also added the designer's *"one deliberate contrast exception"* section to
+`BRAND.md` §2 (the item 3 observation, formalised with two rules: never reuse teal-on-Bone
+as live text — Chalk is the right light ground for that at 5.00:1 — and don't add a third
+teal to close the 0.05 gap; a hue-identical `#00776f` would measure 4.51 but isn't worth
+having). Verified: `#00776f` is 186.6° OKLCH (0.1° from `#007870`) at 4.51:1 on Bone —
+matches exactly.
+
+**The Archivo citation checked out — and finding it revealed a bigger gap than Archivo.**
+`old/DESIGN_BRIEF.md` did not exist *in this git repo*, which is what the first pass of this
+finding checked. It exists in the designer's own working directory — a Windows-side folder
+(`C:\Users\pointer\Documents\Claude Projects\WP Super Gallery`, not synced with this repo;
+see the reference memory on this) that turned out to hold the designer's copy of every file
+in this brand collaboration, including dated `archive/` snapshots matching exactly what
+their correspondence had cited. Read directly from there: lines 178, 318, and 701 of
+`old/DESIGN_BRIEF.md` match the designer's quotations exactly.
+
+**That file is a *later round* of v1 than the one this repo's v1 `DESIGN_BRIEF.md` was ever
+built from — not just on typography.** Cross-checking the rest of it against the current
+brief surfaced two more corrections, both bigger than Archivo:
+
+- **Icon motif.** The current brief's "aperture/frame" direction was tested in a later round
+  and explicitly rejected: it fails the brief's own 16px legibility constraint (aperture
+  blades merge into a ring indistinguishable from a loading spinner) and signifies *camera*
+  where the positioning says *builder*. The decided motif is **the displaced pane** — three
+  panes (tall, seated, and one lifted and rotated -10°) — with exact geometry recorded in
+  the later v1's Decision log.
+- **Tagline.** The current brief's "Design galleries visually. Embed anywhere." was never
+  locked in any round and was explicitly rejected in the later one ("both beats spent on
+  features"). The locked tagline is **"Galleries you compose, not configure."**, with the
+  dropped hero claim moved into supporting copy (WP.org subtitle, search-intent line, banner
+  chips) instead.
+
+**Fixed 2026-09-09.** `DESIGN_BRIEF.md` corrected on all three fronts (icon motif, tagline,
+wordmark), plus a new "House brand — Astragal" section summarising `astragal-brand/BRAND.md`
+for this document's audience, and a restored Decision log carried forward from the later v1
+(now including the House brand row). The status blockquote and What's Open section were
+rewritten to match: only artwork production, the WP.org account name, and full legal
+clearance remain open.
+
+**Vendor-line recommendation received.** Astragal on the WordPress.org account, plugin
+`Author:` / `Author URI:`, Freemius seller of record, and GitHub org; **not** on the WP.org
+banner/icon, admin chrome, Layout Builder, or the plugin's display name. Reasoning: the
+account slug is effectively permanent and reputation accumulates on it across future
+products, so the house brand should hold it, not the product. This is the designer's
+opinion, not yet a decision — folded into P76-C's Key Decision E as new input for whoever
+registers the account.
+
+**Mullion trademark check completed, and independently spot-verified.** Was left incomplete
+last round ("stale cache on both trademark surfaces"). Re-run result: zero MULLION marks in
+US Classes 9 or 42 (live or dead); the only live exact-word mark is Mizuho Corporation's
+Class 010 medical-device registration (catheters/guidewires/stents). **Verified directly**
+via a live TSDR fetch: serial 79350332, registration 7296060, filed 2022-08-08, registered
+2024-02-06, Class 010 — matches the designer's citation exactly, including the registration
+number. The Mullion Group Pty Ltd claim (their sole US filing, FLINTPRO, cancelled
+2025-12-12, ownership moved to Wollemi Natural Capital Developments) could not be
+independently confirmed — two lookup paths (TSDR direct, Justia) both returned HTTP 403 —
+so treat that specific sub-claim as reported-but-unverified, distinct from the Mizuho record
+which is confirmed. Named gaps carried forward as-is: no official USPTO phonetic search run
+(JS-gated), EUIPO/UKIPO/IP Australia unreachable (JS-gated), a UK "Mullion" safety-gear mark
+flagged as a plausible but unconfirmed Class 9 hit. Verdict carried into
+[`FUTURE_TASKS.md`](FUTURE_TASKS.md)'s naming-defense entry, updated accordingly.
+
+### Acceptance criteria
+
+- ~~No file under `docs/design/astragal-brand/` carries `#007A70`.~~ **Met.**
+- ~~BRAND.md's stated ratios reproduce under `chroma.contrast` to two decimals.~~ **Met** —
+  re-verified after correction (4.59, 6.70) plus the six additional pairings the designer's
+  second pass measured and recorded, all reproduce.
+- ~~`DESIGN_BRIEF.md` and BRAND.md agree on what is decided about Mullion's brand
+  typography.~~ **Met 2026-09-09** — and extended beyond typography once the fuller v1 round
+  was found: icon motif and tagline corrected too, House brand section added.
+
+**All items closed. Track done.**
+
+### Reply sent 2026-09-09
+
+[`calibration-response-2026-09-09.md`](design/correspondences/calibration-response-2026-09-09.md)
+(copy also placed in the designer's own folder) confirms every applied item, records the
+two-location diagnosis, and answers all three of their asks. It leaves two questions with
+the designer, neither blocking:
+
+1. **Is `old/DESIGN_BRIEF.md` the final pre-v2 state, and is anything else un-synced?** Asked
+   deliberately as a one-time sweep rather than waiting for the next detail to surface the
+   same way.
+2. **Whether `accentPurple` should be fixed symmetrically on the dark theme.**
+
+Also conveyed: the go-ahead to cut final assets.
+
+### Sign-off received 2026-09-09 — both questions answered, sync question closed
+
+[`designer-signoff-2026-09-09.md`](design/correspondences/designer-signoff-2026-09-09.md).
+Every checkable claim in it was verified here before acting; all reproduce exactly.
+
+**The sync question is closed, definitively rather than by assurance.** The designer
+confirmed `old/DESIGN_BRIEF.md` is byte-identical to their final working copy and gave the
+hash to prove it: **37,355 bytes, MD5 `07dcbc722a45ddabcb8bc10568a0ad01`.** Verified against
+our copy — exact match. There is no later revision of the brief on their side. Everything
+else they ever packaged is in the round-1 through round-6 zips already held in the project
+folder; the only files not shared are process artefacts (render scripts, contact sheets,
+screenshot harnesses) containing no decisions. They have also changed their own phrasing
+convention, and will say "in the project folder at `Claude Projects\WP Super Gallery`"
+rather than "in the repo", which is the other half of the fix.
+
+**`accentPurple` on dark: answered and applied** — see the P76-J notes above for the value
+and the measurements.
+
+**The USPTO gap they named last round is now closed.** They reached `tmsearch.uspto.gov`
+through a live browser session (it returns an empty shell to plain fetchers, which is why
+earlier passes failed). Both names searched on the official register: **MULLION zero in
+Class 9, zero in Class 42** across 11 records, matching the earlier aggregator-derived list
+record for record including serial numbers; **ASTRAGAL zero in both** across 3 records.
+Phonetic near-miss MULLIN checked, no software conflict. They also corrected one of their
+own earlier figures (the dead TANATEX ASTRAGAL is International Class 002, not Class 6 — an
+international-vs-US class-numbering conflation).
+
+Findings are now consolidated in **[`docs/design/BRAND-CLEARANCE.md`](design/BRAND-CLEARANCE.md)**,
+copied into the repo as the solicitor-facing reference; the `FUTURE_TASKS` naming-defense
+entry was reduced to the action list and now points at it. One new watch item came out of
+it: **ASTRAGAL PRESS is live in Class 41 (book publishing)**, so "publisher" stays
+descriptive prose in `BRAND.md` and Astragal should not be filed in Class 41.
+
+**Assets: cleared.** The designer is cutting the final icon, banners, lockups, favicon and
+placeholder against the displaced-pane geometry and the Freemius circle crop. They have also
+offered the 16/20/32/64px contact sheets that decided the mark, as evidence on file rather
+than argument — worth taking, given what the aperture near-miss nearly cost.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -1135,8 +1482,57 @@ Two durable lessons so far:
 
 ## Outcome
 
-**In progress.** P76-A, P76-E, P76-F, P76-G done. P76-D delivered its browser pass, the attribute fix, the missing default-state baseline, and the Lightbox correction; its two open decisions were taken on 2026-08-27 and became **P76-H** and **P76-I**. Remaining: B (15 strings), C (blocked on the WordPress.org account), H, I.
+**Complete.** All twelve tracks landed. A, B, D, E, F, G, H and I closed across late August;
+C, J, K and L all closed 2026-09-09.
 
-P76-I is the one to read first if picking this phase back up cold. It is not a styling nit: the contrast sweep says every one of the 23 themes renders its form controls with a **1.02–1.63:1** boundary while a green audit reports **3.18–4.92:1**, and the gap has now survived three separate attempts to catch it with a test (P75-G's revert, P76-D's zero-tolerance snapshot, P76-D's re-run of the revert). No test can catch it, because the audited colour is never drawn.
+- **P76-I** (2026-08-28) shipped decision A: the focus ring paints `primaryStroke` on all 23
+  themes, `KNOWN_FOCUS_RING_GAPS` is deleted, and the 1.4.11 gate is strict with zero
+  exceptions.
+- **P76-J** (2026-09-09) authored `accentPurple` on *both* themes, not just light — the
+  designer supplied `#bb7eff` for dark when the asymmetry was put to them, closing the last
+  value in the palette that had survived unexamined from the retired Instrument Blue era.
+- **P76-K** (2026-09-09) reordered the screenshot manifest in `readme.txt` and
+  `STORE_ASSETS.md` together, Layout Builder leading.
+- **P76-L** (2026-09-09) took in the Astragal brand kit, corrected three defects in it, and
+  widened mid-track into a much larger finding about the design brief — see below.
+
+- **P76-C** (2026-09-09) closed the last listing-identity leftover from the rebrand. The
+  handle decision went to the house brand, and `astragal` is registered and live;
+  `readme.txt` now credits it. `wpsupergallery` no longer appears anywhere in `wp-plugin/`.
+
+**Three human steps remain before the plugin can actually be submitted**, all gated on the
+same account and none of them Phase 76 work: enable 2FA, generate the separate SVN password
+for the `SVN_USERNAME` / `SVN_PASSWORD` secrets, and correct the proposed slug from `mullion`
+to `mullion-gallery` during the one edit window the submission flow allows. They are listed
+in the P76-C track above and on the [Go-Live Punch List](guides/GO_LIVE_PUNCH_LIST.md) §F.
+
+**Designer engagement closed out.** Assets are cleared for production and the designer is
+cutting the final icon, banners, lockups, favicon and placeholder against the displaced-pane
+geometry. Two things remain owed in that direction and neither gates anything: the
+hover-glow verification screenshots (ours, bundled with the store capture pass) and the
+optional 16/20/32/64px contact sheets the designer offered as evidence for why the aperture
+was dropped.
+
+**A two-location sync gap, not an unreliable designer.** Twice (2026-09-01, 2026-09-09),
+specific claims about "this repo's contents" — a whole `astragal-brand/` kit, a
+`LIGHT-THEME-SPEC.md` appendix, two brand-kit fixes, a citation to `old/DESIGN_BRIEF.md` —
+did not check out against a grep of this git repo. **The resolution, found 2026-09-09: the
+designer works from a separate Windows-side folder that is not synced with this repo** (path
+recorded in memory as a reference; see `PHASE76_REPORT.md`'s own history for why it took two
+rounds to surface). Every one of those files was real, sitting there the whole time. More
+significantly, that folder's `old/DESIGN_BRIEF.md` turned out to be a **later, more-decided
+round of v1 than the one ever committed to this repo** — meaning this repo's v1 (and by
+inheritance, the v2 rewrite built from it) was itself stale on the icon motif and the
+tagline, not just missing the Archivo decision. Both are now corrected in
+`DESIGN_BRIEF.md`. Every analytical and numerical claim across both designer responses has
+reproduced exactly under independent verification, including a live USPTO TSDR fetch that
+matched a cited registration number precisely — the gap was always about which filesystem a
+cited artifact lived in, never about the substance.
+
+*(Historical note, superseded: an earlier version of this section flagged P76-I as the
+read-first item, when the working theory was that `borderStrong` was audited but never
+painted. The premise was corrected mid-track — the token was painted in the shipped default
+all along, and the real defects were the focus-ring token and the missing input focus
+indicator, both since fixed. See the P76-I notes.)*
 
 **Originally:** Planned. Phase 74 can close without this; catalogs are stale, runtime English is not. P76-C is a WordPress.org-upload blocker, not a Phase 74 merge blocker. P76-D–G are Phase 75 follow-ons and block nothing — D is unverified-acceptance-criteria cleanup, E and G are deletions, F is an a11y/UX fix to a toggle that already works.
