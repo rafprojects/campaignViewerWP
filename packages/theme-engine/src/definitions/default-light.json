@@ -1,5 +1,5 @@
 {
-  "_comment": "Mullion Light / Rig Cyan — light companion. Palette from docs/design/LIGHT-THEME-SPEC.md (P75-G). surface2/surface3/textMuted2 derived at resolve time from the authored anchors. info/accentGreen/accentPurple omitted: resolve's fallbacks (primary / success / #a855f7) land on exactly the values default-dark authors, and none of the three is read by a component.",
+  "_comment": "Mullion Light / Rig Cyan — light companion. Palette from docs/design/LIGHT-THEME-SPEC.md (P75-G). surface2/surface3/textMuted2 derived at resolve time from the authored anchors. info/accentGreen omitted: resolve's fallbacks (primary / success) land on exactly the values default-dark authors, and neither role is read by a component. accentPurple IS authored (P76-J): the engine default #a855f7 fails 4.5:1 as text on every light ground (3.38-3.96); #923bde is hue-locked (303.9°, 0.0° delta) and clears 4.60-5.38.",
   "id": "default-light",
   "name": "Mullion Light",
   "colorScheme": "light",
@@ -21,6 +21,7 @@
     "warning": "#8e6200",
     "error": "#c5342d",
 
-    "accent": "#007870"
+    "accent": "#007870",
+    "accentPurple": "#923bde"
   }
 }
