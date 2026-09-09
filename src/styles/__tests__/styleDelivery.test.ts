@@ -10,7 +10,7 @@
  *     the shipped mount, document under a light mount). A selector in it that
  *     is not scoped under `.mullion-gallery` is either dead for portaled
  *     chrome or a leak into the host page, so every selector must carry that
- *     ancestor. Known-dead rules are listed explicitly until P77-C moves them.
+ *     ancestor. P77-C moved the last unscoped rules to chrome-portable.scss.
  *  2. Every CSS module must be registered in `shadowStyles.ts` unless its
  *     consumer provably renders outside the shadow tree (portaled chrome).
  *     Vite injects module CSS into the document only; a module consumed inside
@@ -63,20 +63,6 @@ function selectorsOf(css: string): string[] {
 // 1. global.scss is gallery-tree only
 // ---------------------------------------------------------------------------
 
-/**
- * Rules aimed at Mantine parts without the `.mullion-gallery` ancestor. They
- * reach those parts only when the parts render inside the gallery tree (the
- * inline Admin panel) and are dead for every portaled surface (Settings
- * drawer, Modals, Select dropdowns). Measured 2026-09-09 in both mount modes.
- * P77-C moves them to `chrome-portable.scss`; delete the entry when it does,
- * because the second assertion below fails on a stale entry.
- */
-const GLOBAL_SCSS_KNOWN_DEAD_UNTIL_P77C = [
-  '.mullion-mantine-tabs-tab[data-active]',
-  '.mullion-mantine-segmented-control-label[data-active]',
-  '.mullion-mantine-select-option[data-selected]',
-];
-
 describe('global.scss reaches only the gallery tree', () => {
   const file = path.join(SRC, 'styles', 'global.scss');
   const css = sass.compileString(readFileSync(file, 'utf8'), { loadPaths: [path.dirname(file)] }).css;
@@ -86,21 +72,17 @@ describe('global.scss reaches only the gallery tree', () => {
     expect(selectors.length).toBeGreaterThan(10);
   });
 
-  it('scopes every selector under .mullion-gallery, or lists it as known-dead', () => {
+  // P77-C emptied the known-dead allowlist this test used to carry; the three
+  // Mantine state rules now live in chrome-portable.scss.
+  it('scopes every selector under .mullion-gallery', () => {
     const offenders: string[] = [];
     for (const list of selectors) {
       for (const sel of list.split(',').map((s) => s.trim())) {
         const scoped = sel === '.mullion-gallery' || sel.startsWith('.mullion-gallery ') || sel.startsWith('.mullion-gallery.') || sel.startsWith('.mullion-gallery__') || sel.startsWith('.mullion-gallery--') || sel.startsWith('.mullion-gallery:');
-        if (!scoped && !GLOBAL_SCSS_KNOWN_DEAD_UNTIL_P77C.includes(sel)) offenders.push(sel);
+        if (!scoped) offenders.push(sel);
       }
     }
-    expect(offenders, 'unscoped global.scss selectors cannot reach portaled chrome and leak into the host page under a light mount').toEqual([]);
-  });
-
-  it('keeps the known-dead list honest: every entry still exists in global.scss', () => {
-    const flat = selectors.flatMap((l) => l.split(',').map((s) => s.trim()));
-    const stale = GLOBAL_SCSS_KNOWN_DEAD_UNTIL_P77C.filter((s) => !flat.includes(s));
-    expect(stale, 'remove entries from GLOBAL_SCSS_KNOWN_DEAD_UNTIL_P77C once the rule has moved').toEqual([]);
+    expect(offenders, 'unscoped global.scss selectors cannot reach portaled chrome and leak into the host page under a light mount; Mantine overrides belong in chrome-portable.scss').toEqual([]);
   });
 });
 
@@ -119,19 +101,6 @@ const DOCUMENT_ONLY_MODULES: Record<string, string> = {
     'TemplatePickerModal is a Mantine Modal (withinPortal default), so its cards render under document.body',
 };
 
-/**
- * Modules consumed inside the shadow tree that are NOT registered. Measured
- * dead in the shipped mount on 2026-09-09: the Admin panel renders inline in
- * the gallery tree, and the Media tab's grid shell and cards carry these
- * classes with no matching rule in the shadow root. Making them live changes
- * appearance (hover lift, focus ring, grid max-width), so it belongs to P77-C
- * with the global.scss rules. Delete the entry when C registers them.
- */
-const MODULES_KNOWN_DEAD_UNTIL_P77C = [
-  'components/Admin/MediaCard.module.scss',
-  'components/Admin/MediaTab.module.scss',
-];
-
 describe('CSS modules are delivered to the tree that consumes them', () => {
   const modules = walk(SRC)
     .filter((f) => f.endsWith('.module.scss'))
@@ -144,23 +113,21 @@ describe('CSS modules are delivered to the tree that consumes them', () => {
     expect(modules.length).toBeGreaterThan(3);
   });
 
-  it('registers every module in shadowStyles.ts unless it is document-only or known-dead', () => {
-    const unaccounted = modules.filter(
-      (m) => !registered(m) && !(m in DOCUMENT_ONLY_MODULES) && !MODULES_KNOWN_DEAD_UNTIL_P77C.includes(m),
-    );
+  it('registers every module in shadowStyles.ts unless it is document-only', () => {
+    const unaccounted = modules.filter((m) => !registered(m) && !(m in DOCUMENT_ONLY_MODULES));
     expect(
       unaccounted,
       'a CSS module not concatenated into shadowStyles.ts never reaches the shadow tree; register it, or list it in DOCUMENT_ONLY_MODULES with the consumer that justifies it',
     ).toEqual([]);
   });
 
-  it('does not list a registered module as document-only or dead', () => {
-    const contradictions = [...Object.keys(DOCUMENT_ONLY_MODULES), ...MODULES_KNOWN_DEAD_UNTIL_P77C].filter(registered);
+  it('does not list a registered module as document-only', () => {
+    const contradictions = Object.keys(DOCUMENT_ONLY_MODULES).filter(registered);
     expect(contradictions).toEqual([]);
   });
 
-  it('keeps the allowlists pointing at files that exist', () => {
-    const missing = [...Object.keys(DOCUMENT_ONLY_MODULES), ...MODULES_KNOWN_DEAD_UNTIL_P77C].filter((m) => !modules.includes(m));
+  it('keeps the allowlist pointing at files that exist', () => {
+    const missing = Object.keys(DOCUMENT_ONLY_MODULES).filter((m) => !modules.includes(m));
     expect(missing).toEqual([]);
   });
 });

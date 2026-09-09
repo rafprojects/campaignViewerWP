@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-08-28
-**Last updated:** 2026-09-09 (P77-A, P77-G and P77-D landed)
+**Last updated:** 2026-09-09 (P77-A, P77-G, P77-D and P77-C landed)
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | **Done** (2026-09-09), see notes | Medium |
 | P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | Planned | Medium |
-| P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | Planned | Small |
+| P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | **Done** (2026-09-09), see notes | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
@@ -429,6 +429,39 @@ The lightbox hint is the P77-A contract's mechanism M3 failing to reach a portal
 | `Mullion_REST_Extended_Test::test_get_campaign_analytics`, `::test_list_access` (403) | `Mullion_DB::$space_cache` is a static per-process memo of space rows. `WP_UnitTestCase` rolls the database back after each test but nothing rolls the static back, so a later test resolved the default space through a row the database no longer held. Passes in isolation every time; reproduced only in full-suite order | `Mullion_DB::flush_space_cache()` plus a PHPUnit `BeforeTestHook` extension (`tests/Mullion_Test_Isolation_Hook.php`, registered in `phpunit.xml.dist`) that calls it before every test. Production code path unchanged apart from the new method |
 
 **Results.** `npx playwright test` twice in a row on a clean tree: 39 passed, 39 passed. PHPUnit through wp-env: 1328 tests, 13750 assertions, 2 skipped, no failures. `npx vitest run` on the touched components: green. The persistence test and the P77-A guards are the only e2e or unit tests in this track that were mutation-tested; the others are repairs of specs whose failure mode was observed directly.
+
+### P77-C (2026-09-09)
+
+**Measured first, in both mount modes and both `applyThemeEverywhere` states, with the Admin panel and the Settings drawer open.** The plan's diagnosis was "dead for portaled chrome because `global.scss` never reaches the document". That is true and was not the whole story. Each of the three rules was dead for a second reason that no delivery fix could touch:
+
+| Rule | Plan said | Measured | Fix |
+|------|-----------|----------|-----|
+| `.mullion-mantine-select-option[data-selected]` | dead in portaled dropdowns | matched **nothing in any tree**: Mantine 9.3.1 marks the chosen option with `data-checked` (`data-combobox-selected` is the keyboard-active state). The theme dropdown had no selected-state highlight anywhere, which the P76 baselines show | rule targets `[data-checked]`; the two colours ride on the dropdown as inline custom properties because the dropdown portals on its own, so nothing on the Select root can inherit into it |
+| `.mullion-mantine-tabs-tab[data-active]` | dead in the drawer, live in the Admin panel | the border half was live in the Admin panel (stroke `#008e85` measured against the drawer's Mantine default `#007870`). The colour half was dead everywhere: the adapter pins `color: textMuted` inline on every tab, and inline outranks any class rule | the active border is Mantine's own `--tabs-color`, set from the adapter; both text colours travel as `--mullion-tabs-tab-color` / `--mullion-tabs-tab-active-color` on the Tabs root and the inline colour is gone |
+| `.mullion-mantine-segmented-control-label[data-active]` | assumed dead like the tabs rule | its only declaration was dead everywhere, same inline cause | Mantine reads `--sc-label-color` on the active label, so that variable carries the active colour; the resting colour is `--mullion-segmented-control-label-color`, read by a `:not([data-active])` rule so Mantine's own rule keeps the active state |
+
+All three rules now live in `chrome-portable.scss` with the doubled first class, and `global.scss` has no selector outside `.mullion-gallery`. The pattern is the P76-I-2 checkbox one generalised: a themed colour a state rule must read travels as a custom property, never as an inline colour on the same part. Mantine merges theme-level `vars` after its own `varsResolver` (verified in `use-styles.mjs`), which is why `--tabs-color` can be set from the adapter at all. After the change every surface measured the intended colours: active tab text `#eef8fb` and border `#008e85` in the drawer and the Admin panel alike, checked option `#ffffff` on `#007870` in the drawer's dropdowns and in the Admin panel's sort dropdown, which sits in a document portal with no `--mantine-*` variables at all. Resting colours were re-measured unchanged.
+
+**CSS modules.** `MediaCard.module.scss` and `MediaTab.module.scss` are registered in `shadowStyles.ts`; the probe that found them dead now reports element and rule in the same tree. `MediaTab.module.scss` also carried a `.mediaCard` block nothing consumed (the class of that name comes from `MediaCard.module.scss`); it is deleted. The comment in `MediaCard.module.scss` claiming the card renders inside the Layout Builder modal was wrong and is corrected.
+
+**Baselines, recaptured deliberately.** All 21 theme-qa tests passed *before* recapture, because `maxDiffPixelRatio: 0.1` absorbs a dead rule going live. `--update-snapshots=all` rewrote 15 of 16 files. To separate this track's change from older drift, the baselines were captured once more from a stash of HEAD and pixel-diffed against the new set:
+
+| Snapshot family | Pixels changed by P77-C | What they are |
+|-----------------|-------------------------|---------------|
+| `theme-selector-open-*` (2) | 2.2% | the checked theme option's primary fill and contrast text, plus the active tab |
+| `display-settings-*` (7) | 0.02% to 0.07% | the "Appearance" tab's text and underline |
+| `gallery-shell-*` (6) | 0 to 0.01% | the access-mode "Lock" segmented label brightening from textMuted to text |
+| `themed-control-tight` | 0 | unchanged, as its zero-tolerance assertion requires |
+
+Against the committed baselines the same files differ by 1.1% to 3.1%: header buttons, input borders and label weights that Phase 76 changed after the baselines were captured, all inside tolerance and never reviewed. They are now current. The dropdown diffs were inspected by eye: the "Mullion" and "Mullion Light" rows carry the fill, nothing else in the dropdown moved.
+
+**Tests.** The unit guard's two allowlists are gone, and the test now fails on any unscoped `global.scss` selector or any unregistered module without justification. `adapter.test.ts` gains an assertion that Tabs, SegmentedControl and Select carry no inline colour on the tab, label or option and do carry the variables. `e2e/style-delivery.spec.ts` gains a paint check: with the drawer open, the active tab's computed colour and border equal the variables it carries, and the Theme select's checked option paints the checked pair. Mutations verified: renaming `data-checked` in the rule fails the paint check; restoring `color` in `Tabs.styles.tab` fails the adapter test.
+
+**Flake fixed on the way.** In one of the two full Playwright runs the accessibility spec's login-modal and settings-panel scans failed on contrast values like `#20343e` for text whose inline colour is `#eef8fb`: axe scanning during Mantine's 200ms entrance fade, the same mechanism P77-D found on the lightbox hint. Reproduced at roughly one run in six on the login modal, with no tab, segmented control or select on that surface. Both scans now wait for the dialog to be fully painted (`awaitFullyPainted`), the P77-D lightbox approach made reusable.
+
+**Data point for P77-B.** The Admin panel's own Select dropdown portals to `document.body` and, under the shipped mount, resolves no `--mantine-*` variable at all: its hover colour is Mantine's `--mantine-color-dark-4` fallback `#424242`, not the theme's. The checked state now paints correctly only because its colours travel inline. Anything in the gallery tree that portals is in the same position, and that is the boundary B is deciding on.
+
+**Results.** Before the flake fix, `npx playwright test` (40 tests) gave 40 passed, then 38 passed with the two axe scans above. After it: 40 passed, 40 passed, and the two scans repeated six times each, 12 passed. `npx vitest run`: 259 files, 3922 tests, all passed (one `SettingsPanel.test.tsx` timeout under full-suite load did not reproduce in isolation, the same class as the P77-A `TemplatesTab` note).
 
 
 ## Outcome

@@ -58,8 +58,8 @@ of those files does not.
 |---------|-----------|-------------------------------|--------|
 | `src/styles/chrome-portable.scss` | M1 and M2 (imported in both `main.tsx` and `shadowStyles.ts`) | both trees; also leaks into the host page | **canonical** for Mantine class overrides that admin chrome must see |
 | `src/styles/global.scss` | M2 under shadow; M1 (dynamic import) under light | gallery tree only | **canonical** for structural rules under `.mullion-gallery`; every selector must carry that ancestor (tested) |
-| CSS module registered in `shadowStyles.ts` (`CampaignCard`, `CardGallery`, `CampaignViewer`) | M1 and M2 | both trees | **canonical** for component-local structure in the gallery tree |
-| CSS module not registered (`MediaCard`, `MediaTab`, `TemplatePickerModal`) | M1 only | document only | **constrained**: allowed only when every consumer is portaled; the registry test requires a stated justification. `MediaCard` and `MediaTab` are consumed inside the Admin panel and are therefore dead in the shipped mount; P77-C registers them |
+| CSS module registered in `shadowStyles.ts` (`CampaignCard`, `CardGallery`, `CampaignViewer`, `MediaCard`, `MediaTab`) | M1 and M2 | both trees | **canonical** for component-local structure in the gallery tree. `MediaCard` and `MediaTab` were unregistered, and therefore dead in the shipped mount, until P77-C |
+| CSS module not registered (`TemplatePickerModal`) | M1 only | document only | **constrained**: allowed only when every consumer is portaled; the registry test requires a stated justification |
 | `src/styles/builder.css`, `src/styles/wpAdminFormReset.css` | M1 only | document only | **constrained** by design: Dockview lives in the portaled Layout Builder; the wp-admin reset targets light-DOM admin pages and is intentionally absent from the shadow tree |
 | Mantine `vars` (theme adapter or component prop) | M4 as custom properties | the element and Mantine's own rules that read the variable, including pseudo-state rules | **canonical** for colour and state on a Mantine part whenever Mantine exposes a variable for it (`--input-bd`, `--table-hover-color`, `--checkbox-color`, and so on) |
 | Mantine `classNames` plus a stylesheet | whichever stylesheet | see the stylesheet | **canonical** for state and pseudo-state Mantine does not expose a variable for; the stylesheet must be `chrome-portable.scss` if the part can render in chrome |
@@ -81,7 +81,8 @@ P77-B's decision, not this document's.
 | Job | Write it as | Not as |
 |-----|-------------|--------|
 | Colour or state on a Mantine part that has a variable (`--input-bd`, `--input-bd-focus`, `--table-hover-color`) | `vars` in `adapter.ts` | `styles`, which pins the colour inline and outranks Mantine's own focus and checked rules |
-| Pseudo-state or attribute state on a Mantine part with no variable (`:focus-visible` rings, `[data-active]`, `[data-selected]`) | a stable class through `classNames` plus a rule in `chrome-portable.scss` | a rule in `global.scss`, which never reaches portaled chrome |
+| Pseudo-state or attribute state on a Mantine part with no variable (`:focus-visible` rings, `[data-active]`, `[data-checked]`) | a stable class through `classNames` plus a rule in `chrome-portable.scss` | a rule in `global.scss`, which never reaches portaled chrome |
+| A themed colour that such a state rule must read | your own `--mullion-*` custom property, set through `vars` on the part's root (or inline on a part that portals on its own, such as a Select dropdown) and read by the rule with a fallback | an inline `color` through `styles` on the same part: inline outranks every class rule, including the state rule, so the state never shows (P77-C) |
 | Overriding a Mantine class on anything that can render in chrome | `chrome-portable.scss`, class selectors only, doubled first class to clear Mantine's specificity | `global.scss`; element selectors or resets in `chrome-portable.scss`, which leaks into the host page |
 | Structural layout in the gallery tree | `global.scss` under `.mullion-gallery`, or a CSS module registered in `shadowStyles.ts` | a CSS module you forgot to register; the registry test will tell you |
 | Structural layout for a portaled surface only | a CSS module listed in the test's `DOCUMENT_ONLY_MODULES` with the consumer that justifies it | registration in `shadowStyles.ts` is harmless but pointless |
@@ -93,15 +94,23 @@ P77-B's decision, not this document's.
 When in doubt, the question to ask is "which tree is the element in when it
 paints?", and the answer decides the mechanism. The surface follows.
 
+Two things delivery cannot fix, both found by P77-C. A rule for an attribute
+Mantine does not set (`[data-selected]` on a Select option; Mantine 9 sets
+`data-checked`) is dead in every tree, so check the rendered element's
+attributes before writing the selector. And a class rule cannot beat an
+inline declaration on the same element, so a part whose colour the adapter
+pins through `styles` will never show a state colour from any stylesheet.
+
 ## 5. Tests that hold the contract
 
 | Test | Guards | Mutation that fails it |
 |------|--------|------------------------|
-| `src/styles/__tests__/styleDelivery.test.ts`: global.scss scope | every `global.scss` selector carries `.mullion-gallery`, except an explicit known-dead list that P77-C empties | append an unscoped rule |
-| same file: module registry | every `*.module.scss` is registered in `shadowStyles.ts`, document-only with a justification, or on the known-dead list | add a module without registering it |
+| `src/styles/__tests__/styleDelivery.test.ts`: global.scss scope | every `global.scss` selector carries `.mullion-gallery`; the known-dead allowlist it carried was emptied by P77-C | append an unscoped rule |
+| same file: module registry | every `*.module.scss` is registered in `shadowStyles.ts` or document-only with a justification | add a module without registering it |
 | same file: component `styles={}` flatness | no nested key in any component-level `styles` prop | add `'&:hover'` to any `styles={{}}` |
 | `src/themes/__tests__/adapter.test.ts`: adapter flatness (P76-I-1) | the same rule for the theme adapter across all 23 themes | add a nested key to any component block |
-| `e2e/style-delivery.spec.ts` | with the Settings drawer open, every selector compiled from `chrome-portable.scss` is present in the document's sheets and in the shadow root's; `global.scss` is present in exactly the tree its mechanism implies | remove either `chrome-portable.scss` import |
+| same file: state colours as variables (P77-C) | Tabs, SegmentedControl and Select carry their state colours as custom properties and no inline `color` on the tab, label or option | put `color` back in `Tabs.styles.tab` |
+| `e2e/style-delivery.spec.ts` | with the Settings drawer open, every selector compiled from `chrome-portable.scss` is present in the document's sheets and in the shadow root's; `global.scss` is present in exactly the tree its mechanism implies; the drawer's active tab and the Theme select's checked option paint the colours their variables carry | remove either `chrome-portable.scss` import; rename `data-checked` in the rule |
 | `e2e/theme-qa.spec.ts`: focus ring colour (P76-I-2) | the painted ring on every tabbable control in the drawer is `primaryStroke` | drop a selector from the ring rule |
 
 The e2e spec needs the gallery dev server on the configured port. Note that
@@ -143,7 +152,8 @@ it is not implemented and not planned. Dropping shadow DOM was considered and
 rejected in Phase 77 (Key Decision C): it is the only protection against host
 CSS the plugin cannot obtain any other way.
 
-Document rewritten 2026-09-09 for Phase 77 track A. The previous version
+Document rewritten 2026-09-09 for Phase 77 track A and updated the same day
+for track C. The previous version
 (January 2026) predates the shadow-plus-portal findings of Phases 75 and 76
 and described CSS variables as scoped to `.mullion-gallery`, which has not
 been true since the shadow mount became the default.

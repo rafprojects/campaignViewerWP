@@ -21,6 +21,10 @@ import chromePortableStyles from './styles/chrome-portable.scss?inline';
 import campaignCardStyles from './components/CampaignGallery/CampaignCard.module.scss?inline';
 import cardGalleryStyles from './components/CampaignGallery/CardGallery.module.scss?inline';
 import campaignViewerStyles from './components/CardViewer/CampaignViewer.module.scss?inline';
+// P77-C: the Media tab renders inline in the gallery tree (Admin panel), so
+// its modules were dead under the shipped mount until registered here.
+import mediaCardStyles from './components/Admin/MediaCard.module.scss?inline';
+import mediaTabStyles from './components/Admin/MediaTab.module.scss?inline';
 
 export const shadowStyles = [
   mantineCoreStyles,
@@ -35,4 +39,6 @@ export const shadowStyles = [
   campaignCardStyles,
   cardGalleryStyles,
   campaignViewerStyles,
+  mediaCardStyles,
+  mediaTabStyles,
 ].join('\n');

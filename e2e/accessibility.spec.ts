@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect, type Locator, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 const CAMPAIGNS_URL = '**/wp-json/mullion-gallery/v1/campaigns**';
@@ -39,6 +39,21 @@ const publicCampaign = {
 /** Only report critical and serious axe violations. */
 function criticalViolations(violations: { impact?: string }[]) {
   return violations.filter((v) => v.impact === 'critical' || v.impact === 'serious');
+}
+
+/**
+ * Mantine fades Modal and Drawer content in over its transition duration, and
+ * axe blends mid-fade opacity into its contrast maths (P77-D found this on the
+ * lightbox hint; P77-C saw the login modal fail the same way about one run in
+ * six). Wait until nothing between the element and its root is translucent.
+ */
+async function awaitFullyPainted(locator: Locator) {
+  await expect.poll(() => locator.evaluate((el) => {
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      if (parseFloat(getComputedStyle(node).opacity) < 1) return false;
+    }
+    return true;
+  })).toBe(true);
 }
 
 test.describe('accessibility baseline', () => {
@@ -104,6 +119,7 @@ test.describe('accessibility baseline', () => {
 
     // Wait for the login modal
     await expect(page.getByRole('dialog', { name: 'Sign in' })).toBeVisible();
+    await awaitFullyPainted(page.getByRole('dialog', { name: 'Sign in' }));
 
     // Full-page analyze: axe traverses the open shadow root the app mounts in
     // (a scoped `.include()` CSS selector cannot cross the shadow boundary).
@@ -281,6 +297,7 @@ test.describe('accessibility - admin flows', () => {
     // The settings dialog's accessible name drifts with its header; wait on a
     // settings-panel-specific control (its first tab) to confirm it opened.
     await expect(page.getByRole('tab', { name: 'Appearance' })).toBeVisible();
+    await awaitFullyPainted(page.getByRole('tab', { name: 'Appearance' }));
 
     // P62-H: color-contrast is now enforced. Theme-token contrast is gated
     // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);

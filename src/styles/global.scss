@@ -196,24 +196,9 @@
   box-shadow: var(--mullion-shadow-md);
 }
 
-// Mantine active/selected state helpers. These stay in CSS so selectors like
-// [data-active] and [data-selected] are handled by the browser instead of
-// leaking through React inline style objects.
-.mullion-mantine-tabs-tab[data-active] {
-  color: var(--mullion-color-text);
-  border-color: var(--mullion-color-primary-stroke);
-}
-
-.mullion-mantine-segmented-control-label[data-active] {
-  color: var(--mullion-color-text);
-}
-
-// Select dropdowns may render in a portal, so selected option styling
-// cannot rely on the .mullion-gallery ancestor being present.
-.mullion-mantine-select-option[data-selected] {
-  background-color: var(--mullion-color-primary);
-  color: var(--mullion-color-primary-on, #ffffff);
-}
+// Mantine state rules (`[data-active]` tabs and segmented labels, checked
+// Select options) live in chrome-portable.scss since P77-C: this file never
+// reaches portaled chrome, and those parts render there.
 
 // Compact layout variant
 .mullion-gallery--compact .mullion-gallery__container {

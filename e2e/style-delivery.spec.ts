@@ -135,6 +135,49 @@ test.describe('style delivery contract', () => {
     expect(GLOBAL.filter((s) => doc.includes(s)), 'global.scss must not be loaded into the document under a shadow mount').toEqual([]);
   });
 
+  // P77-C: the rules moved out of global.scss must not only be present in the
+  // document, they must paint. The Theme select's checked option and the
+  // drawer's active tab are the two parts a reader can see.
+  test('shadow mount: the moved state rules paint on portaled chrome', async ({ page }) => {
+    await installAdminSession(page);
+    await page.goto('/');
+    await expect.poll(() => page.evaluate(() => !!document.getElementById('root')?.shadowRoot)).toBe(true);
+    await openSettingsDrawer(page);
+    const dialog = page.getByRole('dialog', { name: /^Settings/ });
+
+    const activeTab = dialog.getByRole('tab', { name: 'Appearance' });
+    await expect(activeTab).toHaveAttribute('data-active', 'true');
+    const tab = await activeTab.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        color: cs.color,
+        borderBottomColor: cs.borderBottomColor,
+        activeVar: cs.getPropertyValue('--mullion-tabs-tab-active-color').trim(),
+        tabsColor: cs.getPropertyValue('--tabs-color').trim(),
+      };
+    });
+    const hexToRgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+    expect(tab.activeVar, 'the adapter must put the active colour on the Tabs root').toMatch(/^#/);
+    expect(tab.color).toBe(hexToRgb(tab.activeVar));
+    expect(tab.borderBottomColor).toBe(hexToRgb(tab.tabsColor));
+
+    await dialog.getByRole('combobox', { name: 'Theme' }).click();
+    const checked = page.locator('.mullion-mantine-select-option[data-checked]').first();
+    await expect(checked).toBeVisible();
+    const option = await checked.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        background: cs.backgroundColor,
+        color: cs.color,
+        bgVar: cs.getPropertyValue('--mullion-select-option-checked-bg').trim(),
+        colorVar: cs.getPropertyValue('--mullion-select-option-checked-color').trim(),
+      };
+    });
+    expect(option.bgVar, 'the adapter must put the checked pair on the dropdown').toMatch(/^#/);
+    expect(option.background).toBe(hexToRgb(option.bgVar));
+    expect(option.color).toBe(hexToRgb(option.colorVar));
+  });
+
   test('light mount: chrome-portable and global.scss both reach the document', async ({ page }) => {
     await installAdminSession(page);
     await page.goto('/?shadow=0');

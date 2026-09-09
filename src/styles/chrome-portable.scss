@@ -81,3 +81,32 @@
 .mullion-mantine-checkbox-input:not(:checked):not([data-indeterminate]) {
   border-color: var(--mullion-checkbox-bd, transparent);
 }
+
+// P77-C: Tabs colour. The adapter pinned `color: textMuted` inline on every
+// tab, which outranked the old global.scss `[data-active]` rule even where
+// that sheet reached, so the active tab never brightened. Both colours are
+// now variables on the Tabs root (adapter.ts) read here; the active border
+// is Mantine's own `--tabs-color`, which the adapter points at primaryStroke.
+.mullion-mantine-tabs-tab.mullion-mantine-tabs-tab {
+  color: var(--mullion-tabs-tab-color, inherit);
+}
+
+.mullion-mantine-tabs-tab.mullion-mantine-tabs-tab[data-active] {
+  color: var(--mullion-tabs-tab-active-color, inherit);
+}
+
+// SegmentedControl resting label colour, same shape. Mantine reads
+// `--sc-label-color` on the active label itself, so the `:not` leaves that
+// rule in charge of the active state.
+.mullion-mantine-segmented-control-label.mullion-mantine-segmented-control-label:not([data-active]) {
+  color: var(--mullion-segmented-control-label-color, inherit);
+}
+
+// Select checked option. Mantine 9 marks the chosen option with
+// `data-checked`; the `data-selected` the old global.scss rule carried
+// matched nothing in any tree. The variables are inline on the dropdown
+// (adapter.ts), so they resolve wherever it is portaled.
+.mullion-mantine-select-option.mullion-mantine-select-option[data-checked] {
+  background-color: var(--mullion-select-option-checked-bg, var(--mantine-primary-color-filled));
+  color: var(--mullion-select-option-checked-color, var(--mantine-primary-color-contrast, #ffffff));
+}

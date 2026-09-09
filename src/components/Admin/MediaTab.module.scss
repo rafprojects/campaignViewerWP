@@ -21,24 +21,3 @@
     max-width: var(--mullion-media-grid-max-lg, var(--mullion-media-grid-max-md, var(--mullion-media-grid-max-sm, var(--mullion-media-grid-max-base, 100%))));
   }
 }
-
-.mediaCard {
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
-  border: 1px solid color-mix(in srgb, var(--mullion-color-text-muted) 25%, transparent);
-}
-
-.mediaCard:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--mullion-shadow-lg);
-  border-color: color-mix(in srgb, var(--mullion-color-primary) 45%, transparent);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mediaCard {
-    transition: none;
-  }
-
-  .mediaCard:hover {
-    transform: none;
-  }
-}
