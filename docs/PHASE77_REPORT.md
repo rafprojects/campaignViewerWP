@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-08-28
-**Last updated:** 2026-08-28
+**Last updated:** 2026-09-01 (P77-F promoted from FUTURE_TASKS on the designer's sign-off)
 
 ### Tracks
 
@@ -13,6 +13,7 @@
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | Planned | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test | Planned | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
+| P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
 
 ---
 
@@ -52,7 +53,10 @@
 2. **P77-A** next — the inventory is the input to everything else, and its enforcement tests are what stop the pattern recurring.
 3. **P77-C** immediately after A, as A's first real customer. If the contract cannot express this fix cleanly, the contract is wrong.
 4. **P77-B** — larger validation surface, and its outcome may retire parts of A's channel list.
-5. **P77-E** last. Gated on A and B by construction.
+5. **P77-F** after C — the ring rule is one of the styles A/C move around, so land the halo
+   through the canonical channel once it exists rather than adding another delivery-channel
+   customer first and migrating it later.
+6. **P77-E** last. Gated on A and B by construction.
 
 ---
 
@@ -247,13 +251,71 @@ A decision document. No component code.
 
 ---
 
+## Track P77-F - Two-tone ("halo") focus ring
+
+Promoted from `FUTURE_TASKS` on 2026-09-01 after the designer's response to the v2 design
+docs ([`docs/design/correspondences/designer-response-v2-notes.md`](design/correspondences/designer-response-v2-notes.md) §4)
+endorsed building it and settled the two open design questions. The full tactical write-up
+this track absorbs lived in the `FUTURE_TASKS` entry (now a pointer here).
+
+### Problem
+
+The P76-I-2 ring (`outline: 2px solid` in `primaryStroke`) is correct for the 23 bundled
+themes **because they can be audited**. It cannot be correct for user-authored themes
+(`registerCustomTheme`), because no build-time audit can see them — and a focus ring is the
+one affordance where failure is not cosmetic: it is whether a keyboard user knows where they
+are. A single-colour ring is only ever as visible as its contrast against whatever sits
+behind it; any theme, or any surface it was not measured against, can put it back under the
+3:1 floor. The two-tone technique Chrome, Firefox and GitHub ship — a brand-coloured core
+plus a contrasting halo — sidesteps this structurally: at least one of the two tones
+contrasts with any background.
+
+### Fix
+
+Add a halo (`box-shadow: 0 0 0 4px var(--ring-halo)` beneath the existing 2px
+`primaryStroke` outline) to the focus-ring rule P76-I-2 introduced, delivered through
+whatever channel P77-A names canonical (the rule currently lives in `global.scss` with its
+colour variable carried into portaled chrome by `chromeVars()` — exactly the plumbing A and
+C are straightening out). Two constraints from the designer's sign-off are requirements, not
+suggestions:
+
+1. **The halo is a neutral drawn from the theme's own grounds — never a second brand
+   colour.** Resolved per colour-scheme: light halo on dark themes, dark on light. Two
+   chromatic tones is what would actually look decorated.
+2. **Ring geometry stays constant across themes.** Only the colours resolve per theme; a
+   ring that changes thickness per theme is what would break the restrained look.
+
+Then re-model `uiContrastAudit`'s ring checks: the guarantee changes from "the ring
+contrasts with the surface" to "the ring pair contrasts with itself and with the surface",
+so the `primaryStroke`-on-ground checks need re-derivation rather than deletion.
+
+### Acceptance criteria
+
+- Focused controls render core + halo on every bundled theme, in both mount modes and both
+  `applyThemeEverywhere` states (the P76-D/H trap: measure the shipped default, not the
+  fixture's).
+- The audit asserts the re-modelled pair guarantee and stays a zero-exception gate.
+- A hostile-theme spot check: a user-authored theme whose surface matches `primaryStroke`
+  still shows a visible ring (the halo carries it).
+- The visual pass covers tight layouts — toolbars, table cells, segmented controls — since
+  the halo's footprint is wider, and `box-shadow` (unlike `outline`) can be clipped by an
+  ancestor's `overflow: hidden`.
+
+### Validation
+
+- `npx playwright test theme-qa` — resting-state baselines must not move (the ring paints
+  only on `:focus-visible`); focus-state assertions extend the P76-I-2 set.
+- Designer review in situ, per their offer — after it is running, not gating the build.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
 | The UI facade itself (`src/ui/`, ESLint boundary, migration) | **Phase 78.** Gated on A, B and E by explicit decision — a boundary drawn before knowing what it must abstract is a guess. |
 | Portal Admin Chrome Into the Shadow Root (existing `FUTURE_TASKS` entry) | Absorbed into P77-B as option (a). The entry stays as the tactical write-up; the decision belongs to the track. |
-| Two-tone ("halo") focus ring | Complementary to P76-I-2's Option A, not urgent — Option A already clears 3:1 on all 23 themes. Stays in `FUTURE_TASKS`. |
+| ~~Two-tone ("halo") focus ring~~ | **Promoted to P77-F on 2026-09-01.** The original deferral ("not urgent — Option A already clears 3:1") stands as far as it goes, but the designer's response to the v2 design docs endorsed building it and supplied the two constraints that were the open design questions. New information, not a reversal of the reasoning. |
 | Privacy items (Sentry PHP scrubber, Google Fonts self-hosting, analytics salt rotation) | All Low / Low-Medium impact; Sentry is off without a DSN and the Google Fonts flow is documented with opt-outs. Would pad the phase without protecting the release. |
 | CORS allow-list | Its own entry states it is meaningless for the shortcode deployment actually shipped. |
 | Structural a11y gate growth | Its entry states WCAG AA is a quality bar, not a WP.org submission gate, and can grow post-launch. |
