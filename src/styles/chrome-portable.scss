@@ -1,0 +1,83 @@
+// ---------------------------------------------------------------------------
+// Styles that must reach PORTALED admin chrome.
+//
+// Why this file exists, separately from global.scss (P76-I-2):
+//
+// `global.scss` is loaded into the light DOM only when the app mounts WITHOUT
+// a shadow root (`main.tsx`: `if (!useShadowDom) import('./styles/global.scss')`).
+// In the shipped default — shadow DOM — it is concatenated into the shadow
+// root by `shadowStyles.ts` instead. But Mantine's `Portal` appends its target
+// to `document.body`, so every Drawer, Modal, Menu and Popover renders OUTSIDE
+// that shadow root. Rules in `global.scss` therefore never reach portaled
+// admin chrome in the configuration we actually ship.
+//
+// Mantine's own stylesheet does reach it, because `main.tsx` imports
+// `@mantine/core/styles.css` unconditionally. Anything of ours that has to
+// override Mantine on portaled chrome needs the same treatment, which is what
+// this file is: imported unconditionally in `main.tsx` (so it is in the
+// document) and concatenated into `shadowStyles.ts` (so it is in the shadow
+// root too).
+//
+// Keep this file small and strictly scoped to Mantine class overrides. It is
+// the one stylesheet that leaks into the host WordPress page, so it must never
+// contain element selectors or resets.
+// ---------------------------------------------------------------------------
+
+// Mantine draws every non-input focus ring straight from
+// `--mantine-primary-color-filled` — i.e. `primaryFill`, the *button
+// background* colour:
+//
+//   .mantine-focus-auto:focus-visible {
+//     outline: 2px solid var(--mantine-primary-color-filled);
+//     outline-offset: 2px;
+//   }
+//
+// Because of the 2px offset that ring sits on the container surface, and
+// measured across the 23 bundled themes it fell below the WCAG 1.4.11 3:1
+// floor on 13 of them — all dark, worst `darcula` at 1.08:1. `primaryStroke`
+// is the rung the theme engine already contrast-selects for exactly this
+// purpose (P75-E) and clears 3:1 on every bundled theme, so the ring is
+// re-pointed at it here.
+//
+// Only `outline-color` is overridden: Mantine keeps ownership of the ring's
+// width, style and offset, so a future change to its geometry still lands.
+//
+// The doubled class is a specificity bump (0,3,0 vs Mantine's 0,2,0) so this
+// wins regardless of stylesheet order — the light-DOM path loads global.scss
+// via a dynamic import, where order is not guaranteed the way it is in
+// `shadowStyles.ts`.
+//
+// Inputs are deliberately absent: they carry no outline at all
+// (`.m_8fb7ebe7:focus { outline: none }`) and signal focus by swapping
+// `--input-bd` to `--input-bd-focus`, which the adapter already points at
+// primaryStroke.
+// Every selector below doubles its first class. Mantine's own focus rules run
+// from (0,2,0) for `.mantine-focus-auto:focus-visible` up to (0,3,0) for the
+// sibling-drawn rings like `.m_926b4011:focus-visible + .m_9307d992`, so a
+// like-for-like selector only *ties* the sibling ones and loses on source
+// order. The Switch track was caught doing exactly that by the `focus ring
+// colour` test in e2e/theme-qa.spec.ts. Doubling puts every rule one step
+// clear of Mantine's, regardless of stylesheet order.
+.mantine-focus-auto.mantine-focus-auto:focus-visible,
+.mantine-focus-always.mantine-focus-always:focus,
+.mantine-Switch-input.mantine-Switch-input:focus-visible + .mantine-Switch-track,
+.mantine-Checkbox-input.mantine-Checkbox-input:focus-visible + label,
+.mantine-Radio-input.mantine-Radio-input:focus-visible + label,
+.mantine-Chip-input.mantine-Chip-input:focus-visible + .mantine-Chip-label {
+  outline-color: var(--mullion-color-primary-stroke, currentColor);
+}
+
+// SegmentedControl routes its ring through a variable rather than `outline`.
+.mantine-SegmentedControl-input.mantine-SegmentedControl-input:focus-visible
+  + .mantine-SegmentedControl-label {
+  --segmented-control-outline: 2px solid var(--mullion-color-primary-stroke, currentColor);
+}
+
+// P76-I-2: Checkbox resting border. The adapter supplies the colour as
+// `--mullion-checkbox-bd` (see adapter.ts) rather than an inline
+// `border-color`, so that Mantine's own checked rule —
+// `.m_26063560:checked { border-color: var(--checkbox-color) }` — can win in
+// the checked state instead of being outranked by an inline style.
+.mullion-mantine-checkbox-input:not(:checked):not([data-indeterminate]) {
+  border-color: var(--mullion-checkbox-bd, transparent);
+}

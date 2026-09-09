@@ -1,0 +1,80 @@
+{
+  "name": "Astragal",
+  "palette": "Lead and Bone",
+  "note": "The house owns no accent colour. Product accents are declared by the product, never here.",
+  "light": {
+    "ground": "#ECEAE4",
+    "surface": "#F8F7F3",
+    "ink": "#191C1E",
+    "inkSecondary": "#3A4043",
+    "inkMuted": "#626A6E",
+    "rule": "#A9AFB2"
+  },
+  "dark": {
+    "ground": "#16181A",
+    "surface": "#1E2123",
+    "ink": "#E9E7E1",
+    "inkSecondary": "#C2C6C7",
+    "inkMuted": "#98A0A4",
+    "rule": "#31373A"
+  },
+  "type": {
+    "wordmark": {
+      "family": "Spectral",
+      "weight": 500,
+      "case": "uppercase",
+      "tracking": "0.17em"
+    },
+    "display": {
+      "family": "Spectral",
+      "weight": [
+        400,
+        500
+      ]
+    },
+    "text": {
+      "family": "IBM Plex Sans",
+      "weight": [
+        400,
+        500,
+        600
+      ]
+    },
+    "data": {
+      "family": "IBM Plex Mono",
+      "weight": 400
+    }
+  },
+  "mark": {
+    "canvas": 96,
+    "cuts": {
+      "full": {
+        "useAtOrAbove": 28,
+        "inkBox": [
+          27,
+          4,
+          42,
+          88
+        ]
+      },
+      "reduced": {
+        "useBelow": 28,
+        "inkBox": [
+          26,
+          6,
+          44,
+          84
+        ]
+      }
+    },
+    "minimumSize": 14,
+    "clearSpace": "one bead diameter",
+    "tileRadiusRatio": 0.21875
+  },
+  "products": {
+    "mullion": {
+      "accentDark": "#1AD1C4",
+      "accentLight": "#007870"
+    }
+  }
+}

@@ -18,6 +18,7 @@ import { resolveColors, withAlpha } from '@mullion/theme-engine';
 const TABS_TAB_CLASS = 'mullion-mantine-tabs-tab';
 const SEGMENTED_CONTROL_LABEL_CLASS = 'mullion-mantine-segmented-control-label';
 const SELECT_OPTION_CLASS = 'mullion-mantine-select-option';
+const CHECKBOX_INPUT_CLASS = 'mullion-mantine-checkbox-input';
 // 'md' is intentionally larger than Mantine 9's default 'sm' to match the
 // PHASE26 design decision (see docs/PHASE26_REVIEW.md Track P26-B).
 const DEFAULT_RADIUS = 'md';
@@ -47,7 +48,6 @@ function generateComponentOverrides(
   rc: ResolvedColors,
 ): NonNullable<MantineThemeOverride['components']> {
   const fill = rc.primaryFill;
-  const fillHover = rc.primary[Math.max(0, rc.primaryFillIndex - 1)] ?? fill;
   const stroke = rc.primaryStroke;
   const onFill = rc.primaryOnFill;
 
@@ -81,40 +81,43 @@ function generateComponentOverrides(
       }),
     },
 
+    // Mantine renders every input-family control through `Input`, calling
+    // useStyles({ name: ['Input', __staticSelector] }) — so this single entry
+    // reaches Input / TextInput / PasswordInput / Select / NumberInput /
+    // ColorInput at once.
+    //
+    // These MUST be `vars` (CSS custom properties on the wrapper), never
+    // `styles`. Mantine's `styles` prop becomes React's inline `style` object,
+    // and an inline `border-color` outranks the stylesheet rule
+    // `border: 1px solid var(--input-bd)` — which is precisely how Mantine
+    // signals focus:
+    //
+    //   .m_8fb7ebe7:focus { outline: none; --input-bd: var(--input-bd-focus); }
+    //
+    // Writing the colour flat pinned the border and silently destroyed the
+    // focus indicator: measured in a browser, `--input-bd` flipped correctly
+    // on focus while the painted border never moved. Writing it as a variable
+    // lets the focus rule win. See P76-I.
     Input: {
-      styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: stroke },
+      vars: () => ({
+        wrapper: {
+          '--input-bd': rc.borderStrong,
+          '--input-bd-focus': stroke,
+          '--input-bg': rc.surface2,
+          '--input-color': rc.text,
+          '--input-placeholder-color': rc.textMuted2,
         },
       }),
     },
 
     TextInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
       }),
     },
 
     PasswordInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&::placeholder': { color: rc.textMuted2 },
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         innerInput: { color: rc.text },
         visibilityToggle: { color: rc.textMuted },
@@ -179,15 +182,22 @@ function generateComponentOverrides(
         tab: {
           color: rc.textMuted,
           fontWeight: FONT_WEIGHT_MEDIUM,
-          '&:hover': {
-            backgroundColor: withAlpha(rc.surface2, 0.5),
-          },
         },
         panel: { color: rc.text },
       }),
     },
 
+    // P76-I-2: rows had no hover state at all — Mantine only highlights when
+    // `highlightOnHover` is set, which nothing did. The deleted adapter rule
+    // used `surface2`, which is three points from `surface` on default-dark
+    // (#132a36 vs #102530) and is imperceptible even at full opacity, so
+    // restoring it verbatim would have looked like a no-op. `surfaceRaised`
+    // is the token that actually reads on both schemes.
     Table: {
+      defaultProps: { highlightOnHover: true },
+      vars: () => ({
+        table: { '--table-hover-color': rc.surfaceRaised },
+      }),
       styles: () => ({
         table: { color: rc.text },
         thead: { borderBottom: `2px solid ${rc.border}` },
@@ -200,7 +210,6 @@ function generateComponentOverrides(
         },
         tr: {
           borderBottom: `1px solid ${withAlpha(rc.border, 0.5)}`,
-          '&:hover': { backgroundColor: withAlpha(rc.surface2, 0.3) },
         },
         td: { color: rc.text },
       }),
@@ -237,7 +246,6 @@ function generateComponentOverrides(
         root: {
           backgroundColor: rc.surface,
           border: `1px solid ${rc.border}`,
-          '&::before': { backgroundColor: fill },
         },
         title: { color: rc.text },
         description: { color: rc.textMuted },
@@ -264,7 +272,6 @@ function generateComponentOverrides(
         },
         item: {
           color: rc.text,
-          '&:hover': { backgroundColor: rc.surface2 },
         },
         label: { color: rc.textMuted },
       }),
@@ -275,32 +282,31 @@ function generateComponentOverrides(
         option: SELECT_OPTION_CLASS,
       },
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&:focus': { borderColor: stroke },
-        },
         dropdown: {
           backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
         },
         option: {
           color: rc.text,
-          '&:hover': { backgroundColor: rc.surface2 },
         },
       }),
     },
 
+    // P76-I-2: the resting border travels as a CSS variable read by a class
+    // rule, not as an inline `borderColor`. Mantine's checked rule sets
+    // background AND border from `--checkbox-color`; an inline border-color
+    // outranks it, which left a `borderStrong` ring around every checked box.
+    // Deleting the declaration is not an option either — Mantine's base is
+    // `border: 1px solid transparent`, so unchecked boxes would lose their
+    // border entirely. See global.scss for the rule that consumes this.
     Checkbox: {
+      classNames: {
+        input: CHECKBOX_INPUT_CLASS,
+      },
+      vars: () => ({
+        root: { '--mullion-checkbox-bd': rc.borderStrong },
+      }),
       styles: () => ({
-        input: {
-          borderColor: rc.borderStrong,
-          '&:checked': {
-            backgroundColor: fill,
-            borderColor: fill,
-          },
-        },
         label: { color: rc.text },
       }),
     },
@@ -319,7 +325,6 @@ function generateComponentOverrides(
       styles: () => ({
         root: {
           color: fill,
-          '&:hover': { color: fillHover },
         },
       }),
     },
@@ -332,7 +337,6 @@ function generateComponentOverrides(
         },
         control: {
           color: rc.text,
-          '&:hover': { backgroundColor: rc.surface2 },
         },
         label: { color: rc.text },
         panel: { color: rc.text },
@@ -367,12 +371,6 @@ function generateComponentOverrides(
 
     NumberInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         control: { borderColor: rc.borderStrong, color: rc.text },
       }),
@@ -380,12 +378,6 @@ function generateComponentOverrides(
 
     ColorInput: {
       styles: () => ({
-        input: {
-          backgroundColor: rc.surface2,
-          borderColor: rc.borderStrong,
-          color: rc.text,
-          '&:focus': { borderColor: stroke },
-        },
         label: { color: rc.textMuted, fontWeight: FONT_WEIGHT_MEDIUM },
         dropdown: {
           backgroundColor: rc.surfaceRaised,
@@ -405,10 +397,6 @@ function generateComponentOverrides(
         label: {
           color: rc.text,
           borderColor: rc.border,
-          '&[data-checked]': {
-            backgroundColor: fill,
-            color: onFill,
-          },
         },
       }),
     },
@@ -588,4 +576,5 @@ export const themeStateClasses = {
   tabsTab: TABS_TAB_CLASS,
   segmentedControlLabel: SEGMENTED_CONTROL_LABEL_CLASS,
   selectOption: SELECT_OPTION_CLASS,
+  checkboxInput: CHECKBOX_INPUT_CLASS,
 } as const;

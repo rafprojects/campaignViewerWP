@@ -6,7 +6,7 @@
 .header {
   position: sticky;
   top: 0;
-  z-index: var(--z-header);
+  z-index: var(--z-header, 40);
   background: color-mix(in srgb, var(--mullion-color-background) 92%, transparent);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--mullion-color-border);

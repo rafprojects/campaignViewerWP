@@ -55,7 +55,7 @@ import { SettingsSystemAdminTab } from '../Settings/tabs/SettingsSystemAdminTab'
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import { AdminChromeProvider } from '@/components/Admin/AdminChromeProvider';
-import { adminChromeClassNames } from '@/themes/chromeTheme';
+import { adminChromeAttributes, adminChromeClassNames, adminChromeStyles } from '@/themes/chromeTheme';
 import { useRootId } from '@mullion/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
@@ -387,7 +387,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
   const badgeText = (color && shadowHost)
     ? (getComputedStyle(shadowHost).getPropertyValue(`--mantine-color-${color}-light-color`).trim() || undefined)
     : undefined;
-  const { setPreviewTheme, setTheme } = useTheme();
+  const { setPreviewTheme, setTheme, themeId } = useTheme();
   const rootId = useRootId();
   const queryClient = useQueryClient();
   const { data: fetchedSettings } = useGetSettings(apiClient, spaceId);
@@ -608,6 +608,7 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       opened={internalOpened}
       onClose={handleClose}
       classNames={adminChromeClassNames(applyThemeEverywhere)}
+      attributes={adminChromeAttributes(applyThemeEverywhere, themeId)}
       title={
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Group gap="sm">
@@ -648,10 +649,20 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
         blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0,
       }}
       scrollAreaComponent={NativeScrollArea}
-      styles={{
-        body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
-        ...(colorHex ? { content: { borderLeft: `2px solid ${colorHex}` } } : {}),
-      }}
+      styles={(() => {
+        // Merge rather than replace: the chrome variables, the space accent
+        // rail, and this drawer's own layout styles all target `content`.
+        const chrome = adminChromeStyles(applyThemeEverywhere, themeId);
+        const contentStyle = {
+          ...chrome.content,
+          ...(colorHex ? { borderLeft: `2px solid ${colorHex}` } : {}),
+        };
+        return {
+          body: { display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 },
+          inner: chrome.inner,
+          content: contentStyle,
+        };
+      })()}
     >
       {isLoading ? (
         <Center py="xl">

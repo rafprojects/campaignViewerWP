@@ -45,9 +45,9 @@ const BASE_SETTINGS = {
 
 async function installThemeSession(
   page: Page,
-  opts: { themeId?: string; wpInjectedThemeId?: string } = {},
+  opts: { themeId?: string; wpInjectedThemeId?: string; applyThemeEverywhere?: boolean } = {},
 ) {
-  const { themeId, wpInjectedThemeId } = opts;
+  const { themeId, wpInjectedThemeId, applyThemeEverywhere } = opts;
 
   await page.addInitScript(
     ([storedTheme, wpTheme]: [string | undefined, string | undefined]) => {
@@ -79,6 +79,7 @@ async function installThemeSession(
   let currentSettings: Record<string, unknown> = {
     ...BASE_SETTINGS,
     ...(themeId ? { theme: themeId } : {}),
+    ...(applyThemeEverywhere === undefined ? {} : { applyThemeEverywhere }),
   };
 
   await page.route('**/wp-json/jwt-auth/v1/token/validate', (r) =>
@@ -218,6 +219,78 @@ const SNAPSHOT_THEMES = [
   'cyberpunk',
 ] as const;
 
+// P76-I-2 (Option A): Mantine draws every non-input focus ring from
+// `--mantine-primary-color-filled` (primaryFill), which fell under WCAG
+// 1.4.11's 3:1 floor on 13 of 23 bundled themes. `src/styles/global.scss`
+// re-points it at `primaryStroke`.
+//
+// This asserts the *painted* result rather than the stylesheet, because the
+// override is a list of selectors and a list can be incomplete: several
+// components (Switch, Checkbox, Chip, SegmentedControl) draw their ring on a
+// sibling element, so a component whose selector is missing would silently
+// keep the old colour. Tabbing the real panel is the only way to catch that.
+test.describe('focus ring colour', () => {
+  test('no painted focus ring uses primaryFill', async ({ page }) => {
+    const FILL = 'rgb(0, 120, 112)';   // default-dark primaryFill  #007870
+    const STROKE = 'rgb(0, 142, 133)'; // default-dark primaryStroke #008e85
+
+    await installThemeSession(page, { themeId: 'default-dark', applyThemeEverywhere: false });
+    await page.goto('/');
+    await waitForShadowMount(page);
+    await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
+    await openDisplaySettings(page);
+    await page.addStyleTag({
+      content: '*,*::before,*::after{transition:none !important;animation:none !important}',
+    });
+
+    const rings: Array<{ where: string; colour: string }> = [];
+    for (let i = 0; i < 45; i++) {
+      await page.keyboard.press('Tab');
+      const found = await page.evaluate(() => {
+        const deepActive = (): Element | null => {
+          let a: Element | null = document.activeElement;
+          while (a && (a as HTMLElement).shadowRoot?.activeElement) {
+            a = (a as HTMLElement).shadowRoot!.activeElement;
+          }
+          return a;
+        };
+        const el = deepActive() as HTMLElement | null;
+        if (!el) return null;
+        const out: Array<{ where: string; colour: string }> = [];
+        // The ring may be painted on the focused element or on its sibling.
+        for (const [label, node] of [
+          ['self', el],
+          ['sibling', el.nextElementSibling],
+        ] as const) {
+          if (!node) continue;
+          const cs = getComputedStyle(node as HTMLElement);
+          // Only Mantine's ring, not the 1px UA default some inputs keep
+          // underneath a sibling-drawn ring.
+          if (cs.outlineStyle === 'solid' && parseFloat(cs.outlineWidth) >= 2) {
+            const cls = typeof (node as HTMLElement).className === 'string'
+              ? (node as HTMLElement).className : '';
+            out.push({ where: `${label}:${cls.split(' ')[1] ?? cls.split(' ')[0] ?? '?'}`, colour: cs.outlineColor });
+          }
+        }
+        return out.length ? out : null;
+      });
+      if (found) rings.push(...found);
+    }
+
+    // The tab order must actually have produced rings, or this proves nothing.
+    expect(rings.length, 'no focus rings were painted — the walk found nothing to check').toBeGreaterThan(5);
+
+    const stillFill = rings.filter((r) => r.colour === FILL);
+    expect(
+      stillFill,
+      `these focus rings still paint primaryFill:\n${stillFill.map((r) => '  - ' + r.where).join('\n')}`,
+    ).toEqual([]);
+
+    // And they resolve to the intended token rather than to the fallback.
+    expect(rings.every((r) => r.colour === STROKE)).toBe(true);
+  });
+});
+
 test.describe('phase-1 visual snapshots', () => {
   test.use({
     viewport: { width: 1280, height: 900 },
@@ -255,6 +328,61 @@ test.describe('phase-1 visual snapshots', () => {
     const dialog = await openDisplaySettings(page);
     await dialog.getByRole('combobox', { name: 'Theme' }).click();
     await expect(page).toHaveScreenshot('theme-selector-open-default-dark.png', { maxDiffPixelRatio: 0.1 });
+  });
+
+  // P76-D: every snapshot above is a toggle-ON capture, so the *shipped default*
+  // (applyThemeEverywhere false — chrome locked to the Mullion brand while the
+  // gallery stays on its own theme) had no visual coverage at all. Tokyo Night
+  // is the established non-default fixture, so a regression that leaked the
+  // gallery palette into locked chrome shows up here as a whole-dialog diff.
+  test('display settings dialog, chrome locked — tokyo-night gallery', async ({ page }) => {
+    await installThemeSession(page, { themeId: 'tokyo-night', applyThemeEverywhere: false });
+    await page.goto('/');
+    await waitForShadowMount(page);
+    await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
+    await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
+    await openDisplaySettings(page);
+    await expect(page).toHaveScreenshot('display-settings-locked-chrome-tokyo-night.png', { maxDiffPixelRatio: 0.1 });
+  });
+
+  // P76-D: a tight-tolerance capture of a single themed control. The whole-page
+  // snapshots above run at maxDiffPixelRatio 0.1, which is ~115k pixels of slack
+  // on a 1280x900 page — enough to swallow any change confined to one control.
+  // This case is scoped to the control and runs at zero tolerance, so a change
+  // to its fill, text, or geometry fails.
+  //
+  // RETRACTED (P76-H): this comment used to say the capture could not cover
+  // `borderStrong` because the controls computed to `border-width: 0px`. That
+  // measurement was taken in follow mode only — BASE_SETTINGS below sets
+  // `applyThemeEverywhere: true`, the opposite of the shipped default — and
+  // follow mode was itself the bug. In the shipped default the border is
+  // painted (`1px solid #648284`), and this capture does cover it.
+  //
+  // The tolerance point above still stands, and is why this case exists: the
+  // six whole-page `display-settings-*` captures did not move when the border
+  // was restored.
+  //
+  // P76-I: the control is captured at REST. Focus state is not covered by any
+  // snapshot — which is how text inputs and selects came to have no focus
+  // indicator at all without a baseline noticing. That is guarded by unit
+  // tests in src/themes/__tests__/adapter.test.ts instead, because the fix
+  // lives in `vars` (CSS custom properties) where a config-level assertion can
+  // actually see it.
+  test('themed control — tight tolerance', async ({ page }) => {
+    await installThemeSession(page, { themeId: 'default-dark' });
+    await page.goto('/');
+    await waitForShadowMount(page);
+    await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
+    await page.addStyleTag({ content: '*, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }' });
+    const dialog = await openDisplaySettings(page);
+    const control = dialog.getByRole('combobox', { name: 'Theme' });
+    await expect(control).toBeVisible();
+    // Keep focus off it: a focused input swaps its colours for the primary
+    // stroke, which would make this capture a focus-ring test instead.
+    await expect(control).toHaveScreenshot('themed-control-tight-default-dark.png', {
+      maxDiffPixelRatio: 0,
+      maxDiffPixels: 0,
+    });
   });
 
   test('theme selector dropdown — default-light', async ({ page }) => {

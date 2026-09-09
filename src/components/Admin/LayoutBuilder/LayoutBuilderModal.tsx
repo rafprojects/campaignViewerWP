@@ -30,7 +30,7 @@ import { useBuilderShellColors } from '@/hooks/useBuilderShellColors';
 import { useTheme } from '@/hooks/useTheme';
 import { useGetSettings } from '@/services/settingsQuery';
 import { AdminChromeProvider } from '@/components/Admin/AdminChromeProvider';
-import { adminChromeClassNames, resolveChromeThemeId } from '@/themes/chromeTheme';
+import { adminChromeAttributes, adminChromeClassNames, adminChromeStyles, resolveChromeThemeId } from '@/themes/chromeTheme';
 import { getTheme } from '@/themes/index';
 import { useLatestRef } from '@mullion/shared-utils';
 import { DockviewReact, DockviewDefaultTab } from 'dockview';
@@ -477,10 +477,17 @@ export function LayoutBuilderModal({
       closeOnEscape={false}
       padding={0}
       classNames={adminChromeClassNames(applyThemeEverywhere)}
-      styles={{
-        body: { height: '100vh', display: 'flex', flexDirection: 'column' },
-        content: { overflow: 'hidden' },
-      }}
+      attributes={adminChromeAttributes(applyThemeEverywhere, themeId)}
+      styles={(() => {
+        // Merge rather than replace: the chrome variables and this modal's own
+        // layout styles both target `content`.
+        const chrome = adminChromeStyles(applyThemeEverywhere, themeId);
+        return {
+          body: { height: '100vh', display: 'flex', flexDirection: 'column' },
+          inner: chrome.inner,
+          content: { ...chrome.content, overflow: 'hidden' },
+        };
+      })()}
       aria-label={tr('lb_mod_aria', 'Layout Builder')}
     >
       <ErrorBoundary

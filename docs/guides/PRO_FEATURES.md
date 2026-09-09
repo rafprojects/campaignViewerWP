@@ -158,7 +158,7 @@ string — see [TRANSLATING.md](TRANSLATING.md)):
 ```bash
 npm run i18n:generate
 wp i18n make-pot wp-plugin/mullion-gallery wp-plugin/mullion-gallery/languages/mullion-gallery.pot \
-  --domain=mullion-gallery --exclude=node_modules,vendor,tests,build
+  --domain=mullion-gallery --exclude=node_modules,vendor,tests,build --skip-js
 # translate the new msgstr in all 5 languages/mullion-gallery-*.po
 wp i18n make-mo  wp-plugin/mullion-gallery/languages
 wp i18n make-php wp-plugin/mullion-gallery/languages

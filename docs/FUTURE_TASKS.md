@@ -195,26 +195,6 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-### Vacuous e2e test — `theme-qa` "changing theme … persists to localStorage"
-
-**Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Branch Review, "Reviewed and deliberately not changed" (2026-08-25). Pre-existing before Phase 75; P75-D touched the test but did not cause the defect.
-
-**Context:** `e2e/theme-qa.spec.ts`'s `changing theme in Display Settings persists to localStorage` cannot fail. Three compounding problems:
-
-1. Its only assertion is `expect(typeof saved === 'string' || saved === null).toBe(true)` — a tautology over `localStorage.getItem`'s own return type. It is true whether or not the theme was written.
-2. The test never changes a theme. It opens Display Settings, asserts the combobox is visible, and saves. The removed comment said as much: *"may be default-dark if unchanged."*
-3. P75-D additionally made the save conditional (`if (await save.isEnabled()) await save.click()`), because the panel's Save button is disabled until the draft is dirty — which, given (2), it never is. So the test now usually does not even click Save.
-
-Net effect: a green test asserting nothing, sitting in the suite that is supposed to protect theme persistence. The adjacent behavioral test (`Display Settings shows the active theme`) is real and does assert a value; this one is the only vacuous case in the file.
-
-**What to implement:** Make the test do what its name says — select a *different* theme in the combobox (the P75-D-era locator is the display name, e.g. `Tokyo Night`, not the id), wait for the Save button to enable, click it, then assert `localStorage.getItem('mullion-theme-id')` equals the newly selected **id**. Drop the conditional click: if Save is disabled after changing the theme, that is the failure the test exists to catch. Consider a second assertion after a reload, since "persists" is the claim.
-
-**Dependencies / risk:** needs a working Playwright run against wp-env (`npx playwright test theme-qa`) to author — the Phase 75 branch review flagged rather than fixed it precisely because rewriting an unexecutable browser test is worse than leaving it visibly marked. Pairs naturally with any track that already has to recapture theme-qa baselines.
-
-**Effort:** Small (one test body, ~15 lines) | **Impact:** Medium — theme persistence is currently unguarded end-to-end despite appearing covered, which is worse than a known gap.
-
----
-
 ### Contract Tests — Frontend Request Payloads vs. REST Route-Arg Enums
 
 **Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-I** (2026-08-26).
@@ -236,9 +216,27 @@ Scope decision worth settling first: whether the manifest is **hand-maintained a
 
 **Files:** `wp-plugin/mullion-gallery/tests/` (new route-enum test), `src/types/` (shared constants), `src/components/Admin/SpaceManagementView.tsx` + `src/components/Admin/AccessTab.tsx` + `src/hooks/useAdminAccessState.ts` (consume rather than inline), plus the other call sites for whichever enums are covered.
 
-**Dependencies / risk:** Cross-artifact parity checks rot if they are not wired into CI — this repo has the precedent: `scripts/validate-adapter-settings-parity.mjs` broke silently in a refactor and is being deleted in [PHASE76_REPORT.md](PHASE76_REPORT.md) **P76-G**, superseded by a Vitest guard that says so in its own header. So the check belongs in the existing PHPUnit + Vitest runs, not in a standalone script nobody runs. Start with the four `access_level` routes (the ones with a demonstrated failure) and widen from there rather than manifesting all 24 in one pass.
+**Dependencies / risk:** Cross-artifact parity checks rot if they are not wired into CI — this repo has the precedent: `scripts/validate-adapter-settings-parity.mjs` broke silently in a refactor and was deleted in [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) **P76-G**, superseded by a Vitest guard that says so in its own header. So the check belongs in the existing PHPUnit + Vitest runs, not in a standalone script nobody runs. Start with the four `access_level` routes (the ones with a demonstrated failure) and widen from there rather than manifesting all 24 in one pass.
 
 **Effort:** Medium | **Impact:** Medium-High — this is the class of bug that reaches users through a fully green pipeline, and P75-I proved it can survive two phases of active development on adjacent code.
+
+---
+
+### Portal Admin Chrome Into the Shadow Root (remove the CSS-variable boundary)
+
+**Origin:** Deferred from [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) **P76-H** Key Decision B (2026-08-27). P76-H ships option (b) — inlining the variables — and explicitly keeps this option open rather than rejecting it.
+
+> **SUPERSEDED 2026-08-28 — retained for its risk analysis, not as independently actionable work.** This is now **option (a) of Track P77-B** in [PHASE77_REPORT.md](PHASE77_REPORT.md), which decides the mount strategy as a whole rather than assuming the boundary should stay and only asking how to cross it. Do not action this entry on its own; take the track. Since it was written, P76-I-2 confirmed the boundary blocks plain stylesheets as well as CSS variables from reaching portaled chrome, and that the app also mounts inside **wp-admin** (`add_submenu_page`), not only the front end — both of which widen the problem described below.
+
+**Context:** The Settings Panel `Drawer` and Layout Builder `Modal` are portaled by Mantine to `document.body` (`Portal.mjs:17-32`, `reuseTargetNode` default `true`). In a shadow mount — the shipped default (`main.tsx:30`) — that puts the chrome in the light DOM while every stylesheet that should theme it lives in the shadow root. A `<style>` inside a shadow root only styles that shadow tree, so nothing scoped there reaches the chrome: not Mantine's `.mullion-admin-chrome[data-mantine-color-scheme="…"]` block, and not `ThemeContext`'s `--mullion-color-*` at `:host`.
+
+The codebase works around this per-consumer rather than structurally, and has already paid for it once: `src/styles/builder.css` themes Dockview through 22 `--mullion-builder-*` properties, so `LayoutBuilderModal` derives them via `useBuilderShellColors` and writes them as **inline styles** on a div inside the Modal. P76-H generalises that workaround; it does not remove the boundary. Each future component themed by CSS variables — an editor, a chart library, a date picker — keeps paying a smaller version of the same tax.
+
+**What to implement:** Give the Drawer/Modal `portalProps={{ target }}` pointing at a node inside the shadow root, so chrome and stylesheets share a tree. `SettingsPanel` already resolves the shadow root for its badge sentinel (`shadowSentinelRef` → `shadowHost`), but that is the *host* element for reading computed variables, not a portal target — this needs new wiring, not a hookup. On success, `useBuilderShellColors` and the `--mullion-builder-*` inline bridge become deletable, and P76-H's `adminChromeStyles()` likely does too.
+
+**Dependencies / risk:** This is the reason it was deferred rather than taken. The Drawer portals to `document.body` specifically to escape the host page's stacking context, so moving it inside the shadow root changes **z-index behaviour against wp-admin** — including against whatever plugins a given customer has installed — plus **focus trapping** and **click-outside** detection. That failure mode surfaces in support tickets, not in CI, which is a poor trade for closing a gap P76-D measured at 3 of 58 painted colour combinations. Re-evaluate when the variable-consuming surface grows enough to justify it; P76-H makes that cheaper, not harder, by centralising the mechanism it would replace.
+
+**Effort:** Medium-Large (small diff, large validation surface — needs real wp-admin testing across plugin combinations) | **Impact:** Medium — architectural cleanup that removes a recurring tax, not a user-visible fix.
 
 ---
 
@@ -283,9 +281,73 @@ The **manual** assistive-tech audit ([guides/ACCESSIBILITY_MANUAL_AUDIT.md](guid
 
 ---
 
+### ~~Two-Tone ("Halo") Focus Ring~~ — ⬆ PROMOTED to Phase 77 (P77-F)
+
+*Promoted 2026-09-01 to [PHASE77_REPORT.md](PHASE77_REPORT.md) track **P77-F**, which absorbs
+this entry's full write-up. The trigger was the designer's response to the v2 design docs
+([`docs/design/correspondences/designer-response-v2-notes.md`](design/correspondences/designer-response-v2-notes.md) §4),
+which endorsed building it and settled the two open design questions: the halo is a
+**neutral drawn from the theme's own grounds** (never a second brand colour), and **ring
+geometry stays constant across themes** (only the colours resolve). Original origin:
+P76-I-2, Option D, deferred 2026-08-28 as complementary to the chosen Option A.*
+
+---
+
+## Design & Brand
+
+### Move the Plugin Header `Author:` / `Author URI:` to Astragal
+
+**Origin:** Designer's endorsement-placement guidance ([`docs/design/correspondences/designer-response-2026-09-09.md`](design/correspondences/designer-response-2026-09-09.md) §3), adopted into [`DESIGN_BRIEF.md`](design/DESIGN_BRIEF.md) → House brand. Unblocked by the `astragal` WordPress.org account registration (P76-C, 2026-09-09), but deliberately not done with it.
+
+**Context:** The house brand publishes the product, and the designer's placement rules put Astragal on exactly the provenance surfaces: the WP.org account (done), the Freemius seller of record, the GitHub organisation, and the plugin header's `Author:` / `Author URI:`. `wp-plugin/mullion-gallery/mullion-gallery.php` still reads `Author: Mullion` with `Author URI:` pointing at the GitHub repo. WordPress renders `Author:` as "By Mullion" in the plugins list, so today the product credits itself as its own vendor.
+
+**Why it is deferred rather than done:** `Author URI:` needs a real destination. `astragalsoftware.com` is owned but the brief does not record a live site there, and pointing the field at a domain that does not resolve is worse than leaving it on the repo URL. Do this when the Astragal site (or a placeholder page) exists. The `Author:` string alone could move independently if preferred, but the pair reads oddly split.
+
+**Also in the same family, when each surface is set up:** the Freemius seller of record (§A of the [Go-Live Punch List](guides/GO_LIVE_PUNCH_LIST.md)) and the GitHub organisation, per the designer's list. Neither is a code change in this repo.
+
+**Effort:** Small (a two-line header edit) | **Impact:** Low-Medium — completes the vendor identity that the WP.org account started, and it is the field users actually see in wp-admin.
+
+### Hover-Glow Default Over Hostile Imagery — designer verification screenshots
+
+**Origin:** Designer response to the v2 design docs ([`docs/design/correspondences/designer-response-v2-notes.md`](design/correspondences/designer-response-v2-notes.md) §3), 2026-09-01. Non-blocking; nothing gates on it.
+
+**Context:** The per-gallery hover-glow effect defaults to the brand teal `#1ad1c4` (`tileGlowColor` in `src/types/gallerySettings.ts`). The designer has no objection to the colour but notes the glow sits over **user photography** — the one place the brand colour meets content nobody controls. Rig Cyan is high-chroma and light: over a cyan-toned or pale image it may read as a wash rather than a glow; over a busy image, as an artefact. Per-image outcome, user-configurable, so not a palette fault — but unverified.
+
+**What to implement:** Capture the default glow over three deliberately hostile cases — (1) a pale beach/sky image, (2) a teal-dominant image, (3) a very dark low-key image — in a seeded wp-env instance, and send the screenshots to the designer. If it survives those it is fine everywhere. Pairs naturally with the store screenshot capture pass (`STORE_ASSETS.md`), which needs the same seeded environment.
+
+**Effort:** Small (an hour with a seeded environment) | **Impact:** Low-Medium — closes the last open designer sign-off on the shipped palette's defaults.
+
+### Expand the Screenshot Capture Pass for the Astragal/Mullion Website
+
+**Origin:** Raised by the user 2026-09-09 while reviewing the Phase 76 close-out. The 5 required WordPress.org screenshots are still uncaptured (`.wordpress-org/` does not exist yet), and the same seeded environment can produce marketing shots for the future Astragal/Mullion website at near-zero marginal cost.
+
+**Context:** The 5 required WP.org screenshots (manifest in [`STORE_ASSETS.md`](design/STORE_ASSETS.md), order finalized in P76-K: Layout Builder canvas, hexagonal-adapter gallery, campaign management panel, lightbox, theme/adapter variety) need a seeded wp-env instance to capture — the same environment the hover-glow verification screenshots above also need. Once that environment exists, a handful of additional shots (other adapters, other themes, other device widths) cost little beyond the required 5, against standing the environment up a second time later.
+
+**Why this stays deliberately unscoped:** the Astragal/Mullion website does not exist yet, so its actual asset needs — hero images, feature callouts, aspect ratios, light vs. dark theme by default — are unknown. Locking a shot list now would be guessing. This entry records the *decision* (bundle the extra capture into the same session) without prematurely scoping the *list*.
+
+**What to do when the capture pass happens:** after the 5 required shots and the 3 hover-glow verification shots, spend one bounded extra pass — not open-ended — on a small set of additional variety (a few more adapters, a couple of alternate themes, one mobile-width shot) explicitly for future website use. Revisit the actual list once the website's design is underway and its needs are concrete. Tracked as part of the screenshot capture item on [PHASE80_REPORT.md](PHASE80_REPORT.md) §D.
+
+**Effort:** Small (marginal time on top of an already-scheduled capture session) | **Impact:** Low — convenience for a future website build; nothing gates on it.
+
+---
+
 ## Monetization & Distribution
 
-Nothing yet.
+### Naming Defense — Trademark Filings + Fallback Domains (human gate, no code)
+
+**Origin:** Designer's naming review, 2026-09-01, completed 2026-09-09. **The full findings now live in [`docs/design/BRAND-CLEARANCE.md`](design/BRAND-CLEARANCE.md)** — a standalone reference card with both register tables, the trading namesakes, the domains, and an explicit list of what the check does not cover. That is the file to hand a solicitor; this entry is just the action list. All product-owner actions: nothing here is a repo change and none of it gates the release.
+
+**Where it stands.** Both names were searched on the **official USPTO register** on 2026-09-09 (the earlier JS-gated gap is closed) and both are **clear: zero marks in Class 9, zero in Class 42.** Mullion's only live exact-word mark is a Japanese medical-catheter registration (independently re-verified here against TSDR, serial 79350332 / reg. 7296060, exact match). Astragal's only bare-word registration is dead. Each name has one unregistered trading namesake in an unrelated vertical.
+
+**Actions, in priority order:**
+
+1. **File intent-to-use in US Classes 9 and 42 for both names.** Both classes are empty for both marks; this closes essentially all the tail risk and is the highest-value single action. Add CIPO (Canada) for Astragal — that namesake prices in CAD.
+2. **Do not file Astragal in Class 41.** ASTRAGAL PRESS (book publishing) is live there. Keep "publisher" as descriptive prose in `BRAND.md`, not as a service claim.
+3. **Register `astragal.dev` and `getastragal.com`.** (`astragal.com` is unobtainable, held since 1999 with transfer locks; `astragalsoftware.com` is already ours.)
+4. **Date-stamp first use in commerce** for both names — common-law rights accrue from use, and a dated record makes them provable.
+5. **For a solicitor**, the two highest-value items: whether **Mullion, Inc.** (Bedford, NH) still trades, and the **first-use date of the astragalhq.com operator** (Cloudflare-shielded, unindexed, so a standard knockout search would miss them entirely). Plus EUIPO / UKIPO / IP Australia if those territories matter — all three were JS-gated and remain unsearched.
+
+**Effort:** Small (human/administrative) | **Impact:** Medium — closes a slow-moving tail risk on both names before the first public release.
 
 ---
 
@@ -508,6 +570,28 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ---
 
+### Opt-In "Mirror the Theme" Mode for Gallery Content Styling
+
+**Origin:** Raised while scoping [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) **P76-I** (2026-08-27), from the observation that the gallery's border settings are user-controlled *by design* — "as much control over how your gallery looks as possible" is the point of the product, so wiring those settings to the theme system automatically would be a mistake.
+
+**Context:** There is currently **no** path from the theme system to gallery *content* styling, in either direction. The theme engine's tokens (`border`, `borderStrong`, `surface`, `primaryFill`, …) reach Mantine chrome via `adapter.ts` and the gallery shell via `--mullion-color-*`, but campaign cards, tiles, media, nav arrows, and the viewer are styled entirely from user settings with fixed defaults — `card_border_color` defaults to `#1ad1c4`, `tile_border_color` to `#ffffff`, and so on.
+
+The nearest existing thing is not a precedent. `cardBorderMode` already selects a colour *source* — `'auto'` (the campaign's company `brandColor`), `'single'` (`settings.cardBorderColor`), `'individual'` (`campaign.borderColor`) — but none of the three consults the theme. `ResetLink` in the settings sections is a different axis entirely: it clears a responsive **breakpoint override** back to the desktop value, not to any theme.
+
+So a site owner who picks a theme they like has no way to say "and make the gallery follow it" short of hand-copying hex values out of the theme and into a dozen settings, where they immediately go stale the moment the theme changes.
+
+**What to implement:** An opt-in mode, per setting or per group, that *sources* the value from the active theme instead of from a stored constant. `cardBorderMode` shows the shape to copy: add a fourth mode (e.g. `'theme'`) alongside `auto` / `single` / `individual`, and generalise the same idea to the other content-styling colours.
+
+**The design decision that matters: mirror, not copy.** A one-shot "Reset to theme" button that writes current theme values into the settings is the obvious implementation and the wrong one — the values are stale the instant the user switches theme, and nothing records that they were ever meant to track it. A *live* mode keeps the link, so changing theme restyles the gallery, and the user can drop back to a fixed colour whenever they want. It also keeps this compatible with the product's premise: mirroring is a choice the user makes and can revoke, not a default that quietly removes control.
+
+Worth deciding at planning time: whether the granularity is per-field, per-group (all card colours), or a single global "gallery follows theme" switch; and which theme token each setting maps to (`card_border_color` → `primaryStroke`? `border`? `borderStrong`?), which is a design question per setting, not a mechanical one.
+
+**Dependencies / risk:** Touches the settings schema (a new enum value or a companion "source" field per setting), the sanitizer, the PHP defaults, the adapter-fields schema, and the settings UI. The `adapterSettingsParity` guard will need the new keys. Space-level overrides and breakpoint overrides both already layer on these settings, so the resolution order — theme → setting → space override → breakpoint override — needs stating explicitly before implementation, not discovered during it. No accessibility coupling: **P76-I** deliberately does not depend on this, and its audit scope is theme-derived chrome only.
+
+**Effort:** Medium-Large | **Impact:** Medium-High — it is the missing half of the theme feature. Themes currently restyle the admin and the gallery shell but stop at the content the user actually came to look at.
+
+---
+
 ## Integration
 
 ### Third-Party OAuth Providers
@@ -616,3 +700,21 @@ When promoting future tasks to an active phase:
 *Updated: July 18, 2026 (Phase 65 post-landing PR review) — Added three Campaign Management entries deferred from the [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass": "Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns" (legacy sideloaded media lacks `attachmentId`, narrow/consistent with an existing `media_orphans()` limitation), "Binary Campaign Export Downloads Non-File URLs for Embed/External Media" (a deeper, pre-existing gap surfaced while verifying the embedUrl/provider fix — video/embed items don't meaningfully round-trip through the ZIP transport), and "Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths" (four small reuse findings, no correctness bug). The two actual bugs found in that review (binary import dropping `embedUrl`/`provider`; multi-campaign batch export filename mismatch) were fixed on-branch, not deferred here.*
 
 *Updated: July 23, 2026 (Phase 72 planning) — Created [PHASE72_REPORT.md](PHASE72_REPORT.md) (Planned, 7 mixed-domain tracks). **Promoted and removed from this backlog:** "WordPress Core Privacy Integration (DSAR Export/Erase)" → P72-B, "Retention / Auto-Purge for Email & Audit-Log Tables" → P72-F, "Admin Notice on Unresolved Shortcode Space Reference" → P72-D, "Unify settings-write authorization behavior" → P72-C (Settings & Admin UI is now an empty placeholder), "`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns" → P72-E, and the `LayoutTemplateList`-fix half of "Structural a11y (axe) gate — grow coverage + fix found issues" → P72-G (the "extend coverage further" half stays here, retitled). **Backfilled** (Follow-On Candidates from Phases 68-70 that were never recorded here — found while verifying the backlog is current, cross-checked every archived phase report's Follow-On Candidates table against this doc): "Full Server-Driven `CardGallery` Host Pagination" (PHASE68_REPORT.md, under Campaign Management), "Google Fonts Self-Host Variant" (PHASE69_REPORT.md, under Privacy & Compliance), "`ApiClient` Facade → Namespaces" and "Promote Inline Sub-Components" (both PHASE70_REPORT.md, under Code Quality & Refactoring) — none of the four were promoted into Phase 72, since each is explicitly conditional/opportunistic in its own origin phase's deferral rationale, not bounded phase-shaped work.*
+
+*Updated: August 27, 2026 (P76-I-1) — Added Code Quality & Refactoring entry "Three e2e specs fail on a clean tree", found while verifying P76-I-1 and confirmed pre-existing against an unmodified tree. Not deferred work from Phase 76; filed so a permanently-red e2e floor has an owner.*
+
+*Updated: August 28, 2026 (P76-I-2 decision) — Added Accessibility entry "Two-Tone (Halo) Focus Ring", deferred from P76-I-2 after Option A (re-point the ring at `primaryStroke`) was selected. Recorded as a complementary layer on top of A, not a competing option; Options B (lift `primaryFill`) and C (accept the gap) were dropped outright and are deliberately not carried here.*
+
+*Updated: August 28, 2026 (P76-I-2 implementation) — Added Code Quality & Refactoring entry "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode", found while implementing the focus-ring override and confirmed by measuring which selectors reach `document.styleSheets`. Two rules are affected (`select-option[data-selected]`, `tabs-tab`); fixing them changes appearance, so it is deliberately not folded into P76-I-2.*
+
+*Updated: August 28, 2026 (Phase 76 retrospective) — Added three architectural spikes to Code Quality & Refactoring after the user challenged the project's visual architecture as accumulating workarounds: "One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", and "UI Component Dependency: Mantine, Alternative, or In-House". They are sequenced deliberately — the dependency question runs last, because Phase 76's evidence attributes most of the pain to the shadow/portal boundary rather than to Mantine, and resolving that first materially narrows the case for replacement. The existing "Portal Admin Chrome Into the Shadow Root" entry is retained as the tactical version of one mount-strategy option.*
+
+*Updated: August 28, 2026 (Phase 77/78/79 planning) — **Promoted and removed:** the three architecture spikes added earlier today ("One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", "UI Component Dependency") became [PHASE77_REPORT.md](PHASE77_REPORT.md) tracks A, B and E; "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode" became P77-C; "Three e2e specs fail on a clean tree" and "Vacuous e2e test — theme-qa persists to localStorage" merged into P77-D. The UI facade became [PHASE78_REPORT.md](PHASE78_REPORT.md), and the former Phase 77 (release pipeline hygiene) was renumbered to [PHASE79_REPORT.md](PHASE79_REPORT.md) — the user chose to settle the visual architecture before release rather than ship on top of it. "Portal Admin Chrome Into the Shadow Root" is **not** promoted: it is retained, marked superseded, as the risk analysis behind option (a) of P77-B.*
+
+*Updated: September 1, 2026 (designer response to the v2 design docs) — **Promoted:** "Two-Tone ('Halo') Focus Ring" to [PHASE77_REPORT.md](PHASE77_REPORT.md) track P77-F, on the designer's build-it sign-off plus the two constraints that were its open design questions (neutral halo from the theme's own grounds; constant ring geometry across themes). **Added:** new Design & Brand section with "Hover-Glow Default Over Hostile Imagery" (three verification screenshots for the designer, non-blocking), and Monetization & Distribution entry "Naming Defense — Trademark Filings + Fallback Domains" (product-owner actions from the designer's §0, none gating design or release). The remaining code/doc items from the same response — `accentPurple: #923bde` on `default-light`, ΔE unit labels, the v1 criterion-wording record, the screenshot-manifest reorder — went to [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) as tracks P76-J and P76-K rather than here, since Phase 76 is the in-progress colour-follow-ons phase.*
+
+*Updated: September 9, 2026 (second designer response; Mullion trademark check completed) — **Updated:** "Naming Defense" entry with the completed Mullion register check (clear in US Classes 9/42, cleaner than Astragal; one detail — the Mullion Group's FLINTPRO cancellation/ownership transfer — reported by the designer but not independently confirmable, two lookup paths blocked) and the two named gaps carried forward (USPTO phonetic search, UK/EU Class 9 exposure from an unrelated "Mullion" safety-gear mark). The Mizuho Class 010 catheter registration the designer cited was independently verified against a live TSDR fetch and matches exactly (serial 79350332, reg. 7296060). No new FUTURE_TASKS entries this round — the remaining items (two brand-kit corrections, the `accentPurple` fix, the Archivo typography question, the WP.org account vendor-slug recommendation) went to [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) P76-J (closed) and P76-L (in progress), since Phase 76 already owns that thread.*
+
+*Updated: September 9, 2026 (P76-C closed) — **Added:** Design & Brand entry "Move the Plugin Header `Author:` / `Author URI:` to Astragal", deferred out of P76-C because `Author URI:` needs a live destination to point at. The WordPress.org account (`astragal`) is registered and the `Contributors:` field now credits it; the naming-defense entry was also rewritten to point at the new [`docs/design/BRAND-CLEARANCE.md`](design/BRAND-CLEARANCE.md) reference card rather than restating the findings.*
+
+*Updated: September 9, 2026 (Phase 76 closed; Phase 80 drafted) — **Added:** "Expand the Screenshot Capture Pass for the Astragal/Mullion Website" to Design & Brand — the 5 required WP.org screenshots are still uncaptured, and the same seeded environment can produce marketing shots for the future website at near-zero marginal cost. Deliberately left unscoped (the website does not exist yet); the bounded version is folded into the new [PHASE80_REPORT.md](PHASE80_REPORT.md) track P80-D. Phase 76 is now archived at [`archive/phases/PHASE76_REPORT.md`](archive/phases/PHASE76_REPORT.md); links to it above corrected accordingly.*

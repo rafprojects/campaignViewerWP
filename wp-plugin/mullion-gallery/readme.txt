@@ -1,5 +1,5 @@
 === Mullion ===
-Contributors: wpsupergallery
+Contributors: astragal
 Tags: gallery, media, campaign, layout-builder, embed
 Requires at least: 6.4
 Tested up to: 7.0
@@ -85,11 +85,11 @@ After purchasing, enter your license key on the plugin's licensing screen (added
 
 == Screenshots ==
 
-1. Campaign gallery with classic grid adapter.
-2. Visual layout builder with layer panels.
+1. Visual layout builder with layer panels docked.
+2. Campaign gallery with the hexagonal adapter.
 3. Admin campaign management panel.
 4. Lightbox viewer with keyboard navigation.
-5. Advanced settings accordion.
+5. Theme and adapter variety.
 
 == Changelog ==
 

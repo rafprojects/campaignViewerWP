@@ -63,8 +63,16 @@ Prerequisites: [WP-CLI](https://wp-cli.org/) with the i18n command
    wp i18n make-pot wp-plugin/mullion-gallery \
      wp-plugin/mullion-gallery/languages/mullion-gallery.pot \
      --domain=mullion-gallery \
-     --exclude=node_modules,vendor,tests,build
+     --exclude=node_modules,vendor,tests,build \
+     --skip-js
    ```
+
+   > **`--skip-js` is required.** Without it `make-pot` runs its JavaScript
+   > parser over the built Vite bundles in `admin/build/assets/` and
+   > `assets/assets/` and dies with `Allowed memory size … exhausted` on a
+   > checkout that has been built. Skipping JS loses nothing: the React strings
+   > reach the POT through the generated PHP manifest (see the bridge diagram
+   > above), and this codebase does not use `@wordpress/i18n` anywhere.
 
 2. **Create the locale `.po`** from the template, e.g. for German:
 

@@ -8,6 +8,15 @@ import { auditUiContrast, UI_CONTRAST_MIN } from './uiContrastAudit';
 import { resolveColors } from './colorGen';
 import type { ThemeColors } from './types';
 
+/**
+ * P76-I-2: this gate briefly carried a KNOWN_FOCUS_RING_GAPS exception table.
+ * It recorded 13 of 23 bundled themes whose focus ring fell under 3:1, because
+ * Mantine draws that ring from `primaryFill` while the audit only measured
+ * `primaryStroke`. The ring has since been re-pointed at `primaryStroke`
+ * (P76-I-2 Option A, implemented in `src/styles/global.scss`), so every
+ * affordance now resolves to a token this audit already checks and the table
+ * is gone. The gate is strict again: **no exceptions.**
+ */
 describe('theme UI contrast — WCAG 1.4.11 (P75-E)', () => {
   for (const def of bundledThemeDefinitions) {
     it(`${def.id}: affordance strokes and borderStrong meet ${UI_CONTRAST_MIN}:1`, () => {

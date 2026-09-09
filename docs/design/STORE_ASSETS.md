@@ -62,11 +62,16 @@ remove, or reorder a screenshot, update both places.**
 
 | File | readme caption | Capture guidance |
 |------|----------------|------------------|
-| `screenshot-1.png` | Campaign gallery with classic grid adapter | Front-end gallery, classic grid, a few real tiles |
-| `screenshot-2.png` | Visual layout builder with layer panels | Admin Layout Builder with the layer/panels docked |
-| `screenshot-3.png` | Admin campaign management panel | Admin panel, campaigns tab, a list of campaigns |
+| `screenshot-1.png` | Visual layout builder with layer panels docked | Admin Layout Builder mid-composition, layer panels docked, rulers and smart guides visible. **The lead shot** — this is the one no competitor can take. |
+| `screenshot-2.png` | Campaign gallery with the hexagonal adapter | Front-end gallery on a visually distinctive adapter (hexagonal, or justified) rather than a plain grid — proves the range immediately |
+| `screenshot-3.png` | Admin campaign management panel | Admin panel, campaigns tab, a populated list |
 | `screenshot-4.png` | Lightbox viewer with keyboard navigation | Open lightbox over a gallery, nav controls visible |
-| `screenshot-5.png` | Advanced settings accordion | Settings → Advanced, an accordion section expanded |
+| `screenshot-5.png` | Theme and adapter variety | The theme selector, or a composite of one gallery across several adapters |
+
+> **Order signed off 2026-09-09** (designer, builder-led positioning). This replaced a
+> classic-grid-first order; slot 5 also changed subject, from the advanced-settings accordion
+> to theme/adapter variety, which sells configurability better than a settings panel does.
+> Rationale in [`DESIGN_BRIEF.md`](DESIGN_BRIEF.md) → Screenshots.
 
 Capture at a clean, wide viewport with representative (non-placeholder) content and a
 neutral theme. Screenshots can be produced later by booting a seeded wp-env instance and

@@ -1,5 +1,3 @@
-@use './tokens';
-
 // ==========================================================================
 // Global Styles — Structural / Reset Only
 //
@@ -7,8 +5,9 @@
 // contains only structural resets, accessibility utilities, responsive
 // adjustments, and layout scaffolding.
 //
-// The @use './tokens' above provides the legacy --color-* → --mullion-*
-// bridge for SCSS modules that haven't migrated yet.
+// The legacy --color-* / --radius-* / --shadow-* bridge (_tokens.scss) was
+// deleted in P76-E — every SCSS module now reads --mullion-* directly. Only
+// --z-header survived it, and it lives on .mullion-gallery below.
 //
 // Gold source: docs/THEME_SYSTEM_ASSESSMENT.md
 // ==========================================================================
@@ -19,6 +18,10 @@
   font-family: var(--mullion-font-family);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  // Structural, not theme-dependent. Read by CardGallery's sticky header and
+  // both AuthBar variants; keep it here so those three keep resolving.
+  --z-header: 40;
 }
 
 .mullion-gallery * {
