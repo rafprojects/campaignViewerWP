@@ -14,7 +14,7 @@
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test | Planned | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
-| P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done in code** (2026-09-09); production check pending a redeploy | Small |
+| P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
 
 ---
 
@@ -394,7 +394,7 @@ The e2e spec also pins `global.scss` to exactly one tree per mode, which is the 
 
 ### P77-G (2026-09-09)
 
-**Status: fix and tests landed; the production acceptance check waits on a redeploy of the plugin, which needs the `sudo`-based `update_dev_plugin.sh`.**
+**Status: done.** After the user rebuilt and redeployed, the production home page carried three server-rendered `<link>` elements with the WordPress handle ids `mullion-gallery-app-style-0-css` through `-2-css` (Mantine core, Dockview, entry) and `document.styleSheets` contained Mantine's base rules with `readyState` already `complete`, before any dynamic chunk had run. Runtime-injected links from Vite's preload helper carry no id, so the two delivery paths are distinguishable and the check does not depend on sign-in state.
 
 `Mullion_Embed::get_entry_css_files()` walks the manifest from `index.html`: each statically imported chunk's CSS first, depth first, every chunk visited once (the walk tolerates cycles), then the entry's own CSS. Both `register_assets()` and the shortcode enqueue use it, so the `mullion-gallery-app-style-N` handles the wp-admin renderers already iterate now cover every sheet. Run against the real manifest the result is exactly the three files `dist/index.html` links, in the same order: `vendor-mantine-core`, `vendor-dockview`, `index`. Dynamic-only chunks are left to Vite's preload helper, which already injects their CSS.
 
