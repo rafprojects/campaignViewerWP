@@ -249,7 +249,7 @@ The WordPress.org account was the one decision here with real consequences, sinc
 is effectively permanent and accumulates a plugin portfolio across every future product. It
 went to the house brand: [`astragal`](https://profiles.wordpress.org/astragal/), registered
 2026-09-09, and the plugin's `Contributors:` field credits it. See
-[`PHASE76_REPORT.md`](../PHASE76_REPORT.md) track P76-C.
+[`PHASE76_REPORT.md`](../archive/phases/PHASE76_REPORT.md) track P76-C.
 
 The plugin header's `Author:` and `Author URI:` still read `Mullion` and the GitHub repo
 URL. Moving them to Astragal follows from the same decision but has not been done, since
@@ -455,7 +455,7 @@ Suggested order, reflecting the builder-led positioning:
 > **Approved.** This reorder is signed off. Execution — updating the `readme.txt` captions
 > and the `STORE_ASSETS.md` manifest table together, since WordPress.org matches captions to
 > files by number and they mismatch silently otherwise — is tracked as
-> [P76-K](../PHASE76_REPORT.md).
+> [P76-K](../archive/phases/PHASE76_REPORT.md).
 
 Capture rules: real UI, real-looking media, **no Lorem or placeholder art**, no visible
 debug chrome, clean wide viewport. Prefer the default Mullion theme for consistency.
