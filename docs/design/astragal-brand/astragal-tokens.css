@@ -1,0 +1,44 @@
+/* Astragal — house brand tokens. Lead and Bone.
+   The house owns no accent colour; products bring their own. */
+
+:root {
+  --ast-bone:      #ECEAE4;  /* light ground */
+  --ast-chalk:     #F8F7F3;  /* raised surface on Bone */
+  --ast-lead-900:  #191C1E;  /* mark, wordmark, body copy */
+  --ast-lead-700:  #3A4043;  /* secondary copy */
+  --ast-lead-500:  #626A6E;  /* muted labels — 4.66:1 on Bone, the floor */
+  --ast-lead-300:  #A9AFB2;  /* rules and dividers only, never text */
+  --ast-graphite:  #16181A;  /* dark ground */
+
+  --ast-ground:    var(--ast-bone);
+  --ast-surface:   var(--ast-chalk);
+  --ast-ink:       var(--ast-lead-900);
+  --ast-ink-2:     var(--ast-lead-700);
+  --ast-ink-muted: var(--ast-lead-500);
+  --ast-rule:      var(--ast-lead-300);
+
+  --ast-font-wordmark: "Spectral", Georgia, "Times New Roman", serif;
+  --ast-font-display:  "Spectral", Georgia, serif;
+  --ast-font-text:     "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --ast-font-data:     "IBM Plex Mono", ui-monospace, monospace;
+  --ast-wordmark-tracking: 0.17em;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ast-ground:    var(--ast-graphite);
+    --ast-surface:   #1E2123;
+    --ast-ink:       #E9E7E1;
+    --ast-ink-2:     #C2C6C7;
+    --ast-ink-muted: #98A0A4;  /* 6.9:1 on Graphite */
+    --ast-rule:      #31373A;
+  }
+}
+:root[data-theme="dark"] {
+  --ast-ground:    var(--ast-graphite);
+  --ast-surface:   #1E2123;
+  --ast-ink:       #E9E7E1;
+  --ast-ink-2:     #C2C6C7;
+  --ast-ink-muted: #98A0A4;
+  --ast-rule:      #31373A;
+}

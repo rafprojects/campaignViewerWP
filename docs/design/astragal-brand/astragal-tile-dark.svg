@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Astragal">
+  <title>Astragal tile</title>
+  <rect width="256" height="256" rx="56" fill="#16181A"/>
+  <g fill="#ECEAE4" transform="translate(48 48) scale(1.667)">
+    <rect x="42" y="4" width="12" height="88" rx="6"/>
+    <rect x="30" y="21.5" width="36" height="7" rx="3.5"/>
+    <rect x="30" y="67.5" width="36" height="7" rx="3.5"/>
+    <circle cx="48" cy="48" r="21"/>
+  </g>
+</svg>
