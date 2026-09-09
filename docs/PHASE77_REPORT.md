@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-08-28
-**Last updated:** 2026-09-09 (P77-A landed; P77-G proposed from its findings)
+**Last updated:** 2026-09-09 (P77-A, P77-G and P77-D landed)
 
 ### Tracks
 
@@ -11,7 +11,7 @@
 | P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | **Done** (2026-09-09), see notes | Medium |
 | P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | Planned | Medium |
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | Planned | Small |
-| P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test | Planned | Small-Medium |
+| P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
 | P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
@@ -401,6 +401,34 @@ The e2e spec also pins `global.scss` to exactly one tree per mode, which is the 
 Four PHPUnit tests cover the walk (order, deduplication, a deliberate cycle, a dynamic chunk excluded), the empty and bare-manifest cases, registration of one handle per file, and enqueueing on render. `Mullion_Embed_Test.php` passes 30 of 30. The full suite reported three failures, none in this area: the edition-marker test fails whenever a local build leaves `assets/mullion-edition.json` behind (its own message says so), and two `Mullion_REST_Extended_Test` analytics cases returned 403. Re-running that file against a tree with this change stashed produced an error in a third test on one run and a clean 63 of 63 on the next, so it is order-dependent and predates this track. Worth a line in P77-D's list even though that track is scoped to the e2e suite.
 
 **Sizing, from the signed-in production check.** With campaigns present a gallery adapter chunk loads immediately and its preload list pulls both vendor sheets into the document within the first paints, so the drawer and modals were never visibly broken for a signed-in admin. The exposure was the window before that first dynamic chunk, and any page that never loads one: signed-out visitors on a page with no adapter, where the auth bar's admin `Menu` portals to a document with no Mantine base rules. Small, but the class of defect this phase exists to remove.
+
+### P77-D (2026-09-09)
+
+**Scope change.** The user folded the PHP suite in: after P77-G's full run showed three PHPUnit failures, fixing them became part of this track rather than a note in it.
+
+**Baseline, measured before touching anything.** `npx playwright test` on a gallery dev server (port 5174; see the port note under P77-A) gave 36 failed, 36 passed. Thirty-three of the failures were the Storybook screenshot suite under `e2e/visual/`, which the default config swept in because `testDir` is `./e2e` and only `playwright.visual.config.ts` knows how to serve it. The three real failures were the two `mantine8-runtime-qa` specs and `media-flows`. The accessibility specs the plan listed as failing or flaky passed on that run and failed on the next, which is what a timing defect looks like. `theme-qa`'s persistence test passed, as a tautology does.
+
+**What each failure actually was.** The plan's diagnoses were taken as hypotheses and two of them were wrong.
+
+| Spec | Plan said | Measured | Fix |
+|------|-----------|----------|-----|
+| `e2e/visual/adapters.spec.ts` (33) | not listed | wrong config picks it up; no server, no baselines | `testIgnore: ['**/visual/**']` in `playwright.config.ts` |
+| `mantine8-runtime-qa` drawer test | debug markers off | markers are on in dev. The dialog is named "Settings" since P75-E, not "Display Settings". Past that, the nested Responsive Gallery Config drawer rendered *inside* the Settings drawer's transformed, scrolling content with `withinPortal={false}`, so `position: fixed` resolved against that box and the editor's header scrolled 46px above the viewport; Playwright could not click Apply because nothing was there. A real bug a user hits by scrolling the Settings panel before opening the editor | dialog name regex; `GalleryConfigEditorModal` gains `withinPortal` and `drawerProps`, and the Settings panel portals it as a peer with the same `adminChrome*` props (contract: M4 carries the chrome tokens across the portal). The CampaignViewer keeps it inline inside the shadow tree. The overlay/close debug slots the spec addressed were never emitted by these two components; they are now, matching the other modals |
+| `mantine8-runtime-qa` viewer test | debug markers off | same missing slots on `GalleryConfigEditorModal` | slots added; no other change needed |
+| `media-flows` | not listed | strict-mode clash between "Upload" and "Remove upload.jpg"; then the upload mock still returned the pre-P28-D single-file shape, so `uploadMany` threw before any toast; then the expected toast text predates P28-D | `exact: true`; batch-shaped `media/upload` and `campaigns/101/media/batch` mocks; expect the batch summary toast |
+| `accessibility` lightbox | login modal order-dependent | the lightbox's first-open keyboard hint (`packages/shared-ui/src/KeyboardHintOverlay.tsx`) styles itself with `--mantine-color-dimmed`, `dark-7`, `dark-4` and `radius-md`. The lightbox portals to `document.body`, where under a shadow mount none of those variables exist, so the hint painted as inherited dark text on a near-black overlay: axe measured 1.24:1. It shows once per session for 3.5s with a 300ms fade, so a scan that lands inside that window fails and one that lands outside passes | literal overlay-safe colours in the hint (the overlay behind it is always `rgba(0,0,0,0.93)`, so this is theme-independent by construction) and a plain styled `<kbd>` in place of Mantine's `Kbd`, which has the same dependency; the test now waits for the hint to be fully painted and scans it rather than racing it |
+| `theme-qa` persistence | vacuous | vacuous | selects Tokyo Night, requires Save to enable, asserts the stored id. Mutation-tested: with `persistThemeId` short-circuited it fails with `Received: "default-dark"` |
+
+The lightbox hint is the P77-A contract's mechanism M3 failing to reach a portal, the same class as every Phase 76 defect. It was fixed here rather than handed to P77-C because C is about `global.scss` rules and CSS modules, this is a component's inline styles, and the test could not be made deterministic without either fixing or hiding it.
+
+**PHP suite.** Three failures in the full run, none of them in the code they appeared to implicate:
+
+| Test | Cause | Fix |
+|------|-------|-----|
+| `Mullion_Package_Edition_Test::test_defaults_premium_without_marker_file` | asserted that the real build output `assets/mullion-edition.json` does not exist, which is false on any machine that has run `npm run build:wp` | the test filters the marker path to a temp file that cannot exist; the default-path assertion moved to its own test |
+| `Mullion_REST_Extended_Test::test_get_campaign_analytics`, `::test_list_access` (403) | `Mullion_DB::$space_cache` is a static per-process memo of space rows. `WP_UnitTestCase` rolls the database back after each test but nothing rolls the static back, so a later test resolved the default space through a row the database no longer held. Passes in isolation every time; reproduced only in full-suite order | `Mullion_DB::flush_space_cache()` plus a PHPUnit `BeforeTestHook` extension (`tests/Mullion_Test_Isolation_Hook.php`, registered in `phpunit.xml.dist`) that calls it before every test. Production code path unchanged apart from the new method |
+
+**Results.** `npx playwright test` twice in a row on a clean tree: 39 passed, 39 passed. PHPUnit through wp-env: 1328 tests, 13750 assertions, 2 skipped, no failures. `npx vitest run` on the touched components: green. The persistence test and the P77-A guards are the only e2e or unit tests in this track that were mutation-tested; the others are repairs of specs whose failure mode was observed directly.
 
 
 ## Outcome

@@ -1310,6 +1310,15 @@ class Mullion_DB {
         return $wpdb->prefix . 'mullion_spaces';
     }
 
+    /**
+     * Drop every memoised space row. The cache is per PHP process; PHPUnit runs
+     * hundreds of tests in one process while rolling the database back under
+     * it, so the test bootstrap calls this before every test (P77-D).
+     */
+    public static function flush_space_cache(): void {
+        self::$space_cache = [];
+    }
+
     public static function get_space(int $id): ?object {
         if (array_key_exists($id, self::$space_cache)) {
             return self::$space_cache[$id];

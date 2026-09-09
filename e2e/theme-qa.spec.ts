@@ -151,6 +151,11 @@ test.describe('theme behavioral tests', () => {
     await expect(themeCombo).toHaveValue('Tokyo Night');
   });
 
+  // P77-D: this used to assert `typeof saved === 'string' || saved === null`,
+  // a tautology over localStorage.getItem, and never changed the theme. It
+  // now picks a different theme, requires Save to enable (a disabled Save
+  // after a theme change is exactly the failure to catch), and asserts the
+  // stored id. Verified to fail when persistence is broken.
   test('changing theme in Display Settings persists to localStorage', async ({ page }) => {
     await installThemeSession(page, { themeId: 'default-dark' });
     await page.goto('/');
@@ -159,13 +164,20 @@ test.describe('theme behavioral tests', () => {
     const dialog = await openDisplaySettings(page);
     const themeCombo = dialog.getByRole('combobox', { name: 'Theme' });
     await expect(themeCombo).toBeVisible();
+    await expect(themeCombo).toHaveValue('Mullion');
+
+    await themeCombo.click();
+    // Option names carry the theme description, so match on the leading name only.
+    await page.getByRole('option', { name: /^Tokyo Night/ }).click();
+    await expect(themeCombo).toHaveValue('Tokyo Night');
 
     const save = dialog.getByRole('button', { name: 'Save Changes' });
-    if (await save.isEnabled()) {
-      await save.click();
-    }
-    const saved = await page.evaluate(() => localStorage.getItem('mullion-theme-id'));
-    expect(typeof saved === 'string' || saved === null).toBe(true);
+    await expect(save).toBeEnabled();
+    await save.click();
+
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem('mullion-theme-id')))
+      .toBe('tokyo-night');
   });
 
   test('WP injected __mullionThemeId overrides localStorage stored theme', async ({ page }) => {

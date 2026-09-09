@@ -181,7 +181,8 @@ test('shadow DOM settings drawer and nested gallery editor remain usable', async
   await openAdminMenu(page);
   await page.getByRole('button', { name: /^Settings$/ }).click();
 
-  const settingsPanel = page.getByRole('dialog', { name: 'Display Settings' });
+  // P75-E renamed the panel; its accessible name is "Settings" plus an optional space badge.
+  const settingsPanel = page.getByRole('dialog', { name: /^Settings/ });
   await expect(settingsPanel).toBeVisible();
   await expect(page.locator('[data-mullion-component="SettingsPanel"][data-mullion-slot="overlay"]')).toBeVisible();
 

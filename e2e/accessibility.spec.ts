@@ -173,6 +173,21 @@ test.describe('accessibility baseline', () => {
     // Wait for lightbox dialog
     await expect(page.getByRole('dialog', { name: 'Media lightbox' })).toBeVisible();
 
+    // P77-D: the first-open keyboard hint fades in over 300ms and auto-dismisses
+    // after 3.5s; axe blends mid-fade opacity into its contrast maths, so a scan
+    // that lands inside the fade read the hint as 1.24:1 and the test flipped run
+    // to run. Scan with the hint fully painted so it is measured, not skipped.
+    const hint = page.locator('[aria-hidden="true"] kbd').first();
+    await expect(hint).toBeVisible();
+    await expect.poll(() => hint.evaluate((el) => {
+      let node: HTMLElement | null = el as HTMLElement;
+      while (node) {
+        if (parseFloat(getComputedStyle(node).opacity) < 1) return false;
+        node = node.parentElement;
+      }
+      return true;
+    })).toBe(true);
+
     // P62-H: color-contrast is now enforced. Theme-token contrast is gated
     // deterministically in fast CI (packages/theme-engine/contrastAudit.test.ts);
     // this manual e2e adds runtime contrast coverage across real rendered flows.

@@ -1,9 +1,31 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Box, Group, Kbd, Text, Transition } from '@mantine/core';
+import { Box, Group, Text, Transition } from '@mantine/core';
 
 const SESSION_KEY = 'lightbox-hint-shown';
 const DISMISS_DELAY = 3500;
+
+// P77-D: literal colours on purpose. The lightbox portals to document.body,
+// where under a shadow mount no `--mantine-*` variable is defined, so the
+// previous `dimmed` text and `dark-7` panel resolved to nothing and the hint
+// painted invisible (axe measured 1.24:1). The overlay behind it is always
+// rgba(0,0,0,0.93), so these are theme-independent by construction.
+const PANEL_STYLE: CSSProperties = {
+  background: 'rgba(18, 18, 18, 0.88)',
+  backdropFilter: 'blur(8px)',
+  borderRadius: 8,
+  border: '1px solid rgba(255, 255, 255, 0.18)',
+};
+const TEXT_STYLE: CSSProperties = { color: 'rgba(255, 255, 255, 0.82)' };
+const KBD_STYLE: CSSProperties = {
+  font: '600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace',
+  color: '#ffffff',
+  background: 'rgba(255, 255, 255, 0.14)',
+  border: '1px solid rgba(255, 255, 255, 0.3)',
+  borderBottomWidth: 3,
+  borderRadius: 4,
+  padding: '1px 6px',
+};
 
 interface KeyboardHintOverlayProps {
   /** Only show when the lightbox is open */
@@ -70,23 +92,14 @@ export function KeyboardHintOverlay({ visible }: KeyboardHintOverlayProps) {
             pointerEvents: 'none',
           }}
         >
-          <Box
-            px="lg"
-            py="sm"
-            style={{
-              background: 'color-mix(in srgb, var(--mantine-color-dark-7) 85%, transparent)',
-              backdropFilter: 'blur(8px)',
-              borderRadius: 'var(--mantine-radius-md)',
-              border: '1px solid var(--mantine-color-dark-4)',
-            }}
-          >
+          <Box px="lg" py="sm" style={PANEL_STYLE}>
             <Group gap="xs" wrap="nowrap">
-              <Kbd>{t('kb_arrow_left', '←')}</Kbd>
-              <Kbd>{t('kb_arrow_right', '→')}</Kbd>
-              <Text size="sm" c="dimmed">{t('kb_hint_navigate', 'navigate')}</Text>
-              <Text size="sm" c="dimmed" mx={4}>{t('kb_hint_separator', '·')}</Text>
-              <Kbd>{t('kb_escape', 'Esc')}</Kbd>
-              <Text size="sm" c="dimmed">{t('kb_hint_close', 'close')}</Text>
+              <kbd style={KBD_STYLE}>{t('kb_arrow_left', '←')}</kbd>
+              <kbd style={KBD_STYLE}>{t('kb_arrow_right', '→')}</kbd>
+              <Text size="sm" style={TEXT_STYLE}>{t('kb_hint_navigate', 'navigate')}</Text>
+              <Text size="sm" style={TEXT_STYLE} mx={4}>{t('kb_hint_separator', '·')}</Text>
+              <kbd style={KBD_STYLE}>{t('kb_escape', 'Esc')}</kbd>
+              <Text size="sm" style={TEXT_STYLE}>{t('kb_hint_close', 'close')}</Text>
             </Group>
           </Box>
         </Box>

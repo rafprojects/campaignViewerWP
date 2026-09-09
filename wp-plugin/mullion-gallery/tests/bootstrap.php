@@ -93,6 +93,10 @@ if ( ! defined( 'MULLION_ALLOW_NONCE_BYPASS' ) ) {
 	define( 'MULLION_ALLOW_NONCE_BYPASS', true );
 }
 
+// P77-D: PHPUnit extension that resets plugin static caches before each test.
+// Must be loadable before PHPUnit instantiates extensions, hence required here.
+require_once __DIR__ . '/Mullion_Test_Isolation_Hook.php';
+
 // Start up the WP testing environment.
 require_once __DIR__ . '/../vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php';
 require "{$_tests_dir}/includes/bootstrap.php";

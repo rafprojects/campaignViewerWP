@@ -56,6 +56,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/hooks/useTheme';
 import { AdminChromeProvider } from '@/components/Admin/AdminChromeProvider';
 import { adminChromeAttributes, adminChromeClassNames, adminChromeStyles } from '@/themes/chromeTheme';
+import { getMullionDebugProps } from '@/utils/mullionDebug';
 import { useRootId } from '@mullion/shared-ui';
 import { useScrollRestore } from '@/hooks/useScrollRestore';
 import { modals } from '@mantine/modals';
@@ -647,7 +648,9 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
       overlayProps={{
         backgroundOpacity: 0.6,
         blur: settings.settingsDrawerBlurEnabled !== false ? 4 : 0,
+        ...getMullionDebugProps('SettingsPanel', 'overlay'),
       }}
+      closeButtonProps={getMullionDebugProps('SettingsPanel', 'close')}
       scrollAreaComponent={NativeScrollArea}
       styles={(() => {
         // Merge rather than replace: the chrome variables, the space accent
@@ -706,6 +709,12 @@ export function SettingsPanel({ opened, apiClient, onClose, onNotify, onSettings
                 }}
                 zIndex={500}
                 blurEnabled={settings.settingsDrawerBlurEnabled}
+                withinPortal={withinPortal}
+                drawerProps={{
+                  classNames: adminChromeClassNames(applyThemeEverywhere),
+                  attributes: adminChromeAttributes(applyThemeEverywhere, themeId),
+                  styles: adminChromeStyles(applyThemeEverywhere, themeId),
+                }}
               />
             </Suspense>
           )}
