@@ -1,19 +1,20 @@
 # Phase 77 - Visual architecture spikes and hardening
 
-**Status:** Planned — no code yet
+**Status:** In progress
 **Created:** 2026-08-28
-**Last updated:** 2026-09-01 (P77-F promoted from FUTURE_TASKS on the designer's sign-off)
+**Last updated:** 2026-09-09 (P77-A landed; P77-G proposed from its findings)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | Planned | Medium |
+| P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | **Done** (2026-09-09), see notes | Medium |
 | P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | Planned | Medium |
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | Planned | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test | Planned | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
+| P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Proposed** — found by P77-A on 2026-09-09, awaiting the user's decision | Small |
 
 ---
 
@@ -170,6 +171,12 @@ Under the shipped shadow mount it goes into the shadow root instead, while porta
 
 The select-option rule is the sharpest case: its own comment states it exists *because* dropdowns portal. The ancestor problem was correctly identified; the delivery problem underneath it was not. The selected-option highlight in every themed dropdown has been falling back to Mantine's default.
 
+**Scope corrected by P77-A's measurement (2026-09-09).** Three findings change the shape of this track:
+
+1. **Dead is per surface, not per rule.** The Admin panel renders inline in the gallery tree (`App.tsx`), not in a portal, so `.mullion-mantine-tabs-tab[data-active]` is live for the Admin panel's tabs and dead only for the Settings drawer's. Moving the rule to `chrome-portable.scss` keeps the Admin panel unchanged and makes the drawer match it. The segmented-control rule is the third of the set; it matched only inside the gallery tree in the surfaces probed, so treat it the same way rather than assuming it is dead everywhere.
+2. **Two CSS modules are dead in the shipped mount.** `MediaCard.module.scss` and `MediaTab.module.scss` are consumed by the Media tab inside the Admin panel (shadow tree) but are not registered in `shadowStyles.ts`, so Vite delivers them to the document only. Measured with the Media tab open: elements carry the classes, no sheet in the shadow root matches them. The hover lift, the focus ring and the grid max-width never apply. Register both in `shadowStyles.ts`; that is an appearance change and needs the same deliberate baseline review as the rules above.
+3. **Both sets are encoded as allowlists** in `src/styles/__tests__/styleDelivery.test.ts` (`GLOBAL_SCSS_KNOWN_DEAD_UNTIL_P77C`, `MODULES_KNOWN_DEAD_UNTIL_P77C`). This track empties them; the test fails on a stale entry, so it cannot be forgotten.
+
 ### Fix
 
 Move rules that target Mantine classes for admin chrome out of `global.scss` and into `chrome-portable.scss`. Keep genuinely gallery-scoped structural rules where they are — `chrome-portable.scss` leaks into the host WordPress page, so it must stay small and contain only Mantine class overrides, never element selectors or resets.
@@ -319,10 +326,43 @@ so the `primaryStroke`-on-ground checks need re-derivation rather than deletion.
 | Privacy items (Sentry PHP scrubber, Google Fonts self-hosting, analytics salt rotation) | All Low / Low-Medium impact; Sentry is off without a DSN and the Google Fonts flow is documented with opt-outs. Would pad the phase without protecting the release. |
 | CORS allow-list | Its own entry states it is meaningless for the shortcode deployment actually shipped. |
 | Structural a11y gate growth | Its entry states WCAG AA is a quality bar, not a WP.org submission gate, and can grow post-launch. |
+| Generalise `adminChromeStyles()` to carry the full `--mullion-*` token set | Would let chrome stylesheets and admin CSS modules read the same tokens the gallery root does, removing per-token special cases and `color-mix()` fallbacks. Deferred to P77-B by agreement on 2026-09-09: if the boundary goes, the mechanism goes with it. |
 
 ## Implementation Notes
 
-_None yet — phase is Planned._
+### P77-A (2026-09-09)
+
+**Status: landed.** Contract in [docs/guides/STYLING_GUIDE.md](guides/STYLING_GUIDE.md), three static guards in `src/styles/__tests__/styleDelivery.test.ts`, one browser guard in `e2e/style-delivery.spec.ts`. All five mutations fail as intended.
+
+**Step 1: measure, do not read.** A throwaway Playwright probe (scratchpad, not committed) compiled `chrome-portable.scss` and `global.scss` with `sass`, parsed them with `new CSSStyleSheet().replaceSync()`, and compared each selector against `document.styleSheets` and the shadow root's sheets, with the Settings drawer open and with the Admin panel's Media tab open, in both mount modes and both `applyThemeEverywhere` states. The fixture trap from P76-I was avoided by setting the flag explicitly for every run. The production site was cross-checked through the browser (sheet sources and rule counts per tree on `wordpress.lan`) and matched the dev picture for every sheet that loads at page start.
+
+**What the measurement changed about the plan.**
+
+| Plan said | Measured |
+|-----------|----------|
+| Seven channels | Four mechanisms (document sheet, shadow `<style>`, runtime variable sheets, inline style) and eleven authoring surfaces. CSS modules split into registered and unregistered, and `builder.css` / `wpAdminFormReset.css` were missing from the list. Reach is a property of the mechanism, so the contract is written mechanism-first and the surface table derives from it. |
+| Two dead `global.scss` rules | Three rules in the set, and dead only for portaled surfaces. The Admin panel is not portaled, so its tabs get the rule today. Recorded under P77-C. |
+| Nothing about CSS modules | `MediaCard` and `MediaTab` modules are dead in the shipped mount. Recorded under P77-C. |
+| Inline styles travel with the element | True for the `styles` and `vars` props and for the chrome variable blocks. Mantine's *responsive* style props are different: with `deduplicateInlineStyles` on they render a hoistable `<style>` that React places in the root container. Measured in the same tree as their elements on every surface probed; no portaled element used one. Recorded as a constraint, not a defect. |
+| The plugin enqueues the built CSS | Only the entry's own CSS. Vite's `dist/index.html` links three stylesheets (`vendor-mantine-core`, `vendor-dockview`, `index`); the manifest hangs the first two off statically imported vendor chunks, and `class-mullion-embed.php` walks `$entry['css']` only. On the production home page the document had no Mantine base sheet at load; it arrives only when a dynamic chunk whose preload list includes it (every gallery adapter, the Admin panel) is fetched. The `AuthBar` admin menu portals to the document from the entry chunk, so on a page where no such chunk has loaded yet it renders without Mantine's base rules. Not fixed here: it is a loader bug, not a channel, and this track introduces no new channel by its own acceptance criteria. Proposed as **P77-G**; the fix is to enqueue the `css` of every chunk in the entry's `imports`, recursively, the way Vite's HTML does. Needs a signed-in check of the production drawer to size the visible impact, which the author could not do from the agent browser. |
+
+**Canonical channels.** Named in the guide's section 4. The short form: state colour through `vars`; pseudo-state Mantine has no variable for through `classNames` plus `chrome-portable.scss`; gallery structure through `global.scss` under `.mullion-gallery` or a registered CSS module; tokens for chrome through `adminChromeStyles()` until P77-B. `styles` is constrained to flat keys, `adminChromeStyles()` and the `--mullion-builder-*` bridge are legacy and load-bearing, and both are consequences of the boundary P77-B decides.
+
+**Channel count.** The acceptance criterion offered "lower than seven, or each survivor has a stated reason". The mechanism count is four. The surface count is eleven, higher than the plan's seven because the inventory was incomplete, and every survivor carries its reason in the guide's surface table. Nothing was deleted in this track: every collapse candidate depends on whether the shadow-plus-portal boundary survives P77-B, and deleting ahead of that decision would be the same guess the phase rationale warns against.
+
+**Tests and mutations.**
+
+| Guard | Mutation applied | Result |
+|-------|------------------|--------|
+| `global.scss` scope | appended `.mullion-mantine-menu-item[data-hovered] { color: red }` | fails naming the selector |
+| module registry | created an unregistered `ProbeMutation.module.scss` | fails naming the file |
+| component `styles={}` flatness | inserted `'&:hover'` into `AuthBar`'s `styles` | fails naming file and key |
+| e2e, document side | commented out the `chrome-portable.scss` import in `main.tsx` | fails with "missing from the document (main.tsx import)" |
+| e2e, shadow side | commented out `chromePortableStyles` in `shadowStyles.ts` | fails with "missing from the shadow root (shadowStyles.ts entry)" |
+
+The e2e spec also pins `global.scss` to exactly one tree per mode, which is the reach claim the guide makes for it.
+
+**Two environment notes for P77-D.** Port 5173 was serving an unrelated project, and `playwright.config.ts` has `reuseExistingServer: true`, so the suite would have driven the wrong app and reported a locator timeout rather than a clear error. Validation for this track ran against a gallery dev server on 5174 with `E2E_BASE_URL`. Separately, the project pins Playwright 1.61 (Chromium build 1228) while the user's general-purpose Playwright is 1.62 (build 1234); only the 262 MB headless shell for 1228 was kept.
 
 ## Outcome
 
