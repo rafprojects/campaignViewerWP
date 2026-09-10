@@ -2,14 +2,14 @@
 
 **Status:** In progress
 **Created:** 2026-08-28
-**Last updated:** 2026-09-09 (P77-A, P77-G, P77-D and P77-C landed)
+**Last updated:** 2026-09-09 (P77-A, P77-G, P77-D and P77-C landed; P77-B decided, prototype behind a flag)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | **Done** (2026-09-09), see notes | Medium |
-| P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | Planned | Medium |
+| P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | **Decided** (2026-09-09): overlay root, prototype behind a flag, default unchanged until accepted; see Decision below and the notes | Medium |
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | **Done** (2026-09-09), see notes | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
@@ -148,6 +148,37 @@ Evaluate, and prototype the leading option:
 
 - `npx playwright test` in full, not only `theme-qa` — this touches overlay behaviour, which the visual snapshots do not cover.
 - Manual wp-admin QA is **required** for (a) or (b) and cannot be substituted with CI. Use the `/php-testing` skill's wp-env setup, and exercise at least: Drawer over the admin menu, nested Modal from within the Drawer, Select dropdown inside the Drawer, Escape and click-outside dismissal.
+
+### Decision (2026-09-09)
+
+**Keep the shadow boundary around the gallery, and move portaled chrome into a second shadow root of ours, attached to a host appended to `document.body` (the "overlay root"). Prototype landed behind a flag; the shipped default stays `document` until the user accepts the flip.**
+
+The plan's leading option (a), portaling into the gallery's own shadow root, was prototyped alongside and is **rejected on measurement**. Every mode was driven through the same script on the dev server, with and without a hostile host page: an element-selector stylesheet (`button { background: red !important }`), a sticky header at `z-index: 9999`, and a wrapper around the mount carrying `transform` and `overflow: hidden`, with the page scrolled 600px before the drawer opens. Any theme or page-builder motion effect produces that wrapper, because `transform` (like `filter`, `perspective`, `will-change` and `contain`) makes an element the containing block for every `position: fixed` descendant.
+
+| Property, Settings drawer open | (d) `document`, shipped | (a) gallery shadow root | overlay root |
+|--------------------------------|-------------------------|-------------------------|--------------|
+| Drawer box inside the transformed wrapper | viewport, `0,0 1280x900` | `0,-500`: above the viewport, clipped, click-outside dead, Theme select unreachable | viewport, `0,0 1280x900` |
+| Host `button` rule reaches the drawer's Cancel button | **yes** (red, 0 radius) | no | no |
+| `--mullion-*` tokens on the drawer | unset | set | set |
+| Mantine variables on the Admin panel's own dropdown | Mantine fallbacks (`#424242`) | theme | theme |
+| Escape, click outside, nested editor, Select in drawer | work | work, except inside the wrapper | work |
+| Layout Builder | styled | not measured | unstyled until the overlay sheet gained Dockview and `builder.css` (zero `.dv-` rules); styled after |
+| Full Playwright suite in that mode | 40 passed | 39 passed | 39 passed |
+| theme-qa visual snapshots | baseline | pass | pass |
+
+The one failure in each alternative mode is the P77-A contract test asserting the drawer renders under `document.body`, which is the fact these modes change; it is left as is until the default flips.
+
+Against a real page (wordpress.lan, Twenty Twenty-Five, logged in), 5 of the 1422 host rules on the page already match elements inside the shipped drawer: heading weight, size, letter-spacing and line-height from the theme's global styles, `text-wrap` from the theme, and a border-style rule from the block library. That is a gentle theme. The chrome is the one surface of the plugin with no protection at all today, and the overlay root gives it the same protection the gallery has.
+
+**Rejected, and why.** (a) fails inside any transformed ancestor, above. (b) split mount: the wp-admin pages are already separate light-DOM apps with their own provider, so the front-end shortcode is the only place the question exists, and there the chrome is the exposed piece. (c) dropping shadow DOM: rejected as planned, for the reason stated in the Problem. (d) status quo: the measured exposure plus the per-consumer tax P77-A documents, five defects deep in Phase 76.
+
+**What the overlay root does not do.** The nested chrome provider (`AdminChromeProvider`) renders its scoped variable sheet in the gallery tree, so in lock mode the brand palette still reaches the drawer only through `adminChromeStyles()`. That bridge and the `--mullion-builder-*` block stay load-bearing after the flip; they carry a theming choice (chrome locked to the brand), not a boundary defect. What the overlay root removes is the whole "stylesheet in the wrong tree" class: `global.scss`, CSS modules and both variable sheets reach the chrome, and `chrome-portable.scss` stops being special under a shadow mount. Mirroring the nested sheet into the overlay root, which would retire `adminChromeStyles()`, is a follow-on.
+
+**Post-release compatibility, in plain language.** Today a site owner's CSS reaches the Settings panel and Layout Builder because they render under `document.body`; it cannot reach the gallery. After the flip it reaches neither. Flipping before release changes nothing anyone relies on. Flipping after release would silently strip styles from any site that had targeted the chrome, so the default flip belongs in this phase, before Phase 79's release pipeline, on the user's call.
+
+**Cost.** One more shadow root per mount, carrying its own copy of the shadow stylesheet plus Dockview and `builder.css` (about 315 KB of CSS text) and two small variable sheets kept in sync by `OverlayRootSync`. A shared constructable stylesheet (`adoptedStyleSheets`) would remove the duplication; filed as a follow-on.
+
+**How to exercise it.** `?portal=overlay-root` on any page, `window.__MULLION_PORTAL_MODE__` for the plugin to set, or `VITE_MULLION_PORTAL_MODE` for a dev server running a whole suite in one mode. `?shadow=0` light mounts ignore the flag.
 
 ---
 
@@ -354,6 +385,8 @@ Walk the manifest the way Vite's HTML generation does: for the entry, the CSS of
 | Privacy items (Sentry PHP scrubber, Google Fonts self-hosting, analytics salt rotation) | All Low / Low-Medium impact; Sentry is off without a DSN and the Google Fonts flow is documented with opt-outs. Would pad the phase without protecting the release. |
 | CORS allow-list | Its own entry states it is meaningless for the shortcode deployment actually shipped. |
 | Structural a11y gate growth | Its entry states WCAG AA is a quality bar, not a WP.org submission gate, and can grow post-launch. |
+| Share one constructable stylesheet between the gallery root and the overlay root (`adoptedStyleSheets`) | The overlay root duplicates about 315 KB of CSS text per mount. Cheap to do once the overlay root is the default; pointless before. Recorded in FUTURE_TASKS under P77-B. |
+| Mirror the nested chrome provider's variable sheet into the overlay root, then retire `adminChromeStyles()` | Only makes sense after the default flips; the inline bridge is correct until then. |
 | Generalise `adminChromeStyles()` to carry the full `--mullion-*` token set | Would let chrome stylesheets and admin CSS modules read the same tokens the gallery root does, removing per-token special cases and `color-mix()` fallbacks. Deferred to P77-B by agreement on 2026-09-09: if the boundary goes, the mechanism goes with it. |
 
 ## Implementation Notes
@@ -462,6 +495,20 @@ Against the committed baselines the same files differ by 1.1% to 3.1%: header bu
 **Data point for P77-B.** The Admin panel's own Select dropdown portals to `document.body` and, under the shipped mount, resolves no `--mantine-*` variable at all: its hover colour is Mantine's `--mantine-color-dark-4` fallback `#424242`, not the theme's. The checked state now paints correctly only because its colours travel inline. Anything in the gallery tree that portals is in the same position, and that is the boundary B is deciding on.
 
 **Results.** Before the flake fix, `npx playwright test` (40 tests) gave 40 passed, then 38 passed with the two axe scans above. After it: 40 passed, 40 passed, and the two scans repeated six times each, 12 passed. `npx vitest run`: 259 files, 3922 tests, all passed (one `SettingsPanel.test.tsx` timeout under full-suite load did not reproduce in isolation, the same class as the P77-A `TemplatesTab` note).
+
+### P77-B (2026-09-09)
+
+**Prototype.** `src/portalTarget.ts` resolves a portal mode (`document`, `shadow`, `overlay-root`) and builds the target node; `withPortalTarget` sets `theme.components.Portal.defaultProps.target` once, in `ThemedApp`, and nested providers inherit it. It is set exactly once for a reason found while reading Mantine's merge: `deepMerge` spreads any object it finds on both sides, and an `HTMLElement` is an object, so a second declaration would turn the target into a plain object and every portal would throw. `AdminChromeProvider.test.tsx` now asserts the nested provider sees the same element. `OverlayRootSync` keeps the overlay root's theme-variable and Mantine-variable sheets current and stamps `data-mantine-color-scheme` on the host and the target, which Mantine's scheme-keyed rules need. The env fallback exists so a dev server can run the suite in one mode without touching the specs.
+
+**Mantine's own hooks are already shadow-safe.** `useClickOutside` walks `composedPath()`, `scopeTab` reads `getRootNode().activeElement`, and Escape handling only reads an attribute off the retargeted event target. Nothing in the prototype patches Mantine.
+
+**What the measurement changed.** Two things the plan assumed did not survive contact. First, (a) was "the leading option"; the containing-block failure is total inside a transformed wrapper and the fixture that shows it is four lines of CSS. Second, the plan's list of bridges that (a) would delete was too long: the nested chrome provider's sheet stays in the gallery tree in every mode, so `adminChromeStyles()` remains the way lock mode reaches the chrome. The prototype also found a gap that only shows on a surface no e2e spec opens: the Layout Builder's Dockview and builder rules are document stylesheets in `main.tsx` and reached an overlay root not at all until `overlayStyles` added them. `e2e/portal-mode.spec.ts` now opens the builder in overlay mode and asserts the rules are present and a tab is painted.
+
+**Pre-existing findings on the way, filed in FUTURE_TASKS.** Focus after closing the Settings drawer lands on `body` in every mode, because `useFocusReturn` records `document.activeElement`, which is the shadow host rather than the trigger button. On the real site the WordPress admin bar (`z-index: 99999`) covers the drawer's header buttons for logged-in users in every mode; Mantine's drawer sits at 450. Both are independent of the boundary and neither is fixed here.
+
+**Tests.** `src/__tests__/portalTarget.test.ts` (mode resolution; element identity through `mergeMantineTheme`), the nested-provider guard above, and `e2e/portal-mode.spec.ts` (drawer geometry inside the hostile wrapper, host-CSS isolation, Escape and click-outside, light mount ignores the flag, builder sheets). Mutation: pointing the geometry test at `?portal=shadow` fails it with `top` at -500. Full Playwright suite on the default server: see the results line below. Manual check on the deployed site is pending a rebuild; `https://wordpress.lan/?portal=overlay-root` exercises it without any settings change.
+
+**Results.** `npx playwright test` on the default dev server, twice in a row with the three new portal-mode tests included: 43 passed, 43 passed. In `shadow` and `overlay-root` mode servers: 39 passed of 40 each, the one failure being the P77-A document-placement assertion described in the Decision. `npx vitest run`: 260 files, 3926 tests, all passed.
 
 
 ## Outcome

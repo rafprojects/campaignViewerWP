@@ -35,6 +35,16 @@ Two surfaces are worth naming because they sit on opposite sides of the line:
   renders inline in `App.tsx`. It is in the gallery tree, inside the shadow
   root under the shipped mount.
 
+**Portal modes (P77-B, prototype).** Where portaled chrome renders is now a
+mount option, `src/portalTarget.ts`: `document` (shipped, everything above
+holds), `shadow` (into the gallery root; rejected, it breaks inside any
+transformed ancestor), and `overlay-root` (a second shadow root of ours on a
+body-level host, carrying the shadow stylesheet plus the builder's sheets and
+both variable sheets). Under `overlay-root` the chrome is in a tree we own, so
+M2 reaches it and host CSS does not; `adminChromeStyles()` still carries the
+locked brand palette. The decision and its measurements are in the Phase 77
+report; until the default flips, the reach columns describe `document`.
+
 ## 2. Delivery mechanisms
 
 There are four ways CSS physically arrives at an element. Everything a
@@ -111,6 +121,7 @@ pins through `styles` will never show a state colour from any stylesheet.
 | `src/themes/__tests__/adapter.test.ts`: adapter flatness (P76-I-1) | the same rule for the theme adapter across all 23 themes | add a nested key to any component block |
 | same file: state colours as variables (P77-C) | Tabs, SegmentedControl and Select carry their state colours as custom properties and no inline `color` on the tab, label or option | put `color` back in `Tabs.styles.tab` |
 | `e2e/style-delivery.spec.ts` | with the Settings drawer open, every selector compiled from `chrome-portable.scss` is present in the document's sheets and in the shadow root's; `global.scss` is present in exactly the tree its mechanism implies; the drawer's active tab and the Theme select's checked option paint the colours their variables carry | remove either `chrome-portable.scss` import; rename `data-checked` in the rule |
+| `e2e/portal-mode.spec.ts` (P77-B) | under a transformed, overflow-hidden host wrapper with the page scrolled, `?portal=overlay-root` keeps the drawer at the viewport origin, keeps a host `button` rule off it, dismisses on Escape and click outside, ignores the flag on a light mount, and styles the Layout Builder | point the geometry test at `?portal=shadow`; drop Dockview from `overlayStyles` |
 | `e2e/theme-qa.spec.ts`: focus ring colour (P76-I-2) | the painted ring on every tabbable control in the drawer is `primaryStroke` | drop a selector from the ring rule |
 
 The e2e spec needs the gallery dev server on the configured port. Note that
@@ -153,7 +164,7 @@ rejected in Phase 77 (Key Decision C): it is the only protection against host
 CSS the plugin cannot obtain any other way.
 
 Document rewritten 2026-09-09 for Phase 77 track A and updated the same day
-for track C. The previous version
+for tracks C and B. The previous version
 (January 2026) predates the shadow-plus-portal findings of Phases 75 and 76
 and described CSS variables as scoped to `.mullion-gallery`, which has not
 been true since the shadow mount became the default.

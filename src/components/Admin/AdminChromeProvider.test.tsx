@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@/test/test-utils';
-import { useMantineTheme } from '@mantine/core';
+import { MantineProvider, useMantineTheme } from '@mantine/core';
+import { withPortalTarget } from '@/portalTarget';
 
 import { AdminChromeProvider } from './AdminChromeProvider';
 import { ADMIN_CHROME_CLASS, BRAND_THEME_ID } from '@/themes/chromeTheme';
@@ -152,5 +153,34 @@ describe('AdminChromeProvider', () => {
       expect(screen.getByTestId('switch')).toBe(control);
       expect(document.activeElement).toBe(control);
     });
+  });
+});
+
+// P77-B: the Portal target set on the outer theme must reach the nested
+// provider as the same DOM element. Mantine's theme merge spreads any object
+// found on both sides, so re-declaring the target here would silently turn it
+// into a plain object and every Drawer would fail to portal.
+describe('AdminChromeProvider portal target', () => {
+  it('inherits the outer Portal target without re-declaring it', () => {
+    const target = document.createElement('div');
+    const outer = withPortalTarget({}, { mode: 'overlay-root', target });
+    let seen: unknown = 'unset';
+    function Probe() {
+      const theme = useMantineTheme();
+      useEffect(() => {
+        seen = theme.components.Portal?.defaultProps?.target;
+      }, [theme]);
+      return null;
+    }
+    render(
+      <ThemeProvider forcedThemeId="tokyo-night">
+        <MantineProvider theme={outer}>
+          <AdminChromeProvider applyThemeEverywhere={false}>
+            <Probe />
+          </AdminChromeProvider>
+        </MantineProvider>
+      </ThemeProvider>,
+    );
+    expect(seen).toBe(target);
   });
 });

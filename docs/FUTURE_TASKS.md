@@ -222,7 +222,9 @@ Scope decision worth settling first: whether the manifest is **hand-maintained a
 
 ---
 
-### Portal Admin Chrome Into the Shadow Root (remove the CSS-variable boundary)
+### ~~Portal Admin Chrome Into the Shadow Root (remove the CSS-variable boundary)~~ — DECIDED (P77-B, 2026-09-09)
+
+> **Decided 2026-09-09 in [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B.** Portaling into the gallery's shadow root, which this entry describes, was prototyped and measured to fail inside any transformed ancestor (the drawer lands 500px above the viewport). The accepted direction is an overlay root: a second shadow root of ours on a body-level host. The risk analysis below stayed accurate about stacking contexts and was the reason the alternative was found.
 
 **Origin:** Deferred from [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) **P76-H** Key Decision B (2026-08-27). P76-H ships option (b) — inlining the variables — and explicitly keeps this option open rather than rejecting it.
 
@@ -237,6 +239,18 @@ The codebase works around this per-consumer rather than structurally, and has al
 **Dependencies / risk:** This is the reason it was deferred rather than taken. The Drawer portals to `document.body` specifically to escape the host page's stacking context, so moving it inside the shadow root changes **z-index behaviour against wp-admin** — including against whatever plugins a given customer has installed — plus **focus trapping** and **click-outside** detection. That failure mode surfaces in support tickets, not in CI, which is a poor trade for closing a gap P76-D measured at 3 of 58 painted colour combinations. Re-evaluate when the variable-consuming surface grows enough to justify it; P76-H makes that cheaper, not harder, by centralising the mechanism it would replace.
 
 **Effort:** Medium-Large (small diff, large validation surface — needs real wp-admin testing across plugin combinations) | **Impact:** Medium — architectural cleanup that removes a recurring tax, not a user-visible fix.
+
+---
+
+### Share One Constructable Stylesheet Between the Gallery Root and the Overlay Root
+
+**Origin:** [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B (2026-09-09).
+
+**Context:** The overlay root (`src/portalTarget.ts`) carries its own `<style>` copy of `overlayStyles`, about 315 KB of CSS text per mount, on top of the gallery root's copy of `shadowStyles`. `adoptedStyleSheets` with one `CSSStyleSheet` built once per page would share the parsed sheet between every root the plugin creates, including multi-shortcode pages.
+
+**What to implement:** Build the sheets once with `replaceSync`, adopt them in `mountWithShadow` and in the overlay root, and keep the `<style>` path as the fallback for browsers without constructable stylesheets. Do it only after the overlay root is the shipped default.
+
+**Effort:** Small | **Impact:** Low-Medium — memory and parse time on multi-mount pages.
 
 ---
 
@@ -264,6 +278,30 @@ The codebase works around this per-consumer rather than structurally, and has al
 ---
 
 ## Accessibility
+
+### Focus Return After Closing Portaled Chrome Lands on `body`
+
+**Origin:** [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B (2026-09-09), measured in every portal mode.
+
+**Context:** Mantine's `useFocusReturn` records `document.activeElement` when a Drawer or Modal opens. When the trigger sits inside the gallery's shadow root that value is the shadow host, not the button, so on close focus goes to `body`. Keyboard users lose their place after every Settings panel or Layout Builder session. Independent of the shadow-versus-portal boundary decision.
+
+**What to implement:** Capture the real trigger through `getRootNode().activeElement` (walking into shadow roots) at open time and pass it as the return target, or wrap the trigger buttons to restore focus themselves on close. Cover with an e2e assertion on `activeElement` after Escape.
+
+**Effort:** Small | **Impact:** Medium — WCAG 2.4.3 focus order on every admin surface.
+
+---
+
+### WordPress Admin Bar Covers the Settings Drawer Header for Logged-In Users
+
+**Origin:** [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B (2026-09-09), measured on wordpress.lan.
+
+**Context:** `#wpadminbar` is `position: fixed` at `z-index: 99999`; Mantine's Drawer sits at 450, so the drawer's Cancel, Save and Close buttons render under the bar on the front end whenever the admin bar is shown. Same in every portal mode.
+
+**What to implement:** Either offset the drawer by the admin bar's height when `body.admin-bar` is present (WordPress already exposes `--wp-admin--admin-bar--height`), or raise the chrome's z-index above the bar. The offset is the more conventional choice in the WordPress ecosystem.
+
+**Effort:** Small | **Impact:** Medium — every logged-in admin on the front end hits it.
+
+---
 
 ### Structural a11y (axe) gate — grow coverage beyond `LayoutTemplateList`
 
@@ -722,3 +760,5 @@ When promoting future tasks to an active phase:
 *Updated: September 9, 2026 (P77-A implementation) — No new entries. Two findings were routed straight into [PHASE77_REPORT.md](PHASE77_REPORT.md) instead: the `MediaCard` / `MediaTab` CSS modules are dead in the shipped shadow mount (added to P77-C alongside the `global.scss` rules, which turned out to be dead per surface rather than per rule), and the plugin enqueues only the entry chunk's CSS so Mantine's base stylesheet reaches the production document only when a dynamic chunk preloads it (proposed as P77-G, awaiting a decision).*
 
 *Updated: September 9, 2026 (P77-C implementation): No new entries. The three `global.scss` state rules and the two Media CSS modules are fixed and recorded in [PHASE77_REPORT.md](PHASE77_REPORT.md); the one finding that outlives the track (the Admin panel's own Select dropdown portals to the document and resolves no `--mantine-*` variable under the shipped mount) is logged there as a data point for P77-B rather than filed here, because B decides the boundary that causes it.*
+
+*Updated: September 9, 2026 (P77-B decision): **Decided:** "Portal Admin Chrome Into the Shadow Root" is struck through; the option it described was prototyped, measured to fail inside transformed ancestors, and replaced by an overlay root, recorded in [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B. **Added:** "Share One Constructable Stylesheet Between the Gallery Root and the Overlay Root" (Code Quality), "Focus Return After Closing Portaled Chrome Lands on `body`" and "WordPress Admin Bar Covers the Settings Drawer Header for Logged-In Users" (Accessibility), all found during the B measurements and independent of the boundary decision.*

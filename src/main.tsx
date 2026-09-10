@@ -27,10 +27,13 @@ import { buildThemeScopeSelector, ensureHostThemeScopeToken } from './utils/them
 import { RootIdProvider } from '@mullion/shared-ui'
 import { parseProps, parseNodeConfig, type MountProps, type NodeConfig } from './mountConfig'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { resolvePortalMode, usePortalTarget, withPortalTarget } from './portalTarget'
+import { OverlayRootSync } from './OverlayRootSync'
 
 const query = new URLSearchParams(window.location.search)
 const windowFlag = (window as Window & { __USE_SHADOW_DOM__?: boolean }).__USE_SHADOW_DOM__
 const useShadowDom = windowFlag ?? query.get('shadow') !== '0'
+const portalMode = resolvePortalMode()
 
 startWebVitalsMonitoring()
 
@@ -88,24 +91,31 @@ function ThemedApp({
   props,
   isShadowDom,
   shadowRootEl,
+  rootId,
 }: {
   props: MountProps
   isShadowDom: boolean
   shadowRootEl?: ShadowRoot | undefined
+  rootId: string
 }) {
-  const { mantineTheme, colorScheme } = useTheme()
+  const { mantineTheme, colorScheme, cssVars } = useTheme()
+  // P77-B: where overlays portal under a shadow mount. See portalTarget.ts.
+  const portal = usePortalTarget(portalMode, rootId, shadowRootEl)
 
   // P60-D: give every Mantine close button (modals, drawers) an accessible name.
   // Mantine leaves CloseButton unlabeled by default, which trips axe `button-name`
   // across the app's ~36 modals; components that pass their own aria-label still win.
   const themeWithA11y = useMemo(
     () =>
-      mergeThemeOverrides(mantineTheme, {
-        components: {
-          CloseButton: { defaultProps: { 'aria-label': i18n.t('common_close', 'Close') } },
-        },
-      }),
-    [mantineTheme],
+      withPortalTarget(
+        mergeThemeOverrides(mantineTheme, {
+          components: {
+            CloseButton: { defaultProps: { 'aria-label': i18n.t('common_close', 'Close') } },
+          },
+        }),
+        portal,
+      ),
+    [mantineTheme, portal],
   )
 
   return (
@@ -123,6 +133,7 @@ function ThemedApp({
           : document.documentElement
       }
     >
+      <OverlayRootSync portal={portal} cssVars={cssVars} colorScheme={colorScheme} />
       <Notifications withinPortal={false} />
       <ModalsProvider>
         {/* P69-D: public-facing boundary. No isAdmin prop → a public visitor
@@ -171,6 +182,7 @@ const renderApp = (
               props={props}
               isShadowDom={isShadow}
               shadowRootEl={shadowRootEl}
+              rootId={rootId}
             />
           </ThemeProvider>
         </RootIdProvider>
@@ -318,6 +330,7 @@ const mountSharedRoot = (nodes: NodeListOf<HTMLElement>) => {
                   props={inst.props}
                   isShadowDom={!!inst.shadowRoot}
                   shadowRootEl={inst.shadowRoot}
+                  rootId={inst.portalKey}
                 />
               </ThemeProvider>
             </RootIdProvider>,

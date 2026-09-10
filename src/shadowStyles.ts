@@ -25,6 +25,8 @@ import campaignViewerStyles from './components/CardViewer/CampaignViewer.module.
 // its modules were dead under the shipped mount until registered here.
 import mediaCardStyles from './components/Admin/MediaCard.module.scss?inline';
 import mediaTabStyles from './components/Admin/MediaTab.module.scss?inline';
+import dockviewStyles from 'dockview/dist/styles/dockview.css?inline';
+import builderStyles from './styles/builder.css?inline';
 
 export const shadowStyles = [
   mantineCoreStyles,
@@ -42,3 +44,11 @@ export const shadowStyles = [
   mediaCardStyles,
   mediaTabStyles,
 ].join('\n');
+
+/**
+ * P77-B: the sheet for an overlay root (`portalTarget.ts`). Portaled chrome
+ * includes the Layout Builder, whose Dockview and builder rules are document
+ * stylesheets in `main.tsx` and would otherwise never reach a shadow root;
+ * measured as zero matching rules before this was added.
+ */
+export const overlayStyles = [shadowStyles, dockviewStyles, builderStyles].join('\n');
