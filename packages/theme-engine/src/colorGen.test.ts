@@ -13,6 +13,7 @@ import {
   deriveDarkTuple,
   deriveBorderStrong,
   resolveColors,
+  deriveFocusHalo,
   derivePrimaryShade,
   inkContrastGround,
   selectPrimaryShadeIndex,
@@ -424,5 +425,38 @@ describe('selectUiContrastIndex (P75-E)', () => {
     const idx = selectUiContrastIndex(ramp, ['#102530'], 0, UI_CONTRAST_MIN);
     expect(idx).not.toBe(0);
     expect(chroma.contrast(ramp[idx]!, '#102530')).toBeGreaterThanOrEqual(UI_CONTRAST_MIN);
+  });
+});
+
+describe('deriveFocusHalo (P77-F)', () => {
+  it('clears 3:1 against the ring core and stays neutral on every bundled theme', () => {
+    for (const def of bundledThemeDefinitions) {
+      const rc = resolveColors(def.colors as ThemeColors, def.colorScheme);
+      const ratio = chroma.contrast(rc.focusHalo, rc.primaryStroke);
+      expect(ratio, `${def.id}: halo ${rc.focusHalo} against core ${rc.primaryStroke}`).toBeGreaterThanOrEqual(3);
+      const chromaValue = chroma(rc.focusHalo).lch()[1];
+      expect(Number.isFinite(chromaValue) ? chromaValue : 0, `${def.id}: halo must be a neutral, not a second accent`).toBeLessThan(8);
+    }
+  });
+
+  it('is light on dark themes and dark on light themes when the core allows it', () => {
+    for (const def of bundledThemeDefinitions) {
+      const rc = resolveColors(def.colors as ThemeColors, def.colorScheme);
+      const L = chroma(rc.focusHalo).lch()[0];
+      const preferredPoleReachable =
+        def.colorScheme === 'dark'
+          ? chroma.contrast('#ffffff', rc.primaryStroke) >= 3
+          : chroma.contrast('#000000', rc.primaryStroke) >= 3;
+      if (!preferredPoleReachable) continue;
+      if (def.colorScheme === 'dark') expect(L, `${def.id}`).toBeGreaterThan(90);
+      else expect(L, `${def.id}`).toBeLessThan(20);
+    }
+  });
+
+  it('flips to the opposite pole for a luminous accent the scheme pole cannot clear', () => {
+    // A yellow core on a dark ground: white reaches 1.4:1, black 15:1.
+    const halo = deriveFocusHalo('#ffd700', '#08141b', 'dark');
+    expect(chroma.contrast(halo, '#ffd700')).toBeGreaterThanOrEqual(3);
+    expect(chroma(halo).lch()[0]).toBeLessThan(20);
   });
 });

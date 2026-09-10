@@ -242,65 +242,93 @@ const SNAPSHOT_THEMES = [
 // sibling element, so a component whose selector is missing would silently
 // keep the old colour. Tabbing the real panel is the only way to catch that.
 test.describe('focus ring colour', () => {
-  test('no painted focus ring uses primaryFill', async ({ page }) => {
-    const FILL = 'rgb(0, 120, 112)';   // default-dark primaryFill  #007870
-    const STROKE = 'rgb(0, 142, 133)'; // default-dark primaryStroke #008e85
+  // P77-F: the ring is a pair. Every painted ring must carry the 2px core in
+  // primaryStroke and a 6px halo in the theme's focus-halo token, with the
+  // same geometry everywhere, in both mount modes and both chrome modes (the
+  // P76-D/H trap: the shipped default is applyThemeEverywhere false).
+  for (const mount of ['shadow', 'light'] as const) {
+    for (const applyThemeEverywhere of [false, true]) {
+      test(`no painted focus ring uses primaryFill, and every ring carries the halo (${mount} mount, applyThemeEverywhere ${applyThemeEverywhere})`, async ({ page }) => {
+        const FILL = 'rgb(0, 120, 112)';   // default-dark primaryFill  #007870
+        const STROKE = 'rgb(0, 142, 133)'; // default-dark primaryStroke #008e85
 
-    await installThemeSession(page, { themeId: 'default-dark', applyThemeEverywhere: false });
-    await page.goto('/');
-    await waitForShadowMount(page);
-    await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
-    await openDisplaySettings(page);
-    await page.addStyleTag({
-      content: '*,*::before,*::after{transition:none !important;animation:none !important}',
-    });
+        await installThemeSession(page, { themeId: 'default-dark', applyThemeEverywhere });
+        await page.goto(mount === 'shadow' ? '/' : '/?shadow=0');
+        if (mount === 'shadow') await waitForShadowMount(page);
+        await expect(page.getByRole('button', { name: 'Admin menu' })).toBeVisible();
+        await openDisplaySettings(page);
+        await page.addStyleTag({
+          content: '*,*::before,*::after{transition:none !important;animation:none !important}',
+        });
 
-    const rings: Array<{ where: string; colour: string }> = [];
-    for (let i = 0; i < 45; i++) {
-      await page.keyboard.press('Tab');
-      const found = await page.evaluate(() => {
-        const deepActive = (): Element | null => {
-          let a: Element | null = document.activeElement;
-          while (a && (a as HTMLElement).shadowRoot?.activeElement) {
-            a = (a as HTMLElement).shadowRoot!.activeElement;
-          }
-          return a;
-        };
-        const el = deepActive() as HTMLElement | null;
-        if (!el) return null;
-        const out: Array<{ where: string; colour: string }> = [];
-        // The ring may be painted on the focused element or on its sibling.
-        for (const [label, node] of [
-          ['self', el],
-          ['sibling', el.nextElementSibling],
-        ] as const) {
-          if (!node) continue;
-          const cs = getComputedStyle(node as HTMLElement);
-          // Only Mantine's ring, not the 1px UA default some inputs keep
-          // underneath a sibling-drawn ring.
-          if (cs.outlineStyle === 'solid' && parseFloat(cs.outlineWidth) >= 2) {
-            const cls = typeof (node as HTMLElement).className === 'string'
-              ? (node as HTMLElement).className : '';
-            out.push({ where: `${label}:${cls.split(' ')[1] ?? cls.split(' ')[0] ?? '?'}`, colour: cs.outlineColor });
-          }
+        type Ring = { where: string; colour: string; width: string; halo: string; haloVar: string };
+        const rings: Ring[] = [];
+        for (let i = 0; i < 45; i++) {
+          await page.keyboard.press('Tab');
+          const found = await page.evaluate(() => {
+            const deepActive = (): Element | null => {
+              let a: Element | null = document.activeElement;
+              while (a && (a as HTMLElement).shadowRoot?.activeElement) {
+                a = (a as HTMLElement).shadowRoot!.activeElement;
+              }
+              return a;
+            };
+            const el = deepActive() as HTMLElement | null;
+            if (!el) return null;
+            const out: Ring[] = [];
+            // The ring may be painted on the focused element or on its sibling.
+            for (const [label, node] of [
+              ['self', el],
+              ['sibling', el.nextElementSibling],
+            ] as const) {
+              if (!node) continue;
+              const cs = getComputedStyle(node as HTMLElement);
+              // Only Mantine's ring, not the 1px UA default some inputs keep
+              // underneath a sibling-drawn ring.
+              if (cs.outlineStyle === 'solid' && parseFloat(cs.outlineWidth) >= 2) {
+                const cls = typeof (node as HTMLElement).className === 'string'
+                  ? (node as HTMLElement).className : '';
+                out.push({
+                  where: `${label}:${cls.split(' ')[1] ?? cls.split(' ')[0] ?? '?'}`,
+                  colour: cs.outlineColor,
+                  width: cs.outlineWidth,
+                  halo: cs.boxShadow,
+                  haloVar: cs.getPropertyValue('--mullion-color-focus-halo').trim(),
+                });
+              }
+            }
+            return out.length ? out : null;
+          });
+          if (found) rings.push(...found);
         }
-        return out.length ? out : null;
+
+        // The tab order must actually have produced rings, or this proves nothing.
+        expect(rings.length, 'no focus rings were painted — the walk found nothing to check').toBeGreaterThan(5);
+
+        const stillFill = rings.filter((r) => r.colour === FILL);
+        expect(
+          stillFill,
+          `these focus rings still paint primaryFill:\n${stillFill.map((r) => '  - ' + r.where).join('\n')}`,
+        ).toEqual([]);
+
+        // And they resolve to the intended token rather than to the fallback.
+        expect(rings.every((r) => r.colour === STROKE)).toBe(true);
+
+        // The halo: the token must reach the element (a missing token paints a
+        // transparent halo, which is the P76 class of defect), and the painted
+        // box-shadow must be that colour at exactly 6px spread on every ring.
+        const hexToRgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(', ')})`;
+        const noToken = rings.filter((r) => !/^#[0-9a-f]{6}$/i.test(r.haloVar));
+        expect(noToken, `the focus-halo token did not reach:\n${noToken.map((r) => '  - ' + r.where).join('\n')}`).toEqual([]);
+        const badHalo = rings.filter((r) => r.halo !== `${hexToRgb(r.haloVar)} 0px 0px 0px 6px`);
+        expect(
+          badHalo,
+          `these rings do not paint the 6px halo in the theme token:\n${badHalo.map((r) => `  - ${r.where}: ${r.halo}`).join('\n')}`,
+        ).toEqual([]);
+        expect(rings.every((r) => r.width === '2px'), 'ring core geometry must stay 2px on every control').toBe(true);
       });
-      if (found) rings.push(...found);
     }
-
-    // The tab order must actually have produced rings, or this proves nothing.
-    expect(rings.length, 'no focus rings were painted — the walk found nothing to check').toBeGreaterThan(5);
-
-    const stillFill = rings.filter((r) => r.colour === FILL);
-    expect(
-      stillFill,
-      `these focus rings still paint primaryFill:\n${stillFill.map((r) => '  - ' + r.where).join('\n')}`,
-    ).toEqual([]);
-
-    // And they resolve to the intended token rather than to the fallback.
-    expect(rings.every((r) => r.colour === STROKE)).toBe(true);
-  });
+  }
 });
 
 test.describe('phase-1 visual snapshots', () => {

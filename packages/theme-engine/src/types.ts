@@ -233,6 +233,12 @@ export interface ResolvedColors {
   primaryStroke: string;
   /** White or black, whichever contrasts better with `primaryFill`. */
   primaryOnFill: string;
+  /**
+   * Focus-ring halo (P77-F): a neutral from the theme's ground hue, light on
+   * dark themes and dark on light, clearing 3:1 against `primaryStroke` so
+   * one of the two tones is visible on any surface.
+   */
+  focusHalo: string;
 
   success: string;
   warning: string;

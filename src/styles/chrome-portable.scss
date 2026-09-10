@@ -65,12 +65,17 @@
 .mantine-Radio-input.mantine-Radio-input:focus-visible + label,
 .mantine-Chip-input.mantine-Chip-input:focus-visible + .mantine-Chip-label {
   outline-color: var(--mullion-color-primary-stroke, currentColor);
+  // P77-F: the halo. A neutral from the theme's grounds under the 2px core,
+  // 6px spread so 2px shows inside the outline's offset and 2px outside it.
+  // Geometry is constant across themes; only the two colours resolve per theme.
+  box-shadow: 0 0 0 6px var(--mullion-color-focus-halo, transparent);
 }
 
 // SegmentedControl routes its ring through a variable rather than `outline`.
 .mantine-SegmentedControl-input.mantine-SegmentedControl-input:focus-visible
   + .mantine-SegmentedControl-label {
   --segmented-control-outline: 2px solid var(--mullion-color-primary-stroke, currentColor);
+  box-shadow: 0 0 0 6px var(--mullion-color-focus-halo, transparent);
 }
 
 // P76-I-2: Checkbox resting border. The adapter supplies the colour as

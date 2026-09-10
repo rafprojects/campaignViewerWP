@@ -548,6 +548,7 @@ export function adaptTheme(def: ThemeDefinition): MantineThemeOverride {
         borderStrong: rc.borderStrong,
         primaryFill: rc.primaryFill,
         primaryStroke: rc.primaryStroke,
+        focusHalo: rc.focusHalo,
         success: rc.success,
         warning: rc.warning,
         error: rc.error,

@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-08-28
-**Last updated:** 2026-09-09 (P77-A, P77-G, P77-D and P77-C landed; P77-B decided, prototype behind a flag)
+**Last updated:** 2026-09-09 (P77-A, P77-G, P77-D, P77-C and P77-F landed; P77-B decided, prototype behind a flag)
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | **Done** (2026-09-09), see notes | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
-| P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
+| P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | **Done** (2026-09-09), see notes; designer review in situ still open | Small-Medium |
 | P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
 
 ---
@@ -506,9 +506,27 @@ Against the committed baselines the same files differ by 1.1% to 3.1%: header bu
 
 **Pre-existing findings on the way, filed in FUTURE_TASKS.** Focus after closing the Settings drawer lands on `body` in every mode, because `useFocusReturn` records `document.activeElement`, which is the shadow host rather than the trigger button. On the real site the WordPress admin bar (`z-index: 99999`) covers the drawer's header buttons for logged-in users in every mode; Mantine's drawer sits at 450. Both are independent of the boundary and neither is fixed here.
 
-**Tests.** `src/__tests__/portalTarget.test.ts` (mode resolution; element identity through `mergeMantineTheme`), the nested-provider guard above, and `e2e/portal-mode.spec.ts` (drawer geometry inside the hostile wrapper, host-CSS isolation, Escape and click-outside, light mount ignores the flag, builder sheets). Mutation: pointing the geometry test at `?portal=shadow` fails it with `top` at -500. Full Playwright suite on the default server: see the results line below. Manual check on the deployed site is pending a rebuild; `https://wordpress.lan/?portal=overlay-root` exercises it without any settings change.
+**Tests.** `src/__tests__/portalTarget.test.ts` (mode resolution; element identity through `mergeMantineTheme`), the nested-provider guard above, and `e2e/portal-mode.spec.ts` (drawer geometry inside the hostile wrapper, host-CSS isolation, Escape and click-outside, light mount ignores the flag, builder sheets). Mutation: pointing the geometry test at `?portal=shadow` fails it with `top` at -500. Full Playwright suite on the default server: see the results line below. Manual check on the redeployed dev site (2026-09-09, user): `https://wordpress.lan/?portal=overlay-root` exercised the drawer, nested editor, theme select and Layout Builder against the real theme; theming and CSS reported correct. The default flip remains the user's call.
 
 **Results.** `npx playwright test` on the default dev server, twice in a row with the three new portal-mode tests included: 43 passed, 43 passed. In `shadow` and `overlay-root` mode servers: 39 passed of 40 each, the one failure being the P77-A document-placement assertion described in the Decision. `npx vitest run`: 260 files, 3926 tests, all passed.
+
+### P77-F (2026-09-09)
+
+**Token.** `deriveFocusHalo` in the theme engine derives `focusHalo` from the theme's own ground: the background's hue at near-zero chroma, stepped from lightness 96 toward white on dark schemes (12 toward black on light) until it clears 3:1 against the ring core, `primaryStroke`. If the scheme's pole cannot clear the core (a luminous accent such as `#ffd700` on a dark ground, where white reaches 1.4:1) the opposite pole is used; the core still carries the ring against the grounds, so the pair keeps its guarantee. Both designer constraints hold by construction: the halo is a neutral, never a second accent (measured chroma under 8 on every bundled theme), and the geometry is fixed in the stylesheet. Exposed as `--mullion-color-focus-halo`, in `theme.other.colors`, and carried inline into portaled chrome by `chromeVars()` next to the stroke token.
+
+**Rule.** The P76-I-2 ring rule in `chrome-portable.scss` gains `box-shadow: 0 0 0 6px var(--mullion-color-focus-halo, transparent)`: 2px of halo inside the outline's offset, the 2px core, 2px of halo outside. The SegmentedControl label, which routes its core through Mantine's `--segmented-control-outline`, gets the same shadow. Delivered through the canonical channel from P77-A and P77-C, which is why this track was sequenced after them: nothing new was added to `global.scss` or to any inline style.
+
+**Audit re-modelled, not replaced.** `intendedUiContrastChecks` gains three checks: halo against core, and for `surface` and `surfaceRaised` whichever of the two tones contrasts better against that ground, labelled with the tone that carries it. The six core-on-ground checks stay, because input focus borders, active tabs and builder outlines are core-only affordances. Zero exceptions on all 23 bundled themes.
+
+**Hostile-theme spot check.** A `ThemeColors` block cannot author a surface equal to its own stroke: the engine always expands `primary` into a ramp and some rung clears any single ground. The case exists at the resolved level, so the primitive is tested with the core pinned to the surface; the halo clears 3:1 against that surface and against `surfaceRaised`, in both schemes.
+
+**Measured.** default-dark: halo `#edf5fb`, core `#008e85`; halo against core 3.66:1, halo on surface 14.33:1, on surfaceRaised 12.50:1. default-light: halo `#101416`, core `#006e66`; halo against core 3.02:1, on surface 17.66:1, on surfaceRaised 18.52:1. The e2e ring walk (theme-qa) now runs four times, shadow and light mount times locked and following chrome, and on every painted ring asserts: core in `primaryStroke`, core width 2px, the halo token present on the element, and the painted box-shadow equal to that token at exactly 6px spread. All four pass. The full theme-qa suite passes with no resting baseline moving, as the acceptance criteria require.
+
+**Tight layouts, by eye.** Focused controls were screenshotted at 2x: the access-mode segmented control, the "All" filter chip, the drawer's "Apply gallery theme" switch and an Edit button inside a table cell. The halo renders as a full ring on each, inside and outside the core, and none is clipped by an ancestor. The `overflow: hidden` risk the plan named did not materialise on any surface probed; it remains a thing to look for when a new container is introduced.
+
+**Results.** `npx playwright test` twice in a row (46 tests, the ring walk now counting four): 46 passed, 46 passed. `npx vitest run`: 260 files, 3931 tests, all passed, the 1.4.11 gate included with its three new checks per theme.
+
+**Not done here.** Designer review in situ, per their offer, after it is running. An authored `focusHalo` override in theme JSON was considered and not added: the designer's constraint is that the halo is derived from the grounds, and an override would reintroduce the failure mode the halo exists to close.
 
 
 ## Outcome

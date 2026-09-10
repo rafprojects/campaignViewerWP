@@ -136,13 +136,17 @@ function chromeVars(themeId: string): CSSProperties {
   // variable block or the ring silently falls back inside every Drawer,
   // Modal and Menu. `defaultCssVariablesResolver` only emits `--mantine-*`,
   // so it is added here explicitly.
-  const stroke = (entry.mantine.other as { colors?: { primaryStroke?: string } } | undefined)
-    ?.colors?.primaryStroke;
+  const colors = (entry.mantine.other as { colors?: { primaryStroke?: string; focusHalo?: string } } | undefined)
+    ?.colors;
+  const stroke = colors?.primaryStroke;
+  // P77-F: the halo travels the same way, for the same reason.
+  const halo = colors?.focusHalo;
 
   const vars = {
     ...variables,
     ...scheme,
     ...(stroke ? { '--mullion-color-primary-stroke': stroke } : {}),
+    ...(halo ? { '--mullion-color-focus-halo': halo } : {}),
   } as CSSProperties;
 
   chromeVarCache.set(themeId, vars);

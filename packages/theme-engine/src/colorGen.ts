@@ -185,6 +185,41 @@ export function deriveBorderStrong(
   return best;
 }
 
+/**
+ * Derive the focus-ring halo (P77-F): a neutral drawn from the theme's own
+ * ground hue, light on dark themes and dark on light, stepped toward the pole
+ * until it clears 3:1 against the ring core (`primaryStroke`). If the
+ * scheme's pole cannot clear the core (a luminous accent on a dark theme),
+ * the opposite pole is used; the core still carries the ring against the
+ * theme's grounds, so the pair keeps its guarantee either way.
+ */
+export function deriveFocusHalo(
+  core: string,
+  background: string,
+  colorScheme: 'light' | 'dark',
+  minRatio: number = UI_CONTRAST_MIN,
+): string {
+  const hue = chroma(background).lch()[2];
+  const h = Number.isFinite(hue) ? hue : 0;
+  const ramp = (pole: 'light' | 'dark'): { hex: string; ratio: number } => {
+    const start = pole === 'light' ? 96 : 12;
+    const end = pole === 'light' ? 100 : 0;
+    let best = { hex: chroma.lch(start, 4, h).hex(), ratio: 0 };
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      const hex = chroma.lch(start + (end - start) * t, 4 * (1 - t), h).hex();
+      const ratio = chroma.contrast(hex, core);
+      if (ratio > best.ratio) best = { hex, ratio };
+      if (ratio >= minRatio) return { hex, ratio };
+    }
+    return best;
+  };
+  const preferred = ramp(colorScheme === 'dark' ? 'light' : 'dark');
+  if (preferred.ratio >= minRatio) return preferred.hex;
+  const opposite = ramp(colorScheme === 'dark' ? 'dark' : 'light');
+  return opposite.ratio > preferred.ratio ? opposite.hex : preferred.hex;
+}
+
 function labStops(from: string, to: string, count: number): string[] {
   return chroma.scale([from, to]).mode('lab').colors(count).map((c) => chroma(c).hex());
 }
@@ -399,6 +434,7 @@ export function resolveColors(
     chroma.contrast('#ffffff', primaryFill) >= chroma.contrast('#000000', primaryFill)
       ? '#ffffff'
       : '#000000';
+  const focusHalo = deriveFocusHalo(primaryStroke, colors.background, colorScheme);
 
   return {
     background: colors.background,
@@ -420,6 +456,7 @@ export function resolveColors(
     primaryFillIndex: fillIndex,
     primaryStroke,
     primaryOnFill,
+    focusHalo,
 
     success: colors.success,
     warning: colors.warning ?? '#f59e0b',
