@@ -2,7 +2,7 @@
 
 **Status:** Planned — no code yet
 **Created:** 2026-08-28
-**Last updated:** 2026-08-28
+**Last updated:** 2026-09-10 (Key Decision E added after P77-E; no code yet)
 
 ### Tracks
 
@@ -34,6 +34,7 @@
 | B | Before or after release? | **Before.** The user chose to settle the visual architecture ahead of shipping rather than build on top of it, and is explicitly not in a rush to release. Note this is a *preference*, not a technical necessity — the facade is purely internal, has no external contract, and would be no harder after release. Recorded so the trade is visible if priorities change. |
 | C | Big-bang migration or incremental? | **Incremental, enforced at the boundary.** A-B-C below: create the layer, ban *new* direct imports with lint, migrate the theming-critical components, then let the long tail migrate. A half-migrated layer is only harmful if nothing prevents the two styles from mixing — the ESLint rule is what makes the intermediate state safe. |
 | D | Does the facade re-implement behaviour, or only re-export? | **Re-export plus prop surface, no behaviour.** The moment the facade starts reimplementing focus management or overlay behaviour, it becomes the in-house library P77-E was supposed to decide on first. If P77-E recommends in-house, that is its own phase. |
+| E | What did P77-E decide, and what does it change here? | **P77-E (2026-09-10) recommends an in-house component layer on headless primitives, migrated behind this facade**, with the primitive chosen by a spike and Mantine headless as the fallback ([UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md), [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md)). P78-A is unchanged and lands first, as the user decided. P78-B and P78-C are to be re-planned as migrations onto the new components rather than re-exports of Mantine; until that re-plan they stand as written, and the "zero pixels move" rule applies to P78-A only. |
 
 ## Execution Priority
 

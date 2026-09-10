@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-08-28
-**Last updated:** 2026-09-09 (P77-A, P77-G, P77-D, P77-C and P77-F landed; P77-B decided, prototype behind a flag)
+**Last updated:** 2026-09-10 (P77-E and P77-H delivered; P77-A, P77-G, P77-D, P77-C and P77-F landed; P77-B decided, prototype behind a flag)
 
 ### Tracks
 
@@ -12,9 +12,10 @@
 | P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | **Decided** (2026-09-09): overlay root, prototype behind a flag, default unchanged until accepted; see Decision below and the notes | Medium |
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | **Done** (2026-09-09), see notes | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
-| P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
+| P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | **Done** (2026-09-10): [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md); recommends an in-house layer on headless primitives behind the Phase 78 facade, primitive settled by a spike; see Decision below and the notes | Medium |
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | **Done** (2026-09-09), see notes; designer review in situ still open | Small-Medium |
 | P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
+| P77-H | In-house UI framework study: what a token-driven framework of our own on headless primitives would take, the Theme Manager merge, and the list of Mantine parts to address. Document only | **Done** (2026-09-10): [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md); see the notes | Medium |
 
 ---
 
@@ -47,6 +48,14 @@
 | C | Is dropping shadow DOM a live option in B? | **No. Rejected, and recorded as rejected so it is not re-proposed.** See P77-B below — it trades away the only protection the plugin cannot obtain any other way. |
 | D | Does E risk becoming a migration instead of an evaluation? | **Constrain it to a decision document.** E produces criteria, scores and a recommendation with exit conditions. It writes no component code. A half-migrated component layer is worse than either endpoint. |
 | E | Should release-adjacent backlog items be pulled in to pad the phase? | **No.** The privacy items are Low impact (Sentry is off by default without a DSN; the Google Fonts data flow is documented in `PRIVACY.md` with opt-outs), CORS is explicitly meaningless for the shortcode deployment actually shipped, and the a11y gate's own entry says WCAG AA is a quality bar rather than a WP.org submission gate. Adding them would pad the phase without protecting the release. |
+| F | Does the "roll our own" study belong inside E or in its own track? | **Its own track, P77-H** (2026-09-10). The user asked for a separate document and left the split to the author. E decides; H describes what the decided path takes and lists the Mantine parts to address. Keeping them apart lets H stand whether or not E's recommendation is followed. |
+| G | Where does behaviour come from if we roll our own? | **Headless behaviour primitives** (user, 2026-09-10). Keyboard, focus and ARIA come from a primitive library; styling, theming and the component API are ours. Writing behaviours from scratch and vendoring behaviour code were both declined. |
+| H | How much release delay may a migration cost? | **Correctness over timing** (user, 2026-09-10). No ceiling; the evaluation states the delay each option implies and weights migration cost at 1. |
+| I | Which criteria weigh most? | **Theming fidelity and designer control over the visual language** (user, 2026-09-10), both at weight 3. Shadow-DOM friendliness and maintenance viability are gates, not scores. Maintainer capacity is undecided, so longevity sits at neutral weight. |
+| J | What does "merge the Theme Manager with the theming implementation" absorb? | **All four** (user, 2026-09-10): the engine's model as the only theme model; registry, switching and persistence; runtime theme editing by users; per-instance scoping and lock/follow mode. Requirements of P77-H section 3. |
+| K | Do the wp-admin Spaces and Assets pages fall under the same decision? | **Same framework everywhere** (user, 2026-09-10). `@wordpress/components` is scored only as a surface-specific option and rejected. |
+| L | Does the Phase 78 facade land first regardless of E's outcome? | **Yes** (user, 2026-09-10). Every migration option is scored behind it. |
+| M | Visual parity or refresh if we replace? | **A refresh with the designer is welcome** (user, 2026-09-10). No option is charged for failing to reproduce Mantine's look; the theme-qa baselines are recaptured per component as the refresh lands. |
 
 ## Execution Priority
 
@@ -59,6 +68,7 @@
    customer first and migrating it later.
 6. **P77-E** last. Gated on A and B by construction.
 7. **P77-G** slots in as soon as it is accepted: it is small, it is a production delivery bug rather than architecture, and A's contract already describes the mechanism it repairs.
+8. **P77-H** beside E, written after E's scoring so it describes the path E recommends rather than a path in the abstract.
 
 ---
 
@@ -288,6 +298,14 @@ A decision document. No component code.
 
 - No automated validation. The deliverable is a document; review it with the user before Phase 78 begins.
 
+### Decision (2026-09-10)
+
+**Recommendation:** an in-house component layer whose behaviour comes from a headless primitive library and whose styling and theming are ours, driven directly by the engine's tokens, migrated behind the Phase 78 facade. The primitive is not settled here: Ark UI scores first on our measured needs, Base UI and React Aria Components sit within three points, and a bounded spike (the same five components on the top two, measured against the P77-A guards, the P77-F ring walk, the P77-B hostile-host probe, focus return through the shadow boundary and the axe gate) decides. Fallback if both fail: Mantine in headless mode behind the same facade. Full scoring, evidence and exit conditions in [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md).
+
+**Why not stay.** Mantine does expose the seams the plugin needed, and P77-B has settled the boundary that caused most of Phase 76. What remains is structural and is exactly what the user's two heaviest criteria measure: the theme model is a translation target (a 601-line adapter with 31 override blocks), the stylesheet is a specificity opponent (`chrome-portable.scss` doubles every class), `styles` is inline CSS in disguise, colour-scheme rules key on an ancestor attribute, and `useFocusReturn` still reads `document.activeElement` in 9.6.1. Under the user's weights the recommended option leads staying-behind-the-facade by seventeen points of ninety-five; under equal weights by four of fifty-five; under a ship-soon weighting staying wins narrowly, which is the honest statement of the trade.
+
+**Consequence for Phase 78.** P78-A lands as planned and is the pivot. P78-B and P78-C become migrations onto the new components once the framework phase exists, rather than re-exports of Mantine; the phase doc carries a note to that effect and is re-planned by the user.
+
 ---
 
 ## Track P77-F - Two-tone ("halo") focus ring
@@ -375,6 +393,30 @@ Walk the manifest the way Vite's HTML generation does: for the entry, the CSS of
 
 ---
 
+## Track P77-H - In-house UI framework study
+
+Added 2026-09-10 at the user's request alongside P77-E: consider what it would take to "roll our own" styling framework that completely replaces Mantine, addresses the shortcomings met so far, and merges the custom Theme Manager with the theming implementation; deliver a separate document with the thoughts and discoveries and a short list of the parts of Mantine to address.
+
+### Problem
+
+The evaluation answers whether to leave Mantine. It does not say what a replacement built for this plugin would look like, which of Mantine's roles it must take over, or which of Mantine's shortcomings it is the chance to design out. Without that, "in-house" is a word rather than a plan, and the Phase 78 facade would be drawn without knowing what it will eventually front.
+
+### Fix
+
+A design study, no code. Principles, architecture (packages, provider, three-tier token model, styling layer, delivery, component API), behaviour sourcing for every one of the 62 components in use against the three primitive candidates, the "need to address" and "should address" lists, effort classes per step driven by measured counts, and risks. The Theme Manager merge is specified as provider concerns (scope, portal, lock and follow, persistence, runtime `defineTheme` with audits at save).
+
+### Acceptance criteria
+
+- A document a reader can use to plan the framework phase without re-deriving the inventory.
+- The Mantine inventory covers everything this codebase touches, measured, and nothing it does not.
+- No `src/ui/` or framework code.
+
+### Validation
+
+- None automated. Reviewed with the user together with P77-E.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -388,6 +430,9 @@ Walk the manifest the way Vite's HTML generation does: for the entry, the CSS of
 | Share one constructable stylesheet between the gallery root and the overlay root (`adoptedStyleSheets`) | The overlay root duplicates about 315 KB of CSS text per mount. Cheap to do once the overlay root is the default; pointless before. Recorded in FUTURE_TASKS under P77-B. |
 | Mirror the nested chrome provider's variable sheet into the overlay root, then retire `adminChromeStyles()` | Only makes sense after the default flips; the inline bridge is correct until then. |
 | Generalise `adminChromeStyles()` to carry the full `--mullion-*` token set | Would let chrome stylesheets and admin CSS modules read the same tokens the gallery root does, removing per-token special cases and `color-mix()` fallbacks. Deferred to P77-B by agreement on 2026-09-09: if the boundary goes, the mechanism goes with it. |
+| Primitive spike (Ark UI against Base UI, React Aria Components third) | The first code of the framework phase, not of this one; P77-E section 9 fixes its protocol and measurements. |
+| Re-plan Phase 78 B and C as migrations onto the new components | Depends on the user accepting the P77-E recommendation; P78-A is unchanged either way. |
+| Lazy-load admin chrome so the visitor path stops shipping `vendor-mantine-core` statically | Available under every option; P77-E section 4.3 shows the visitor bundle is a code-splitting question more than a library question. Worth a FUTURE_TASKS entry when Phase 78 is re-planned. |
 
 ## Implementation Notes
 
@@ -528,7 +573,22 @@ Against the committed baselines the same files differ by 1.1% to 3.1%: header bu
 
 **Not done here.** Designer review in situ, per their offer, after it is running. An authored `focusHalo` override in theme JSON was considered and not added: the designer's constraint is that the halo is derived from the grounds, and an override would reintroduce the failure mode the halo exists to close.
 
+### P77-E (2026-09-10)
+
+**Method.** The user was interviewed first (Key Decisions G to M) so the weights were theirs, not the author's. Codebase facts were measured on `c131b50d` with a multi-line-aware import parser (the plan's "153 of 434" became 142 non-test files of 357, 73 distinct symbols, 62 components; 1,535 style props; about 1,500 literal `size` and `variant` props; 117 provider-wrapped test files). Library facts came from the npm registry, the GitHub API and the libraries' own source files on 2026-09-10; web search was unavailable, so every claim carries a primary source. Representative component sets from each candidate were bundled with esbuild under one method so their sizes compare with each other.
+
+**What the measurement changed about the plan's framing.** Bundle size is a weak discriminator: a headless library of comparable coverage costs the same as Mantine for our set (Ark 120 kB gz, React Aria Components 139, Base UI 141, Mantine's used set 114 plus 32 kB of CSS), and the visitor-facing cost is a code-splitting question. Shadow-DOM support divides the field sharply when read from source: Ark (`EnvironmentProvider`, root-node-aware DOM queries), Base UI (`container` accepting `ShadowRoot`, a shadow-walking active-element helper) and React Aria (behind a global `enableShadowDOM()` flag with `UNSAFE_PortalProvider`) pass; Radix's `FocusScope` reads `document.activeElement` in six places; Mantine's `useFocusReturn` still does in 9.6.1. Coverage divides it again: Ark has direct counterparts for every behavioural component we use, Base UI lacks pagination, tags input and colour picker, React Aria lacks pagination and scroll area; Ariakit and Headless UI lack sliders and number fields and are excluded. Mantine's own headless mode (`HeadlessMantineProvider`, present in 9.3.1) turned out to be a real option and is the fallback.
+
+**Scores.** Twelve options against eleven criteria and three gates, weighted three ways (section 8 of the document). The recommended option leads under the user's weights and under equal weights; staying wins narrowly under a ship-soon weighting. The three viable primitives finish within three points, which is why the choice is delegated to a spike with fixed measurements rather than decided on paper.
+
+**Exit conditions** are recorded in both directions: what would turn this back into "stay" (the spike fails twice; the designer's refresh does not happen; the primitive loses its organisation), and what would have turned a "stay" into "leave" (a second `styles`-class trap; a major that changes the theming contract; an unfixable in-component boundary defect).
+
+### P77-H (2026-09-10)
+
+**Delivered** as [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md): eight principles, the architecture (three packages, a `MullionProvider` that absorbs `ThemeContext`, `OverlayRootSync`, `AdminChromeProvider` and Mantine's variable emitter; a three-tier token model in which the adapter's 31 override blocks become engine-derived component tokens; a styling layer with no colour literals and no ancestor scheme selectors; one delivery list for every tree), a behaviour-sourcing table for all 62 components against Ark, Base UI and React Aria Components, the "need to address" list (fifteen groups, measured) and the "should address" list (fifteen shortcomings, each with its P76 or P77 evidence and the design that removes it), effort classes per step, and risks.
+
+**Two findings worth stating outside the document.** The largest mechanical cost of leaving Mantine is not the behavioural components but the style props and literal scales (about 3,000 occurrences), and that cost is identical under Mantine's own headless mode, so headless Mantine is a fallback rather than a cheaper stepping stone. And the Theme Manager merge is mostly a consolidation of code that already exists in five files; what is new is the runtime editor with audits at save and the lock/follow mode as a provider prop rather than a nested-provider trick.
 
 ## Outcome
 
-_Pending._
+_Pending: P77-B default flip and the designer's in-situ review of the halo ring are the open items; every track's document work is complete._

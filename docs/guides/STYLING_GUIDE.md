@@ -163,8 +163,18 @@ it is not implemented and not planned. Dropping shadow DOM was considered and
 rejected in Phase 77 (Key Decision C): it is the only protection against host
 CSS the plugin cannot obtain any other way.
 
+**Where this contract goes next.** Phase 77 track E
+([UI_DEPENDENCY_EVALUATION.md](../UI_DEPENDENCY_EVALUATION.md)) recommends
+replacing Mantine with an in-house component layer on headless primitives
+behind the Phase 78 facade, and track H
+([IN_HOUSE_UI_FRAMEWORK_STUDY.md](../IN_HOUSE_UI_FRAMEWORK_STUDY.md))
+describes the styling model that would follow: no third-party CSS, state as
+data attributes, colour only as tokens, one stylesheet registered in every
+tree. Until that lands, this guide is the contract, and every channel in it
+stays canonical for the code that exists.
+
 Document rewritten 2026-09-09 for Phase 77 track A and updated the same day
-for tracks C and B. The previous version
+for tracks C and B; pointer to tracks E and H added 2026-09-10. The previous version
 (January 2026) predates the shadow-plus-portal findings of Phases 75 and 76
 and described CSS variables as scoped to `.mullion-gallery`, which has not
 been true since the shadow mount became the default.
