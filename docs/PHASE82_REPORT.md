@@ -24,7 +24,7 @@
 
 ## Rationale
 
-1. **What triggered it.** The [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) left three items with no owner once its own findings were placed into Phase 76. None is blocked on anything: the packaging exclude list is duplicated between `.distignore` and `release.yml` and has already drifted, and Phase 75 shipped ~160 lines of new workflow YAML across `release.yml` and `svn-deploy.yml` with its own validation section conceding *"No `actionlint`/`yamllint` tooling exists in this repo today; out of scope to add it here — manual review plus the local dry-run substitute for automated YAML linting."* The third is a caching bug in the Freemius bootstrap that the review's R3 finding uncovered and then partly masked.
+1. **What triggered it.** The [Phase 75 branch review](archive/phases/PHASE75_REPORT.md#branch-review-2026-08-25) left three items with no owner once its own findings were placed into Phase 76. None is blocked on anything: the packaging exclude list is duplicated between `.distignore` and `release.yml` and has already drifted, and Phase 75 shipped ~160 lines of new workflow YAML across `release.yml` and `svn-deploy.yml` with its own validation section conceding *"No `actionlint`/`yamllint` tooling exists in this repo today; out of scope to add it here — manual review plus the local dry-run substitute for automated YAML linting."* The third is a caching bug in the Freemius bootstrap that the review's R3 finding uncovered and then partly masked.
 
 2. **Why they belong together, and why not Phase 76.** Phase 76 is already a container spanning gettext catalogs, listing identity, admin chrome, theme CSS, and a dead script; adding release packaging and CI tooling would make it incoherent rather than merely mixed. A and B share an actual subject — the correctness of the pipeline that produces and ships the two release ZIPs. C is the odd one out by domain (it is PHP, not CI) but belongs by *origin and size*: it is the last unowned item from the same review, it is small, and Phase 76 has no track it fits under. Filing it here beats a `FUTURE_TASKS` entry it would outlive, and beats leaving it in a conversation.
 
@@ -151,7 +151,7 @@ function mullion_fs() {
 
 Every call therefore re-runs the body: an `apply_filters('mullion_freemius_config', …)` dispatch with whatever callbacks are hooked, the config array construction, and two `empty()` checks. Callers are `Mullion_License::is_sdk_active()` → `can_use_premium_code()` → `can_use_feature()`, reached from `class-mullion-embed.php:85` (once per rendered embed) and `class-mullion-layout-templates.php:562,565` (twice per template write).
 
-Found during the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25). Finding R3 fixed the expensive half — P75-A had added a marker file read inside that body, so the missing cache meant an `is_readable()` + `file_get_contents()` + `json_decode()` per entitlement check — by memoizing `mullion_is_premium_package()` per resolved path. That was the right scope for a review pass, but it also **masked the underlying bug**: the remaining per-call work is now cheap enough that nothing will ever prompt a second look. This track is the reason it does not get forgotten.
+Found during the [Phase 75 branch review](archive/phases/PHASE75_REPORT.md#branch-review-2026-08-25). Finding R3 fixed the expensive half — P75-A had added a marker file read inside that body, so the missing cache meant an `is_readable()` + `file_get_contents()` + `json_decode()` per entitlement check — by memoizing `mullion_is_premium_package()` per resolved path. That was the right scope for a review pass, but it also **masked the underlying bug**: the remaining per-call work is now cheap enough that nothing will ever prompt a second look. This track is the reason it does not get forgotten.
 
 ### Fix
 
@@ -197,7 +197,7 @@ Nothing else in the plugin reads `global $mullion_fs` (grep confirms the only oc
 
 ## Implementation Notes
 
-Not started. All three tracks are the residue of the [Phase 75 branch review](PHASE75_REPORT.md#branch-review-2026-08-25) after its findings were placed into Phase 76 — the items that were not blocked on a human gate and had nowhere else to go. With P82-C filed, every item that review surfaced has an owner.
+Not started. All three tracks are the residue of the [Phase 75 branch review](archive/phases/PHASE75_REPORT.md#branch-review-2026-08-25) after its findings were placed into Phase 76 — the items that were not blocked on a human gate and had nowhere else to go. With P82-C filed, every item that review surfaced has an owner.
 
 ## Outcome
 

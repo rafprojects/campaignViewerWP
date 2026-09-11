@@ -76,7 +76,7 @@ Route all four through `i18n.t('key', 'English default')`, the same pattern P71-
 
 ## Track P72-B - WordPress Core Privacy Integration (DSAR export/erase)
 
-*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Privacy & Compliance, flagged there as the highest-value item in that section. Origin: [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-E, surfaced while auditing data handling for `PRIVACY.md`. Re-verified 2026-07-23: `wp_privacy_personal_data_exporters`/`erasers` are not registered anywhere in the plugin.*
+*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Privacy & Compliance, flagged there as the highest-value item in that section. Origin: [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E, surfaced while auditing data handling for `PRIVACY.md`. Re-verified 2026-07-23: `wp_privacy_personal_data_exporters`/`erasers` are not registered anywhere in the plugin.*
 
 ### Problem
 
@@ -166,7 +166,7 @@ In `resolve_space_id()`, distinguish "an explicit attribute was given but did no
 
 ## Track P72-E - `AdminPanel.tsx` remaining tab-state extraction (P70-H remainder)
 
-*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Code Quality & Refactoring, deferred from [PHASE70_REPORT.md](archive/phases/PHASE70_REPORT.md) § P70-H (2026-07-21) — P70-H shipped only `useAdminZipTransfers`, the self-contained win; the tab-state concerns were carved out. Re-verified 2026-07-23: `AdminPanel.tsx` is 927 lines; `mediaCampaignId`/`accessCampaignId`/`auditCampaignId`/`selectedCompanyId`/`accessViewMode`/`showExpiredGrants` are all still inline exactly as documented.*
+*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Code Quality & Refactoring, deferred from [PHASE70_REPORT.md](PHASE70_REPORT.md) § P70-H (2026-07-21) — P70-H shipped only `useAdminZipTransfers`, the self-contained win; the tab-state concerns were carved out. Re-verified 2026-07-23: `AdminPanel.tsx` is 927 lines; `mediaCampaignId`/`accessCampaignId`/`auditCampaignId`/`selectedCompanyId`/`accessViewMode`/`showExpiredGrants` are all still inline exactly as documented.*
 
 ### Problem
 
@@ -201,7 +201,7 @@ Either way, preserve behavior exactly: the `selectedSpaceId` reset, the "default
 
 ## Track P72-F - Retention / auto-purge for PII tables
 
-*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Privacy & Compliance, origin [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-E. Re-verified 2026-07-23: `class-wpsg-maintenance.php` has `ANALYTICS_PURGE_HOOK` (`wpsg_analytics_purge`) and an `analytics_retention_days` setting for analytics only; no equivalent purge job exists for the two PII tables named below.*
+*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Privacy & Compliance, origin [PHASE60_REPORT.md](PHASE60_REPORT.md) P60-E. Re-verified 2026-07-23: `class-wpsg-maintenance.php` has `ANALYTICS_PURGE_HOOK` (`wpsg_analytics_purge`) and an `analytics_retention_days` setting for analytics only; no equivalent purge job exists for the two PII tables named below.*
 
 ### Problem
 
@@ -229,7 +229,7 @@ Add optional, **opt-in** (not opt-out — avoid surprising existing installs wit
 
 ## Track P72-G - Structural a11y (axe) gate: fix the 2 known `LayoutTemplateList` violations
 
-*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Accessibility, origin [PHASE62_REPORT.md](archive/phases/PHASE62_REPORT.md) P62-H (2026-07-11). This track is a deliberately-scoped-down slice of the full backlog entry — the entry's "extend coverage to more surfaces" half is intentionally **not** part of this track; see the note at the end of this section.*
+*Source: [FUTURE_TASKS.md](FUTURE_TASKS.md) → Accessibility, origin [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H (2026-07-11). This track is a deliberately-scoped-down slice of the full backlog entry — the entry's "extend coverage to more surfaces" half is intentionally **not** part of this track; see the note at the end of this section.*
 
 ### Problem
 

@@ -1,6 +1,6 @@
 # Phase 65 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE65_REPORT.md](PHASE65_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE64_MANUAL_QA_RUNBOOK.md](PHASE64_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE65_REPORT.md](../archive/phases/PHASE65_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE64_MANUAL_QA_RUNBOOK.md](PHASE64_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P65-A … P65-D, plus §5's two post-landing PR-review fixes. Phase 65 is almost entirely a **backend** change (the campaign/media import-export pipeline). There is no new frontend surface; you verify it through the REST API and WP-CLI, then inspect the resulting post meta / manifests. Do the shared setup once (§1–§3), then run the tracks in any order.
 

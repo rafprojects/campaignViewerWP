@@ -7,7 +7,7 @@ reflow). Automated coverage (theme-contrast gate, axe structural checks) is desc
 
 > **Status:** living document — started 2026-07-11. We add surfaces/checks as coverage grows.
 > Track progress in §8 (Coverage tracker) and log issues in §7. Nothing here blocks a launch on its
-> own — WCAG AA is the project's quality bar (see [PHASE62_REPORT.md](../PHASE62_REPORT.md) P62-H).
+> own — WCAG AA is the project's quality bar (see [PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) P62-H).
 
 ---
 

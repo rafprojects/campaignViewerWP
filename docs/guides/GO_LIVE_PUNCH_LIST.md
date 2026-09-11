@@ -3,7 +3,7 @@
 **One place for everything left to launch.** The Phase 62 *engineering* is essentially complete
 (F–K); what remains below is human/dashboard, legal, design, and validation work. Detail lives in
 [MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md) (the full runbook) and
-[../PHASE62_REPORT.md](../PHASE62_REPORT.md) (per-track); this is the tight index.
+[PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) (per-track); this is the tight index.
 
 Two launch channels: **Premium** (paid, via Freemius) and the free **WP.org "lite"** build. You can
 ship **premium first** and add the free tier later — §F doesn't block §A–E.
@@ -52,5 +52,5 @@ Legend: ⬜ to do · 🔒 blocked on a prior item · 💻 has code already done,
 
 ---
 
-_Engineering status per track is in [../PHASE62_REPORT.md](../PHASE62_REPORT.md); the detailed how-to for
+_Engineering status per track is in [PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md); the detailed how-to for
 each item above is in [MARKETPLACE_READINESS.md](MARKETPLACE_READINESS.md)._

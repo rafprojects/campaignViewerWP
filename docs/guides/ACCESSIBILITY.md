@@ -4,7 +4,7 @@
 and the remaining **human** assistive-technology (AT) audit that automated tooling can't cover.
 
 WCAG AA is the project's **quality bar** for a public listing (see
-[../PHASE62_REPORT.md](../PHASE62_REPORT.md) P62-H). It is **not** a hard WordPress.org submission
+[PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) P62-H). It is **not** a hard WordPress.org submission
 gate, so the WP.org "lite" tier can launch before the manual AT audit below is complete.
 
 ---
@@ -109,4 +109,4 @@ and VoiceOver + Safari) before declaring full AA.
       and builder transitions.
 - [ ] **Zoom/reflow (1.4.10):** usable at 200% zoom / 320px width without loss of content or function.
 
-Record results and fixes back in [../PHASE62_REPORT.md](../PHASE62_REPORT.md) P62-H.
+Record results and fixes back in [PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) P62-H.

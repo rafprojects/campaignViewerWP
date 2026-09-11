@@ -1,6 +1,6 @@
 # Phase 72 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE72_REPORT.md](PHASE72_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE71_MANUAL_QA_RUNBOOK.md](PHASE71_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE72_REPORT.md](../archive/phases/PHASE72_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE71_MANUAL_QA_RUNBOOK.md](PHASE71_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P72-A … P72-G. Phase 72 is a **mixed-domain hardening** phase — unlike P71 (single-arc React efficiency), the tracks here span PHP (privacy, settings, shortcode) and React (i18n, a11y, refactor), and several are **real behaviour/content changes** (a new admin notice, DSAR flows, translated strings, a11y fixes), not pure refactors. So the verification shape differs per track and is stated explicitly in each section. This doc is built **incrementally as each track lands** — a section is added when the corresponding fix is committed, not all at once up front.
 

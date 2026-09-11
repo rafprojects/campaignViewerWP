@@ -123,4 +123,4 @@ Questions about this EULA: **[PLACEHOLDER: support/legal email]**.
 
 _Owner/maintainer note: wire this EULA into the Freemius product listing (Settings → Legal → EULA) at
 go-live, keep it in sync with the refund/support text in LICENSE_ACTIVATION.md and readme.txt, and
-record the go-live status in [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-J._
+record the go-live status in [PHASE62_REPORT.md](archive/phases/PHASE62_REPORT.md) P62-J._

@@ -1,6 +1,6 @@
 # WordPress.org Account Setup
 
-A human-gate walkthrough for [P76-C](../PHASE76_REPORT.md#track-p76-c---wordpressorg-contributors-handle):
+A human-gate walkthrough for [P76-C](../archive/phases/PHASE76_REPORT.md#track-p76-c---wordpressorg-contributors-handle):
 the plugin cannot be submitted to the directory, and `readme.txt`'s `Contributors:`
 field cannot be fixed, until a live WordPress.org account exists. This is not
 code — nobody else can do this step for you.
@@ -37,7 +37,7 @@ WordPress.org itself expects, not just a convenience:
   `Contributors:` entry — not instead of it.
 
 None of this picks the actual username for you — that's still your call (see
-[Key Decision E](../PHASE76_REPORT.md#key-decisions)) — just: pick something
+[Key Decision E](../archive/phases/PHASE76_REPORT.md#key-decisions)) — just: pick something
 that scales past this one plugin.
 
 Two data points from checking live profiles, not assumptions:
