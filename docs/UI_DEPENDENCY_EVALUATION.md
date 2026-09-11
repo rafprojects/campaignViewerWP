@@ -1,6 +1,7 @@
 # UI dependency evaluation: Mantine, an alternative, or in-house (P77-E)
 
-**Status:** Decision document, delivered 2026-09-10. No component code.
+**Status:** Decision document, delivered 2026-09-10. **Recommendation accepted by the user on
+2026-09-10**, and scheduled as Phases 78 to 81; see section 9. No component code.
 **Companion:** [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md) (P77-H) describes what the
 recommended path would take to build.
 **Phase:** [PHASE77_REPORT.md](PHASE77_REPORT.md), track E.
@@ -459,36 +460,52 @@ costs a long migration and buys the two things they weighted highest.
 
 ## 9. Recommendation
 
-1. **Land P78-A as planned** (`src/ui/`, the lint boundary, re-exports with a narrowed prop
+1. **Land the facade** (`src/ui/`, the lint boundary, re-exports with a narrowed prop
    surface). It is the pivot for every option and the user has decided it lands first.
-2. **Run a bounded primitive spike before writing P78-B.** Build the same five components on
-   Ark UI and Base UI (React Aria Components as the third if either fails): a Drawer in the
-   overlay root, a Select with a portaled listbox, a Slider, a NumberInput, and Tabs. Measure
-   against fixed tests, not impressions: the P77-A delivery guards, the P77-F ring walk, the
-   P77-B hostile-host probe (transformed ancestor, 600 px scroll, sticky 9999 header), focus
-   return to a trigger inside the gallery shadow root, outside-click through the boundary, the
-   axe gate, and the esbuild footprint of the five. Two weeks, one branch each, both discarded.
+2. **Run a bounded primitive bake-off before any framework code.** Build the same five
+   components on Ark UI and Base UI (React Aria Components as the third if either fails): a
+   Drawer in the overlay root, a Select with a portaled listbox, a Slider, a NumberInput, and
+   Tabs. Measure against fixed tests, not impressions: the P77-A delivery guards, the P77-F
+   ring walk, the P77-B hostile-host probe (transformed ancestor, 600 px scroll, sticky 9999
+   header), focus return to a trigger inside the gallery shadow root, outside-click through the
+   boundary, the axe gate, and the esbuild footprint of the five. One branch each, both
+   discarded, the loser's measurements recorded.
 3. **Adopt the winner as the behaviour layer of an in-house component framework** whose
    styling and theming are ours and whose theme model is the engine's, as designed in
    [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md). Migrate behind the facade in
    the order the adapter fights hardest: the Input family and overlays first, then combobox,
    tabs and segmented control, then the long tail. The theme-qa harness is the regression net,
    with new baselines captured per component as the designer's refresh lands.
-4. **Fallback:** if neither primitive passes the spike's boundary tests, use option C (Mantine
-   headless) behind the same facade. It gives the styling layer to us at once and keeps the
-   behaviours we have; the structural traps that remain are documented in section 4.2 and are
-   wrappable at the facade.
-5. **Keep** `@mantine/hooks` only if the spike finds it convenient; the seven hooks we use are
-   about 150 lines to own. Replace `@mantine/notifications`, `@mantine/modals` and
+4. **Fallback:** if neither primitive passes the bake-off's boundary tests, use option C
+   (Mantine headless) behind the same facade. It gives the styling layer to us at once and
+   keeps the behaviours we have; the structural traps that remain are documented in section 4.2
+   and are wrappable at the facade.
+5. **Keep** `@mantine/hooks` only if the bake-off finds it convenient; the seven hooks we use
+   are about 150 lines to own. Replace `@mantine/notifications`, `@mantine/modals` and
    `@mantine/form` with facade-level `notify()`, `confirm()` and plain form state; the call
    sites are 48, 11 and 1.
 
-Delay implied. The facade is weeks. The framework core (provider, tokens, delivery, layout and
-typography primitives) is a phase. The behavioural migration is a phase of medium-to-large
-tracks whose long tail can run past release without harm, because the facade makes the mixed
-state safe by construction. Under the user's "correctness over timing" answer this is
-acceptable; under a ship-soon constraint the answer is B and the framework work happens after
-release behind the same facade. Nothing in this recommendation is lost by choosing B first.
+### As scheduled (user decision, 2026-09-10)
+
+The user accepted this recommendation and chose to build the framework **before release**
+rather than ship on Mantine and migrate for v2. The author's written advice in an earlier
+draft of this section was the opposite, and the trade is recorded in
+[PHASE78_REPORT.md](PHASE78_REPORT.md) Key Decision B so it stays visible: the release moves
+out by several phases in exchange for shipping on the final architecture.
+
+| Phase | Content | Steps from the study's section 6 |
+|-------|---------|-----------------------------------|
+| [78](PHASE78_REPORT.md) | UI boundary, primitive bake-off, token model | 0, 1, 2 |
+| [79](PHASE79_REPORT.md) | Framework core and theme manager | 3, 6 |
+| [80](PHASE80_REPORT.md) | Behavioural components | 4, 5 |
+| [81](PHASE81_REPORT.md) | Consumer migration and Mantine removal | 7, 8 |
+| [82](PHASE82_REPORT.md) | Release pipeline hygiene (was Phase 79) | none |
+| [83](PHASE83_REPORT.md) | Go-live (was Phase 80) | none |
+
+Release does not wait for full removal. It waits for the framework, the behavioural components
+and the theming-critical surfaces; the long tail of presentational components migrates behind
+the facade afterwards, which is what the facade's lint boundary exists to make safe
+([PHASE81_REPORT.md](PHASE81_REPORT.md) Key Decision A).
 
 ## 10. Exit conditions
 

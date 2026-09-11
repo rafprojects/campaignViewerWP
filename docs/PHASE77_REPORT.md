@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-08-28
-**Last updated:** 2026-09-10 (P77-E and P77-H delivered; P77-A, P77-G, P77-D, P77-C and P77-F landed; P77-B decided, prototype behind a flag)
+**Last updated:** 2026-09-10 (P77-E and P77-H delivered, and their recommendation accepted; P77-I opened to flip the P77-B default; P77-A, P77-G, P77-D, P77-C and P77-F landed)
 
 ### Tracks
 
@@ -16,6 +16,7 @@
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | **Done** (2026-09-09), see notes; designer review in situ still open | Small-Medium |
 | P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
 | P77-H | In-house UI framework study: what a token-driven framework of our own on headless primitives would take, the Theme Manager merge, and the list of Mantine parts to address. Document only | **Done** (2026-09-10): [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md); see the notes | Medium |
+| P77-I | Flip the portal default to the overlay root and retarget the one assertion that depends on the old placement | **Planned** (opened 2026-09-10), the last track of the phase | Small |
 
 ---
 
@@ -69,6 +70,7 @@
 6. **P77-E** last. Gated on A and B by construction.
 7. **P77-G** slots in as soon as it is accepted: it is small, it is a production delivery bug rather than architecture, and A's contract already describes the mechanism it repairs.
 8. **P77-H** beside E, written after E's scoring so it describes the path E recommends rather than a path in the abstract.
+9. **P77-I** last, once E's recommendation is accepted. It is the only track in the phase that changes shipped behaviour, and it is sequenced after the decision because the framework should be built against the boundary it will actually ship on.
 
 ---
 
@@ -184,7 +186,7 @@ Against a real page (wordpress.lan, Twenty Twenty-Five, logged in), 5 of the 142
 
 **What the overlay root does not do.** The nested chrome provider (`AdminChromeProvider`) renders its scoped variable sheet in the gallery tree, so in lock mode the brand palette still reaches the drawer only through `adminChromeStyles()`. That bridge and the `--mullion-builder-*` block stay load-bearing after the flip; they carry a theming choice (chrome locked to the brand), not a boundary defect. What the overlay root removes is the whole "stylesheet in the wrong tree" class: `global.scss`, CSS modules and both variable sheets reach the chrome, and `chrome-portable.scss` stops being special under a shadow mount. Mirroring the nested sheet into the overlay root, which would retire `adminChromeStyles()`, is a follow-on.
 
-**Post-release compatibility, in plain language.** Today a site owner's CSS reaches the Settings panel and Layout Builder because they render under `document.body`; it cannot reach the gallery. After the flip it reaches neither. Flipping before release changes nothing anyone relies on. Flipping after release would silently strip styles from any site that had targeted the chrome, so the default flip belongs in this phase, before Phase 79's release pipeline, on the user's call.
+**Post-release compatibility, in plain language.** Today a site owner's CSS reaches the Settings panel and Layout Builder because they render under `document.body`; it cannot reach the gallery. After the flip it reaches neither. Flipping before release changes nothing anyone relies on. Flipping after release would silently strip styles from any site that had targeted the chrome, so the default flip belongs in this phase, before the release pipeline phase, on the user's call.
 
 **Cost.** One more shadow root per mount, carrying its own copy of the shadow stylesheet plus Dockview and `builder.css` (about 315 KB of CSS text) and two small variable sheets kept in sync by `OverlayRootSync`. A shared constructable stylesheet (`adoptedStyleSheets`) would remove the duplication; filed as a follow-on.
 
@@ -304,7 +306,18 @@ A decision document. No component code.
 
 **Why not stay.** Mantine does expose the seams the plugin needed, and P77-B has settled the boundary that caused most of Phase 76. What remains is structural and is exactly what the user's two heaviest criteria measure: the theme model is a translation target (a 601-line adapter with 31 override blocks), the stylesheet is a specificity opponent (`chrome-portable.scss` doubles every class), `styles` is inline CSS in disguise, colour-scheme rules key on an ancestor attribute, and `useFocusReturn` still reads `document.activeElement` in 9.6.1. Under the user's weights the recommended option leads staying-behind-the-facade by seventeen points of ninety-five; under equal weights by four of fifty-five; under a ship-soon weighting staying wins narrowly, which is the honest statement of the trade.
 
-**Consequence for Phase 78.** P78-A lands as planned and is the pivot. P78-B and P78-C become migrations onto the new components once the framework phase exists, rather than re-exports of Mantine; the phase doc carries a note to that effect and is re-planned by the user.
+**Accepted, and scheduled (2026-09-10).** The user accepted the recommendation and chose to build the framework **before release** rather than ship on Mantine and migrate for v2. The author's written advice was the opposite; the trade is recorded in [PHASE78_REPORT.md](PHASE78_REPORT.md) Key Decision B rather than buried here. The work is distributed over four phases and the two release phases shift down:
+
+| Phase | Content |
+|-------|---------|
+| [78](PHASE78_REPORT.md) | UI boundary, primitive bake-off, token model (was "UI facade") |
+| [79](PHASE79_REPORT.md) | Framework core and theme manager |
+| [80](PHASE80_REPORT.md) | Behavioural components |
+| [81](PHASE81_REPORT.md) | Consumer migration and Mantine removal |
+| [82](PHASE82_REPORT.md) | Release pipeline hygiene (was Phase 79) |
+| [83](PHASE83_REPORT.md) | Go-live (was Phase 80) |
+
+Release does not wait for full Mantine removal: it waits for the framework, the behavioural components and the theming-critical surfaces, with the long tail migrating behind the facade afterwards ([PHASE81_REPORT.md](PHASE81_REPORT.md) Key Decision A).
 
 ---
 
@@ -414,6 +427,58 @@ A design study, no code. Principles, architecture (packages, provider, three-tie
 ### Validation
 
 - None automated. Reviewed with the user together with P77-E.
+
+---
+
+## Track P77-I - Flip the portal default to the overlay root
+
+Opened 2026-09-10, after the user accepted the P77-E recommendation and confirmed the flip
+should happen in this phase.
+
+### Problem
+
+P77-B decided the mount strategy and landed the overlay root behind a flag, but the shipped
+default is still `document`. The decision's own compatibility argument has a deadline: today a
+site owner's CSS reaches the Settings panel and Layout Builder because they render under
+`document.body`, and after the flip it reaches neither. Flipping before release changes nothing
+anyone relies on. Flipping after release would silently strip styles from any site that had
+targeted the chrome.
+
+Two further reasons to flip now rather than later. The framework phases that follow build
+overlays against a portal boundary, and they should build against the one that ships. And
+while the default is `document`, the P77-A contract's legacy surfaces (`adminChromeStyles()`,
+the `--mullion-builder-*` bridge) cannot begin to retire.
+
+### Fix
+
+Change the fallback in `resolvePortalMode()` from `document` to `overlay-root`, keeping every
+override intact (`?portal=`, `window.__MULLION_PORTAL_MODE__`, `VITE_MULLION_PORTAL_MODE`) so a
+site owner or a support case can put it back without a build.
+
+Retarget the one P77-A guard that asserts the Settings drawer renders under `document.body`.
+That assertion encodes the placement this track changes, so it is rewritten to assert the new
+contract: the drawer renders inside the overlay root, and the overlay root is a direct child of
+`document.body`.
+
+### Acceptance criteria
+
+- The shipped default is `overlay-root`; all three overrides still select `document` and
+  `shadow`.
+- The retargeted P77-A guard fails if the drawer renders outside the overlay root, verified by
+  mutation.
+- The full Playwright suite passes twice consecutively at 100 percent, not the 39 of 40 the
+  P77-B prototype measured, because the one failure was this assertion.
+- `theme-qa` baselines do not move. The overlay root measured identical drawer geometry, so any
+  pixel movement is a defect rather than an expected consequence.
+- The wp-admin manual pass P77-B's validation requires: drawer over the admin menu, nested
+  modal from within the drawer, Select dropdown inside the drawer, Escape and click-outside
+  dismissal.
+
+### Validation
+
+- `npx playwright test` twice, `npx vitest run`, and a rebuilt plugin checked on the dev site.
+- The manual wp-admin pass above, which P77-B's validation section marks as required and not
+  substitutable with CI.
 
 ---
 

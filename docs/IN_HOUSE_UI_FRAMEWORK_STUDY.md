@@ -1,6 +1,8 @@
 # In-house UI framework study (P77-H)
 
-**Status:** Study, delivered 2026-09-10. No component code.
+**Status:** Study, delivered 2026-09-10. **The path it describes was accepted by the user on
+2026-09-10** and is scheduled as Phases 78 to 81; the step-to-phase mapping is in section 6.
+No component code.
 **Companion:** [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md) (P77-E) scores the options and
 recommends this path. This document describes what the path would take, whether or not it is
 taken.
@@ -65,7 +67,7 @@ this codebase actually touches, measured.
 | `@mullion/theme-manager` | new, or a module of `@mullion/ui` | Registry, catalogue, switching, persistence, scoping, lock and follow, the editor model. Today spread over `src/themes/index.ts`, `src/contexts/ThemeContext.tsx`, `src/components/Admin/ThemeSelector.tsx`, `src/themes/chromeTheme.ts` and `AdminChromeProvider.tsx` |
 | `@mullion/shared-ui` | yes | Consumers move onto `@mullion/ui`; the package stops depending on Mantine |
 
-The app's `src/ui/` (Phase 78) is the import boundary and, during migration, the place where
+The app's `src/ui/` ([Phase 78](PHASE78_REPORT.md) A) is the import boundary and, during migration, the place where
 a name resolves to either the Mantine re-export or the `@mullion/ui` component. When the
 migration completes, `src/ui/` re-exports `@mullion/ui` and the lint rule bans direct imports
 of both Mantine and the primitive library.
@@ -302,17 +304,17 @@ The short list the user asked for. "Need" is what this codebase uses and must ha
 Effort classes follow the phase docs (Small, Medium, Large) and are driven by the measured
 counts, not estimated in days.
 
-| Step | Scope | Effort | Depends on |
-|------|-------|--------|------------|
-| 0 Facade | `src/ui/`, lint boundary, re-exports (Phase 78 A) | Medium | none |
-| 1 Primitive spike | Five components on two candidates against the fixed tests in the evaluation's section 9 | Small-Medium | 0 |
-| 2 Engine extension | Component token tier, framework constants, `defineTheme` with audits at save | Medium | none |
-| 3 Framework core | `MullionProvider` (scope, portal, mode, persistence), delivery, token sheet, layout and typography primitives, focus rule | Medium-Large | 1, 2 |
-| 4 Behavioural components, wave one | Input family, `Modal`, `Drawer`, `Popover`, `Tooltip`, `Menu` (the adapter's hardest cases) | Large | 3 |
-| 5 Behavioural components, wave two | `Select` family, `Tabs`, `SegmentedControl`, `Checkbox`, `Switch`, `Chip`, `Slider`, `NumberInput`, `ColorInput`, `Accordion`, `ScrollArea`, `Pagination`, toast and confirm managers | Large | 4 |
-| 6 Theme manager merge | Registry, catalogue, `ThemeSelector`, persistence, scoping, lock and follow, the editor | Medium | 3 |
-| 7 Consumer migration | 142 files; 1,535 style props; about 1,500 size and variant literals; 117 test files onto the new wrapper; 16 stories; 3 e2e selectors; `--mantine-*` references in 58 files | Large, incremental behind the facade | 4, 5, 6 |
-| 8 Removal | Drop `@mantine/*`, the adapter, `chromeTheme.ts`, `chrome-portable.scss`, `AdminChromeProvider`, `adminChromeStyles()`, the builder bridge; retarget the P77-A tests | Small | 7 |
+| Step | Scope | Effort | Depends on | Phase |
+|------|-------|--------|------------|-------|
+| 0 Facade | `src/ui/`, lint boundary, re-exports | Medium | none | [78](PHASE78_REPORT.md) A |
+| 1 Primitive bake-off | Five components on two candidates against the fixed tests in the evaluation's section 9 | Small-Medium | 0 | 78 B |
+| 2 Engine extension | Component token tier, framework constants, `defineTheme` with audits at save | Medium | none | 78 C |
+| 3 Framework core | `MullionProvider` (scope, portal, mode, persistence), delivery, token sheet, layout and typography primitives, focus rule | Medium-Large | 1, 2 | [79](PHASE79_REPORT.md) A, B, C |
+| 4 Behavioural components, wave one | Input family, `Modal`, `Drawer`, `Popover`, `Tooltip`, `Menu` (the adapter's hardest cases) | Large | 3 | [80](PHASE80_REPORT.md) A |
+| 5 Behavioural components, wave two | `Select` family, `Tabs`, `SegmentedControl`, `Checkbox`, `Switch`, `Chip`, `Slider`, `NumberInput`, `ColorInput`, `Accordion`, `ScrollArea`, `Pagination`, toast and confirm managers | Large | 4 | 80 B, C |
+| 6 Theme manager merge | Registry, catalogue, `ThemeSelector`, persistence, scoping, lock and follow, the editor | Medium | 3 | 79 D |
+| 7 Consumer migration | 142 files; 1,535 style props; about 1,500 size and variant literals; 117 test files onto the new wrapper; 16 stories; 3 e2e selectors; `--mantine-*` references in 58 files | Large, incremental behind the facade | 4, 5, 6 | [81](PHASE81_REPORT.md) A, B, C |
+| 8 Removal | Drop `@mantine/*`, the adapter, `chromeTheme.ts`, `chrome-portable.scss`, `AdminChromeProvider`, `adminChromeStyles()`, the builder bridge; retarget the P77-A tests | Small | 7 | 81 D |
 
 The critical path is 0, 1, 3, 4, 5, 7. Steps 2 and 6 run beside it. Wave one lands the
 components where Phase 76's defects lived, so the framework is validated against the hardest
@@ -335,9 +337,6 @@ step 0.
 
 ## 8. What is not in scope
 
-- No decision on numbering the phases that would build this; that is the user's call after
-  Phase 78 is re-planned.
-- No prototype. The P77-E spike is the first code, and it belongs to the phase that builds the
-  framework.
+- No prototype. The bake-off is the first code, and it is track B of Phase 78.
 - No review of Mantine's total surface. The inventory in section 5 is what this codebase
   touches; a full comparison is only worth doing if the path is taken.
