@@ -2,7 +2,7 @@
 
 **Status:** Planned, no code yet
 **Created:** 2026-09-10
-**Last updated:** 2026-09-11 (P78-A measurements folded into B and D)
+**Last updated:** 2026-09-11 (P78-A measurements folded into B and D; Decision J gives B a batch zero)
 
 ### Tracks
 
@@ -86,16 +86,18 @@ A codemod for the direct mappings onto the framework's layout primitive props, w
 
 142 non-test files import `@mantine/core` across 75 symbols. Counting the other four restricted packages and the test and mock files, the P78-A allow-list starts at 178 entries, 24 of which are test files and seven of those coupled only through a `vi.mock` call that no import scan sees. The facade means they can move in any order, and the order should be risk-first.
 
-Six of those entries are in `packages/shared-ui`, and they are not an ordering problem. That package is published standalone with `@mantine/core` and `@mantine/form` as declared `peerDependencies`, and its isolated `tsconfig.build.json` overrides `paths` to resolve only `@mullion/shared-utils`, so it cannot import `@/ui` at all. Either the framework ships as a package `shared-ui` can depend on, or `shared-ui` merges back into the app. That choice has to be made before the allow-list can reach zero, and it is the only entry on the list that a batch cannot clear on its own.
+Six of those entries are in `packages/shared-ui`, and they are not an ordering problem. Its isolated `tsconfig.build.json` overrides `paths` to resolve only `@mullion/shared-utils`, so it cannot import `@/ui` at all: those six files cannot be migrated in place by any amount of work. **Phase 78 Decision J settled this on 2026-09-11: the package is dissolved rather than kept.** It resolves to source in `vite.config.ts` and `tsconfig.json`, no workflow ever builds or publishes it, and four of its six components already keep their tests in `src/`, so the boundary had no consumer and no build while costing the blocker.
 
 ### Fix
 
-Batch by surface, not by component. Settings panel, Layout Builder chrome, admin panel, then the gallery and viewer surfaces, then the wp-admin Spaces and Assets apps. Each batch shrinks the ESLint allow-list, which the P78-A test requires to be monotonic. Decide the `shared-ui` question first, since it determines whether the framework needs a package boundary of its own.
+**Batch zero: dissolve `packages/shared-ui`.** Move `LoginForm`, `Lightbox`, `KeyboardHintOverlay`, `SpaceSwitcher`, `AuthBarFloating` and `AuthBarMinimal` into `src/components/` beside the tests that already live there (`Auth/`, `Galleries/Shared/`), move `RootIdContext` and `CanvasTransformContext` into `shared-utils`, and delete the package with its build config and `prepack` chain. This clears no allow-list entries by itself, since the six files still import Mantine at their new paths, but it is the prerequisite that makes them migratable at all. Per Decision J, `LoginForm`, `SpaceSwitcher` and the `AuthBar` variants land in `src/components/` and not in `@/ui`.
+
+Then batch by surface, not by component. Settings panel, Layout Builder chrome, admin panel, then the gallery and viewer surfaces, then the wp-admin Spaces and Assets apps. Each batch shrinks the ESLint allow-list, which the P78-A test requires to be monotonic.
 
 ### Acceptance criteria
 
 - The allow-list shrinks with every batch and never grows.
-- The `packages/shared-ui` question is answered in writing before the first batch, and its six entries have a route to zero.
+- `packages/shared-ui` is gone, its eight modules rehomed, and the allow-list paths updated to match before the first surface batch.
 - Per batch: full suites green, axe gate green, and a keyboard pass on any surface whose interaction changed.
 - The wp-admin apps work with WordPress styles present and without a global reset, which is the P77-E criterion C10.
 
