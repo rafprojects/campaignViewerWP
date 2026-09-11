@@ -254,6 +254,41 @@ The codebase works around this per-consumer rather than structurally, and has al
 
 ---
 
+### Host Decoupling: Run Mullion on Any Web App ("Mullion-next")
+
+**Origin:** User request, 2026-09-10, raised alongside the [UI dependency evaluation](UI_DEPENDENCY_EVALUATION.md). Supersedes the abandoned dual WP/non-WP experiment as the *approach*, not as the goal.
+
+**Context:** The product is a React gallery app that currently assumes WordPress for seven host services: authentication and identity, the REST data layer, the media library, settings persistence, capabilities and roles, i18n string loading, and page embedding. Two of those already have a real seam, and it works: `src/services/auth/AuthProvider.ts` is a host-neutral interface with `WpNonceProvider` and `WpJwtProvider` behind it, and `src/services/http/HttpTransport.ts` documents in its own header that WordPress glue "lives at the wiring site" so the transport stays free of `window.__MULLION_*` reads. The remaining coupling is 44 non-test source files, concentrated in `src/hooks` (13), `src/services/api` (8) and `src/components/Admin` (8).
+
+The backend is the part with no seam at all: 32 PHP classes, about 11,000 lines, 86 registered REST routes. That is not glue around a portable core. For data, media, permissions and export it *is* the server.
+
+**The three meanings of "decoupled", which cost wildly different amounts.** This entry cannot be promoted until the user picks one, per evaluation criterion 5:
+
+| Meaning | What it takes | Where the existing backlog sits |
+|---------|---------------|----------------------------------|
+| (1) **Headless WordPress.** The SPA runs anywhere; WordPress stays the backend, reached cross-origin | JWT auth, CORS policy, build and routing changes, deployment docs. Mostly already scoped below | "JWT In-Memory Token Auth (Standalone SPA)", "CORS Origin Allow-List", "JWT Token Refresh" in **Access Control** are exactly this work, and the section intro already says so |
+| (2) **Pluggable host, WordPress as one implementation.** A `HostAdapter` interface for all seven services; the WP plugin becomes the reference implementation; a second adapter (Supabase, a Node service, a static demo) proves the boundary | The 44-file frontend cleanup plus a written host contract. Backend still required per host, but each host supplies its own | New work. The auth and transport seams are the precedent to copy |
+| (3) **Portable product.** A first-party non-WordPress backend so Mullion runs standalone end to end | Re-implementing the 86 REST routes and the domain logic behind them on a portable server, plus media storage, plus an install and upgrade story | New work, and by far the largest thing in this backlog |
+
+**What to implement (recommended shape, whichever meaning is chosen):** a single codebase with one host boundary, never a fork. Define `HostAdapter` as a set of small interfaces (`AuthProvider` is already one of them) covering auth, data transport, media, settings, capabilities, i18n loading and mount/embed. Wire the concrete implementation once at the entry point, exactly as `HttpTransport` already documents. Push host-neutral code into workspace packages (`@mullion/theme-engine` is already framework-neutral with zero runtime peers, and `@mullion/shared-utils` has no dependencies) so "does this import WordPress?" becomes a lint rule rather than a judgement call.
+
+**Why not a separate "Mullion-next" repository or build:** the user's own concern is drift, and drift is what a fork guarantees. Two builds of the same product diverge at the speed of whichever one is shipping. One codebase with one boundary and two adapters cannot drift, because the shared half has exactly one copy. The earlier dual WP/non-WP attempt is evidence for this reading rather than against it: it failed as scattered per-call-site conditionals, which is drift inside a single file rather than across two repositories. The lesson is "one seam, wired once", not "abstraction does not work here", and the auth provider shipped later on exactly that pattern and has held.
+
+**Dependencies / risk:**
+- Meaning (1) is a prerequisite for (2) and (3) in practice: the app has to survive not being same-origin before it can survive not being WordPress.
+- Ordering against the in-house UI work is genuinely open. The two touch disjoint layers (component layer versus service layer), so they do not block each other, and the host boundary is what makes `@mullion/ui` cleanly publishable if that is ever wanted. Sequencing is a product call, not a technical one.
+- The premium/licensing model (Freemius, `MULLION_PREMIUM` build flag) assumes a WordPress distribution channel. A non-WP host needs its own licensing answer, which is a **Monetization & Distribution** question, not an engineering one.
+- The WP media library is the deepest assumption. Attachment IDs appear in campaign data, export formats and the REST contract; a media abstraction has a data-migration tail, not only an interface.
+
+**Open questions:**
+- Q1: Which of the three meanings above is the actual goal?
+- Q2: If (2) or (3), what is the second host, concretely? A boundary with one implementation is a guess, exactly as P77 Key Decision A argued about the facade.
+- Q3: Does the WordPress plugin remain the flagship, or become one distribution among several? This decides whether the WP adapter may keep privileged shortcuts.
+
+**Effort:** (1) Medium-Large | (2) Large | (3) Very Large, multi-phase | **Impact:** High. It is a market-expansion item rather than a quality item, and the largest single scope increase currently in this backlog.
+
+---
+
 ## Internationalization
 
 ### ~~Full Admin-Panel i18n Migration~~ — ✅ RESOLVED (Phase 60-I + Phase 61)
@@ -766,3 +801,5 @@ When promoting future tasks to an active phase:
 *Updated: September 9, 2026 (P77-F implementation): No new entries. The promoted "Two-Tone (Halo) Focus Ring" entry above is delivered in [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-F: a derived neutral halo token, the ring rule through the P77-A canonical channel, and the WCAG 1.4.11 audit re-modelled as a pair guarantee. The designer's in-situ review remains open and is tracked on the phase report, not here.*
 
 *Updated: September 10, 2026 (P77-E and P77-H delivered): No new entries. The UI dependency evaluation is [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md) (recommends an in-house component layer on headless primitives behind the Phase 78 facade, primitive settled by a spike, Mantine headless as the fallback) and the in-house framework study is [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md). Two candidates were routed to [PHASE77_REPORT.md](PHASE77_REPORT.md) Follow-On Candidates rather than filed here because they depend on the user re-planning Phase 78: the primitive spike, and lazy-loading admin chrome so the visitor path stops shipping `vendor-mantine-core` statically (P77-E section 4.3 measured that the visitor bundle is a code-splitting question more than a library question).*
+
+*Updated: September 10, 2026 (host decoupling): **Added:** "Host Decoupling: Run Mullion on Any Web App (Mullion-next)" to Code Quality & Refactoring, at the user's request. Recorded as an umbrella entry over the existing standalone-SPA items in **Access Control** (JWT auth, CORS allow-list, JWT refresh), which turn out to be one of its three possible meanings rather than separate work. The entry deliberately does not pick between the three meanings (headless WordPress, pluggable host, portable product); that is its first open question and it should not be promoted before the user answers it.*
