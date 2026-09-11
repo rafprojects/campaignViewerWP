@@ -76,3 +76,48 @@ describe('focus ring pair (P77-F)', () => {
     }
   });
 });
+
+// P78-C: the audit reads the component-token tier rather than inferring an
+// affordance's colour from the Mantine variable the adapter happens to write.
+// The point of the move is that a changed derivation now *fails* instead of
+// silently changing a pixel, so that is what these check.
+describe('the audit reads component tokens (P78-C)', () => {
+  const def = bundledThemeDefinitions.find((t) => t.id === 'default-dark')!;
+  const colors = def.colors as ThemeColors;
+
+  it('names affordances by their component token', () => {
+    const labels = intendedUiContrastChecks(colors, def.colorScheme).map((c) => c.label);
+    for (const token of [
+      'tab-indicator-color',
+      'input-bd-focus',
+      'input-bd',
+      'checkbox-bd',
+      'switch-track-bd',
+      'menu-bg',
+    ]) {
+      expect(labels.some((l) => l.includes(token)), `no check names ${token}`).toBe(true);
+    }
+  });
+
+  it('fails when a derivation is changed to something invisible', () => {
+    // Collapsing the checkbox border onto the surface it sits on is exactly
+    // the regression the tier exists to catch. With the audit wired to the
+    // role token this override would have been invisible to it.
+    const rc = resolveColors(colors, def.colorScheme);
+    const failures = auditUiContrast(colors, def.colorScheme, UI_CONTRAST_MIN, {
+      'checkbox-bd': rc.surface,
+    });
+    expect(failures.map((f) => f.label)).toContain(
+      'checkbox-bd on surface (unchecked checkbox border)',
+    );
+  });
+
+  it('stays green on every bundled theme with the derivations intact', () => {
+    for (const t of bundledThemeDefinitions) {
+      expect(
+        auditUiContrast(t.colors as ThemeColors, t.colorScheme),
+        `${t.id} regressed`,
+      ).toEqual([]);
+    }
+  });
+});

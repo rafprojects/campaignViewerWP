@@ -8,6 +8,8 @@
  * revisited in a future iteration if needed.
  */
 
+import type { ComponentTokenKey } from './componentTokens';
+
 // ---------------------------------------------------------------------------
 // Color shorthand — compact notation for theme JSON files
 // ---------------------------------------------------------------------------
@@ -166,8 +168,19 @@ export interface ThemeDefinition {
   /**
    * Optional component-specific Mantine overrides. When provided these
    * take precedence over the auto-generated overrides from the adapter.
+   *
+   * [P78-C] This is the *adapter's* field and keeps Mantine's shape. The
+   * component-token tier below is separate on purpose: the adapter still
+   * reads this one and is load-bearing until Phase 81 deletes it.
    */
   components?: Record<string, ComponentOverride>;
+
+  /**
+   * [P78-C] Optional overrides for the component-token tier. A theme that
+   * wants a different input border or a denser control scale names the token
+   * here and the engine emits that value instead of the derivation.
+   */
+  componentTokens?: Partial<Record<ComponentTokenKey, string>>;
 }
 
 // ---------------------------------------------------------------------------

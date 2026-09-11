@@ -32,7 +32,7 @@
  *       }
  *     That is `primaryFill`, and measured across the bundled themes it fell
  *     below 3:1 on 13 of 23. **P76-I-2 re-pointed that ring at
- *     `primaryStroke`** (see the focus-ring block in `src/styles/global.scss`),
+ *     `primaryStroke`** (the focus-ring block, which P77-A moved to `src/styles/chrome-portable.scss`),
  *     so both families of affordance now resolve to the same audited token and
  *     the checks below cover the ring as painted. Because of the ring's 2px
  *     offset it sits on the *container* surface, which is why `surface` and
@@ -41,6 +41,7 @@
  */
 import { resolveColors, UI_CONTRAST_MIN } from './colorGen';
 import { contrastRatio } from './validation';
+import { deriveComponentTokens, type ComponentTokenKey } from './componentTokens';
 import type { ThemeColors } from './types';
 
 export { UI_CONTRAST_MIN };
@@ -60,8 +61,17 @@ export function intendedUiContrastChecks(
   colors: ThemeColors,
   colorScheme: 'light' | 'dark',
   minRatio: number = UI_CONTRAST_MIN,
+  componentTokenOverrides: Partial<Record<ComponentTokenKey, string>> = {},
 ): UiContrastCheck[] {
   const rc = resolveColors(colors, colorScheme);
+  // P78-C: the affordance strokes and the grounds they sit on are component
+  // tokens now, so the audit names what the framework will actually paint
+  // instead of inferring it from the Mantine variable the adapter happened to
+  // write. Every value below resolves to the same colour the role-token form
+  // checked before, which is why the gate stayed at zero exceptions through
+  // the change; what moved is that a changed derivation now fails the audit
+  // rather than silently changing a pixel.
+  const ct = deriveComponentTokens(rc, componentTokenOverrides);
   // P77-F: the focus ring is a pair, core (`primaryStroke`) plus a neutral
   // halo. The guarantee is that the pair contrasts with itself and that one
   // of the two tones contrasts with each ground the ring sits on. The single
@@ -85,39 +95,45 @@ export function intendedUiContrastChecks(
     pairOn('surface', rc.surface),
     pairOn('surfaceRaised', rc.surfaceRaised),
     {
-      label: `primaryStroke on surface (builder outline, tab, gallery focus)`,
-      fg: rc.primaryStroke,
+      label: 'tab-indicator-color on surface (active tab, builder outline)',
+      fg: ct['tab-indicator-color'],
       bg: rc.surface,
       minRatio,
     },
     {
-      label: `primaryStroke on surface2 (input focus)`,
-      fg: rc.primaryStroke,
-      bg: rc.surface2,
+      label: 'input-bd-focus on input-bg (input focus border)',
+      fg: ct['input-bd-focus'],
+      bg: ct['input-bg'],
       minRatio,
     },
     {
-      label: `primaryStroke on surfaceRaised (menus / drop targets)`,
-      fg: rc.primaryStroke,
-      bg: rc.surfaceRaised,
+      label: 'input-bd on input-bg (input resting outline)',
+      fg: ct['input-bd'],
+      bg: ct['input-bg'],
       minRatio,
     },
     {
-      label: 'borderStrong on surface (input outline, checkbox, switch)',
-      fg: rc.borderStrong,
+      label: 'checkbox-bd on surface (unchecked checkbox border)',
+      fg: ct['checkbox-bd'],
       bg: rc.surface,
       minRatio,
     },
     {
-      label: 'borderStrong on surface2 (controls on elevated form chrome)',
-      fg: rc.borderStrong,
-      bg: rc.surface2,
+      label: 'switch-track-bd on switch-track-bg (switch track outline)',
+      fg: ct['switch-track-bd'],
+      bg: ct['switch-track-bg'],
       minRatio,
     },
     {
-      label: 'borderStrong on surfaceRaised (inputs inside menus / popovers)',
-      fg: rc.borderStrong,
-      bg: rc.surfaceRaised,
+      label: 'primaryStroke on menu-bg (drop targets inside dropdowns)',
+      fg: rc.primaryStroke,
+      bg: ct['menu-bg'],
+      minRatio,
+    },
+    {
+      label: 'input-bd on menu-bg (inputs inside menus / popovers)',
+      fg: ct['input-bd'],
+      bg: ct['menu-bg'],
       minRatio,
     },
   ];
@@ -127,9 +143,15 @@ export function auditUiContrast(
   colors: ThemeColors,
   colorScheme: 'light' | 'dark',
   minRatio: number = UI_CONTRAST_MIN,
+  componentTokenOverrides: Partial<Record<ComponentTokenKey, string>> = {},
 ): UiContrastFailure[] {
   const failures: UiContrastFailure[] = [];
-  for (const check of intendedUiContrastChecks(colors, colorScheme, minRatio)) {
+  for (const check of intendedUiContrastChecks(
+    colors,
+    colorScheme,
+    minRatio,
+    componentTokenOverrides,
+  )) {
     const ratio = contrastRatio(check.fg, check.bg);
     if (ratio === null) {
       failures.push({ ...check, ratio: 0 });

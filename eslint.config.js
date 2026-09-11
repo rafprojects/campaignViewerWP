@@ -16,6 +16,16 @@ import i18next from 'eslint-plugin-i18next'
 // closes that gap precisely — see eslint-rules/no-untranslated-notification.js.
 import noUntranslatedNotification from './eslint-rules/no-untranslated-notification.js'
 
+// [P78-A] The `src/ui/` import boundary. The allow-list is generated data, not
+// prose (scripts/mantine-boundary.mjs), read here so the rule and the list can
+// never drift. Read with fs rather than an import attribute so the config stays
+// loadable under every tool that evaluates it.
+import { readFileSync } from 'node:fs'
+
+const mantineBoundary = JSON.parse(
+  readFileSync(new URL('./eslint-rules/mantine-boundary-allowlist.json', import.meta.url), 'utf8'),
+)
+
 export default tseslint.config({
   ignores: [
     'dist',
@@ -149,5 +159,28 @@ export default tseslint.config({
   plugins: { mullion: { rules: { 'no-untranslated-notification': noUntranslatedNotification } } },
   rules: {
     'mullion/no-untranslated-notification': 'error',
+  },
+}, {
+  // [P78-A] The Mantine import boundary. Everything the app renders comes from
+  // `@/ui`; a direct Mantine import outside it is an error. The files that
+  // already do so are exempted by the generated allow-list, which only shrinks.
+  // See src/ui/README.md and docs/PHASE78_REPORT.md track P78-A.
+  files: ['src/**/*.{ts,tsx}', 'packages/*/src/**/*.{ts,tsx}'],
+  ignores: ['src/ui/**', ...mantineBoundary.files],
+  rules: {
+    'no-restricted-imports': ['error', {
+      patterns: [{
+        group: mantineBoundary.restrictedPackages.flatMap((pkg) => [pkg, `${pkg}/*`]),
+        message:
+          'Import UI primitives from `@/ui`, not from Mantine directly. See src/ui/README.md.',
+      }],
+    }],
+  },
+}, {
+  // The boundary barrel re-exports components alongside hooks and imperative
+  // helpers, which is precisely what this rule exists to discourage elsewhere.
+  files: ['src/ui/**/*.{ts,tsx}'],
+  rules: {
+    'react-refresh/only-export-components': 'off',
   },
 });

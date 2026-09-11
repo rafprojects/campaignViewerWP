@@ -2,7 +2,7 @@
 
 **Status:** Planned, no code yet
 **Created:** 2026-09-10
-**Last updated:** 2026-09-10
+**Last updated:** 2026-09-11 (P78-A measurements folded into B and D; Decision J gives B a batch zero; the Typography panel redesign is claimed by B's Settings batch)
 
 ### Tracks
 
@@ -84,15 +84,22 @@ A codemod for the direct mappings onto the framework's layout primitive props, w
 
 ### Problem
 
-142 non-test files import `@mantine/core` across 73 symbols. The facade means they can move in any order, and the order should be risk-first.
+142 non-test files import `@mantine/core` across 75 symbols. Counting the other four restricted packages and the test and mock files, the P78-A allow-list starts at 178 entries, 24 of which are test files and seven of those coupled only through a `vi.mock` call that no import scan sees. The facade means they can move in any order, and the order should be risk-first.
+
+Six of those entries are in `packages/shared-ui`, and they are not an ordering problem. Its isolated `tsconfig.build.json` overrides `paths` to resolve only `@mullion/shared-utils`, so it cannot import `@/ui` at all: those six files cannot be migrated in place by any amount of work. **Phase 78 Decision J settled this on 2026-09-11: the package is dissolved rather than kept.** It resolves to source in `vite.config.ts` and `tsconfig.json`, no workflow ever builds or publishes it, and four of its six components already keep their tests in `src/`, so the boundary had no consumer and no build while costing the blocker.
 
 ### Fix
 
-Batch by surface, not by component. Settings panel, Layout Builder chrome, admin panel, then the gallery and viewer surfaces, then the wp-admin Spaces and Assets apps. Each batch shrinks the ESLint allow-list, which the P78-A test requires to be monotonic.
+**Batch zero: dissolve `packages/shared-ui`.** Move `LoginForm`, `Lightbox`, `KeyboardHintOverlay`, `SpaceSwitcher`, `AuthBarFloating` and `AuthBarMinimal` into `src/components/` beside the tests that already live there (`Auth/`, `Galleries/Shared/`), move `RootIdContext` and `CanvasTransformContext` into `shared-utils`, and delete the package with its build config and `prepack` chain. This clears no allow-list entries by itself, since the six files still import Mantine at their new paths, but it is the prerequisite that makes them migratable at all. Per Decision J, `LoginForm`, `SpaceSwitcher` and the `AuthBar` variants land in `src/components/` and not in `@/ui`.
+
+Then batch by surface, not by component. Settings panel, Layout Builder chrome, admin panel, then the gallery and viewer surfaces, then the wp-admin Spaces and Assets apps. Each batch shrinks the ESLint allow-list, which the P78-A test requires to be monotonic.
+
+The Settings batch carries one piece of design work with it: the **Typography panel redesign**, filed in [FUTURE_TASKS.md](FUTURE_TASKS.md) under Design & Brand from a user report on 2026-09-11. Its four problems all live in files this batch rewrites anyway (`TypographyEditor.tsx`, `CssValueInput.tsx`, `UnitScrubField.tsx`), and Decision B already permits the pixels to move here, so porting them forward and fixing them afterwards would be doing the same file twice. It depends on P80-A shipping a number field with a unit slot.
 
 ### Acceptance criteria
 
 - The allow-list shrinks with every batch and never grows.
+- `packages/shared-ui` is gone, its eight modules rehomed, and the allow-list paths updated to match before the first surface batch.
 - Per batch: full suites green, axe gate green, and a keyboard pass on any surface whose interaction changed.
 - The wp-admin apps work with WordPress styles present and without a global reset, which is the P77-E criterion C10.
 
@@ -133,6 +140,8 @@ Six pieces of this codebase exist only to make Mantine fit: `adapter.ts` (601 li
 ### Fix
 
 Delete them, drop `@mantine/core`, `@mantine/hooks`, `@mantine/modals`, `@mantine/notifications` and `@mantine/form` from `package.json`, and remove Mantine's stylesheet imports from `main.tsx` and `shadowStyles.ts`.
+
+`@mantine/dates` goes too, and it can go at any time: P78-A found it has zero importers anywhere in `src/`, `packages/`, `e2e/` or the stories, so it is a dependency the tree already does not use. It is excluded from the P78-A lint rule for the same reason, a rule with no subject being noise.
 
 Retarget rather than delete the guards that still describe something true: the style-delivery tests, the P77-F ring walk and the 1.4.11 audit all continue to hold, against framework tokens instead of Mantine variables. Delete only the guards whose subject is gone, such as the `styles`-prop flatness tests, and say so in this document so their absence is not later read as a gap.
 

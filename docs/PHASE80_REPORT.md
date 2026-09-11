@@ -2,7 +2,7 @@
 
 **Status:** Planned, no code yet
 **Created:** 2026-09-10
-**Last updated:** 2026-09-10
+**Last updated:** 2026-09-11 (P78-B picked Base UI 1.8.0; Decision D's gap list is now concrete)
 
 ### Tracks
 
@@ -31,7 +31,7 @@
 | A | Compound parts or flat props? | **Both.** Compound parts where the primitive has them, plus a flat convenience component for the common case, because 26 files use the flat Mantine `Select` form and rewriting them into parts is migration cost with no benefit. The flat form is a wrapper over the parts, never a fork of them. |
 | B | Does this phase migrate any consumers? | **No.** Components are built and proved in Storybook and tests. Consumers move in Phase 81. Mixing the two would make every component's completion contingent on a file migration, and would put pixel movement and behaviour change in the same diff. |
 | C | How is a component proved done? | **Four gates:** the axe structural gate, the P77-F ring walk, the P79-B static sheet tests, and a manual keyboard pass recorded in `ACCESSIBILITY_MANUAL_AUDIT.md`. A component with green unit tests and no keyboard pass is not done. |
-| D | What about components the primitive lacks? | **Named, owned and reviewed as behaviour.** The gap list depends on P78-B's pick: Ark UI has a counterpart for everything in use; Base UI lacks pagination, tags input and colour picker; React Aria lacks pagination and scroll area. Each gap is a small component we write, and each carries the same four gates. |
+| D | What about components the primitive lacks? | **Named, owned and reviewed as behaviour.** Resolved 2026-09-11 by P78-B's pick of Base UI 1.8.0, so the gap list is no longer conditional: **pagination** (10 files), **tags input** (5 files) and **colour picker** (20 files). Pagination is a button list with roving focus and is cheap. Tags input is Base UI's `Combobox` plus chips. The colour picker is a saturation and hue surface and is a component in its own right, so P80-B should budget for writing or vendoring it rather than wrapping it. Each gap carries the same four gates. |
 | E | Do the notification and confirmation managers keep their call shape? | **Yes.** `notify.show()` and `confirm()` mirror the 48 and 11 existing call sites, so Phase 81's migration of those sites is mechanical rather than a rewrite. |
 
 ## Execution Priority
@@ -51,6 +51,8 @@
 ### Fix
 
 Wrap the primitive's dialog, popover, tooltip and menu, taking the portal container from the provider rather than each call site. Wrap its field and input primitives, with our own label, description and error composition. `Textarea` autosize is ours; it is named in the study's section 4 as behavioural code we write.
+
+The number field takes a **unit slot as a first-class part**. Today `UnitScrubField` posts a `variant="unstyled"` `Select` into a Mantine `NumberInput`'s `rightSection`, sized by a hand-computed width and held together by four `styles` overrides forcing `height: 100%`; the seam between the two controls is visible and the field is taller than its neighbours. That is the blocker for the Typography panel redesign claimed by P81-B, so the slot has to exist here rather than be improvised there.
 
 Every state that used to need an inline colour is a token read by a data-attribute selector, per study principle 2.
 

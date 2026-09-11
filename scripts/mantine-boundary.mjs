@@ -1,0 +1,184 @@
+#!/usr/bin/env node
+/**
+ * mantine-boundary.mjs (P78-A)
+ *
+ * The data half of the `src/ui/` import boundary. ESLint forbids importing a
+ * Mantine package anywhere under src/ or packages/*\/src/ except inside
+ * `src/ui/`; the files that already do so are allow-listed, and this module
+ * both generates that allow-list and provides the detector the boundary test
+ * uses, so the two can never drift apart.
+ *
+ * The allow-list only ever shrinks. `maxFiles` is a ratchet: this generator
+ * lowers it to match reality but never raises it, so adding a direct Mantine
+ * import to a new file fails the boundary test until a human edits the number
+ * by hand, which is an explicit act with a diff.
+ *
+ * Usage:
+ *   node scripts/mantine-boundary.mjs            # (re)write the allow-list
+ *   node scripts/mantine-boundary.mjs --check    # CI: fail if stale
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const projectRoot = path.resolve(__dirname, '..');
+
+export const ALLOWLIST_PATH = path.join(
+  projectRoot,
+  'eslint-rules',
+  'mantine-boundary-allowlist.json',
+);
+
+/**
+ * The Mantine packages the boundary restricts. `@mantine/dates` is a declared
+ * dependency with zero importers and is deliberately left out. See the P78-A
+ * rationale in docs/PHASE78_REPORT.md.
+ */
+export const RESTRICTED_PACKAGES = [
+  '@mantine/core',
+  '@mantine/form',
+  '@mantine/hooks',
+  '@mantine/modals',
+  '@mantine/notifications',
+];
+
+/** The one directory allowed to import Mantine directly. */
+export const BOUNDARY_DIR = 'src/ui';
+
+/** Roots scanned for direct Mantine imports, repo-relative. */
+export const SCAN_ROOTS = ['src', 'packages'];
+
+const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx']);
+const SKIP_DIRECTORIES = new Set(['node_modules', 'dist', 'coverage', '__snapshots__']);
+
+/**
+ * Matches every position from which a module specifier can reach a Mantine
+ * package: static import/export, dynamic import(), and the `typeof import()`
+ * type query.
+ */
+const SPECIFIER_PATTERN = /(?:from|import|require)\s*\(?\s*['"]([^'"]+)['"]/g;
+
+/**
+ * Module mocks name a package without importing it, so neither the pattern
+ * above nor ESLint sees them, yet a mock of a package that no longer exists
+ * fails at run time. They are real coupling and the list counts them, which is
+ * why detection is deliberately a superset of what no-restricted-imports
+ * flags: an entry lint would not have demanded is harmless, a missing one is
+ * not.
+ */
+const MOCK_PATTERN =
+  /\b(?:vi|jest)\s*\.\s*(?:mock|doMock|unmock|importActual|importMock)\s*\(\s*['"]([^'"]+)['"]/g;
+
+/** True when a module specifier resolves to one of the restricted packages. */
+export function isRestrictedSpecifier(specifier) {
+  return RESTRICTED_PACKAGES.some(
+    (pkg) => specifier === pkg || specifier.startsWith(`${pkg}/`),
+  );
+}
+
+/** True when `source` names a restricted Mantine package in an import or a mock. */
+export function hasRestrictedImport(source) {
+  for (const pattern of [SPECIFIER_PATTERN, MOCK_PATTERN]) {
+    pattern.lastIndex = 0;
+    let match;
+    while ((match = pattern.exec(source)) !== null) {
+      if (isRestrictedSpecifier(match[1])) return true;
+    }
+  }
+  return false;
+}
+
+function* walk(dir) {
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return;
+  }
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (SKIP_DIRECTORIES.has(entry.name)) continue;
+      yield* walk(full);
+    } else if (SOURCE_EXTENSIONS.has(path.extname(entry.name))) {
+      yield full;
+    }
+  }
+}
+
+/** Every repo-relative `.ts`/`.tsx` file under `dir`, sorted, forward-slashed. */
+export function listSourceFiles(dir) {
+  return [...walk(path.join(projectRoot, dir))]
+    .map((absolute) => path.relative(projectRoot, absolute).split(path.sep).join('/'))
+    .sort();
+}
+
+/**
+ * Every repo-relative source file outside `src/ui/` that imports a restricted
+ * Mantine package directly, sorted, with forward slashes on every platform.
+ */
+export function findDirectImporters() {
+  const found = [];
+  for (const root of SCAN_ROOTS) {
+    for (const absolute of walk(path.join(projectRoot, root))) {
+      const relative = path.relative(projectRoot, absolute).split(path.sep).join('/');
+      if (relative === `${BOUNDARY_DIR}` || relative.startsWith(`${BOUNDARY_DIR}/`)) continue;
+      if (hasRestrictedImport(fs.readFileSync(absolute, 'utf8'))) found.push(relative);
+    }
+  }
+  return found.sort();
+}
+
+/** The committed allow-list, or null when it has not been generated yet. */
+export function readAllowlist() {
+  if (!fs.existsSync(ALLOWLIST_PATH)) return null;
+  return JSON.parse(fs.readFileSync(ALLOWLIST_PATH, 'utf8'));
+}
+
+function buildAllowlist(files, previousMaxFiles) {
+  return {
+    $generated:
+      'GENERATED by scripts/mantine-boundary.mjs. Do not edit `files` by hand; run `npm run ui:allowlist`.',
+    $contract:
+      'Files that reach Mantine directly, by import or by module mock. This list only shrinks: delete an entry when its file stops naming Mantine. `maxFiles` is a ratchet the generator lowers but never raises.',
+    restrictedPackages: RESTRICTED_PACKAGES,
+    maxFiles: Math.min(previousMaxFiles ?? files.length, files.length),
+    files,
+  };
+}
+
+function serialize(allowlist) {
+  return `${JSON.stringify(allowlist, null, 2)}\n`;
+}
+
+function main() {
+  const check = process.argv.includes('--check');
+  const files = findDirectImporters();
+  const previous = readAllowlist();
+  const output = serialize(buildAllowlist(files, previous?.maxFiles));
+
+  if (check) {
+    const existing = previous === null ? '' : fs.readFileSync(ALLOWLIST_PATH, 'utf8');
+    if (existing !== output) {
+      console.error(
+        '✗ The Mantine boundary allow-list is stale. Run `npm run ui:allowlist` and commit the result.',
+      );
+      process.exit(1);
+    }
+    console.log(`✓ Mantine boundary allow-list is up to date (${files.length} files).`);
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(ALLOWLIST_PATH), { recursive: true });
+  fs.writeFileSync(ALLOWLIST_PATH, output, 'utf8');
+  console.log(
+    `Generated ${path.relative(projectRoot, ALLOWLIST_PATH)} (${files.length} files, ratchet ${
+      buildAllowlist(files, previous?.maxFiles).maxFiles
+    }).`,
+  );
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
+}

@@ -13,6 +13,7 @@
 import type { ResolvedColors } from './types';
 import type { ThemeDefinition } from './types';
 import { sanitizeCssValue } from '@mullion/shared-utils';
+import { deriveComponentTokens, frameworkConstants } from './componentTokens';
 
 // ---------------------------------------------------------------------------
 // CSS variable namespace prefix
@@ -103,6 +104,21 @@ export function generateCssVariables(
 
   // --- Meta ---
   vars.push(`${PREFIX}-color-scheme: ${def.colorScheme};`);
+
+  // --- Component tokens (P78-C) ---
+  // Derived from the role tokens above, overridable per theme. The adapter
+  // still makes these decisions for Mantine; this tier is what the in-house
+  // framework reads instead, and what the 1.4.11 audit can name.
+  const componentTokens = deriveComponentTokens(rc, def.componentTokens ?? {});
+  for (const [name, value] of Object.entries(componentTokens)) {
+    vars.push(`${PREFIX}-${name}: ${sanitizeCssValue(value) ?? 'inherit'};`);
+  }
+
+  // --- Framework constants (P78-C) ---
+  // Fixed across every theme: geometry and timing are not palette decisions.
+  for (const [name, value] of Object.entries(frameworkConstants(PREFIX))) {
+    vars.push(`${PREFIX}-${name}: ${value};`);
+  }
 
   const indent = '  ';
   const body = vars.map((v) => `${indent}${v}`).join('\n');

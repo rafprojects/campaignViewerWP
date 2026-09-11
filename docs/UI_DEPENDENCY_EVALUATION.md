@@ -5,6 +5,11 @@
 **Companion:** [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md) (P77-H) describes what the
 recommended path would take to build.
 **Phase:** [PHASE77_REPORT.md](PHASE77_REPORT.md), track E.
+**Outcome:** the bake-off this document called for ran as P78-B on 2026-09-11 and picked
+**Base UI 1.8.0**, 13 of 13 measurements against Ark UI's 12 and a Mantine control's 11. The
+deciding measurement was outside-click dismissal, which Ark performs on the first open of a
+page and never again. Full numbers, including the loser's and the fallback's, in
+[PHASE78_REPORT.md](PHASE78_REPORT.md) under track P78-B.
 
 ## 1. Summary
 
