@@ -402,8 +402,8 @@ product (each item re-verified against the code for v2):
 - Iconography is **Tabler Icons** throughout: thin 2px rounded strokes. That is the house
   line weight, and a mark drawn in that spirit will sit naturally alongside the UI.
 - Focus rings are two-tone (P77-F): a 2px core in the theme's contrast-audited accent rung
-  (`primaryStroke`) inside a neutral halo drawn from the theme's own grounds, light on dark
-  themes and dark on light. One of the two tones contrasts with any surface, so the ring is
+  (`primaryStroke`) inside a neutral halo drawn from the theme's own grounds, stepped toward
+  whichever pole separates it from the core. One of the two tones contrasts with any surface, so the ring is
   visible on user-authored themes no audit can see, not only on the shipped ones.
 
 ### Voice

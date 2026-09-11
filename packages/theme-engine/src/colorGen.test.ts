@@ -429,6 +429,32 @@ describe('selectUiContrastIndex (P75-E)', () => {
 });
 
 describe('deriveFocusHalo (P77-F)', () => {
+  // P77-F designer sign-off, 2026-09-11: raising the pair target looks like free
+  // headroom and is not. The halo can never beat pure white or pure black against
+  // the core, and the lowest such ceiling across the bundled set is what caps the
+  // whole system. This test fails if a future change raises UI_CONTRAST_MIN past
+  // that ceiling, or if a new bundled theme lowers it.
+  it('the 3:1 pair target is at the system ceiling, so it must not be raised', () => {
+    let binding = { id: '', ceiling: Infinity };
+    for (const def of bundledThemeDefinitions) {
+      const rc = resolveColors(def.colors as ThemeColors, def.colorScheme);
+      // The halo keeps the ground hue at near-zero chroma, so its extremes are
+      // white and black; the reachable ceiling is the better of the two poles.
+      const ceiling = Math.max(
+        chroma.contrast('#ffffff', rc.primaryStroke),
+        chroma.contrast('#000000', rc.primaryStroke),
+      );
+      const poleInUse = chroma(rc.focusHalo).lch()[0]! >= 50 ? '#ffffff' : '#000000';
+      const ceilingOnPoleInUse = chroma.contrast(poleInUse, rc.primaryStroke);
+      expect(ceiling, `${def.id}: no halo can reach the 3:1 floor at all`).toBeGreaterThanOrEqual(3);
+      if (ceilingOnPoleInUse < binding.ceiling) binding = { id: def.id, ceiling: ceilingOnPoleInUse };
+    }
+    // Measured 2026-09-11: catppuccin-latte at 3.07. Every theme can hold 3:1 on
+    // the pole it already uses; none has room for 3.1.
+    expect(binding.ceiling, `binding theme is ${binding.id}`).toBeGreaterThanOrEqual(UI_CONTRAST_MIN);
+    expect(binding.ceiling, `${binding.id} caps the system; a target above this forces pole flips`).toBeLessThan(3.1);
+  });
+
   it('clears 3:1 against the ring core and stays neutral on every bundled theme', () => {
     for (const def of bundledThemeDefinitions) {
       const rc = resolveColors(def.colors as ThemeColors, def.colorScheme);

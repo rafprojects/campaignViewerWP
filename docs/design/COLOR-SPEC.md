@@ -124,7 +124,7 @@ One accent seed produces **three resolved roles** (P75-E — this replaced a har
 | `primaryFill`   | `#007870` (index 5) | the authored `primaryShade` rung — filled buttons, selected backgrounds |
 | `primaryStroke` | `#008e85` (index 4) | nearest rung clearing 3:1 against `surface` / `surface2` / `surfaceRaised` — focus rings, active-tab and builder outlines, input focus borders. Equals `primaryFill` when the fill already passes (10 of 23 themes) |
 | `primaryOnFill` | `#ffffff` | white or black, whichever contrasts better on `primaryFill` |
-| `focusHalo` | `#edf5fb` | P77-F: a neutral from the background's hue, light on dark themes and dark on light, stepped toward the pole until it clears 3:1 against `primaryStroke`. The focus ring's second tone; never a second accent |
+| `focusHalo` | `#edf5fb` | P77-F: a neutral from the background's hue, stepped toward whichever pole clears 3:1 against `primaryStroke`. The scheme picks which pole is tried first, not the answer: five bundled dark themes have accents light enough that the halo correctly resolves dark. The focus ring's second tone; never a second accent. The 3:1 target is at the system ceiling and must not be raised (designer sign-off, 2026-09-11) |
 
 The split exists because the two jobs pull the criterion in opposite directions: the fill
 answers 4.5:1 *under white text*, and that same rung often fails 3:1 *as a thin line on a

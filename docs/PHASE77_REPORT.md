@@ -2,7 +2,7 @@
 
 **Status:** Complete (2026-09-10)
 **Created:** 2026-08-28
-**Last updated:** 2026-09-10 (phase closed: all nine tracks done)
+**Last updated:** 2026-09-11 (designer signed off the halo ring; P77-F's last open item closed)
 
 ### Tracks
 
@@ -13,7 +13,7 @@
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | **Done** (2026-09-09), see notes | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | **Done** (2026-09-10): [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md); recommends an in-house layer on headless primitives behind the Phase 78 facade, primitive settled by a spike; see Decision below and the notes | Medium |
-| P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | **Done** (2026-09-09), see notes; designer review in situ still open | Small-Medium |
+| P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | **Done** (2026-09-09); designer signed off in situ 2026-09-11 with no changes, see notes | Small-Medium |
 | P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
 | P77-H | In-house UI framework study: what a token-driven framework of our own on headless primitives would take, the Theme Manager merge, and the list of Mantine parts to address. Document only | **Done** (2026-09-10): [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md); see the notes | Medium |
 | P77-I | Flip the portal default to the overlay root and retarget the one assertion that depends on the old placement | **Done** (2026-09-10), see notes | Small |
@@ -636,7 +636,32 @@ Against the committed baselines the same files differ by 1.1% to 3.1%: header bu
 
 **Results.** `npx playwright test` twice in a row (46 tests, the ring walk now counting four): 46 passed, 46 passed. `npx vitest run`: 260 files, 3931 tests, all passed, the 1.4.11 gate included with its three new checks per theme.
 
-**Not done here.** Designer review in situ, per their offer, after it is running. An authored `focusHalo` override in theme JSON was considered and not added: the designer's constraint is that the halo is derived from the grounds, and an override would reintroduce the failure mode the halo exists to close.
+**Not done here.** An authored `focusHalo` override in theme JSON was considered and not added: the designer's constraint is that the halo is derived from the grounds, and an override would reintroduce the failure mode the halo exists to close.
+
+#### Designer sign-off (2026-09-11), and a correction to the spec
+
+The designer reviewed the ring in situ and signed off all three questions with **no changes to the ring** ([design/correspondences/designer-response-focus-ring-2026-09-11.md](design/correspondences/designer-response-focus-ring-2026-09-11.md), proof sheet alongside it). Two of the three answers changed something other than the code, which is why they are recorded here rather than just filed.
+
+**The pole rule was stated wrongly, in their brief and in ours.** The original constraint read "light pole on dark themes, dark on light", and P77-F's implementation notes above describe the five dark themes that resolve dark as "the fallback behaviour working exactly as designed". The designer's correction: that is not a fallback, it is the rule. The pole is a function of the core's lightness, not of the colour scheme, and had the scheme-based rule been implemented literally those five themes would have shipped with a halo that fails the pair guarantee outright. The code was already correct, because it tries the scheme's pole and then the other; only the descriptions undersold it. Corrected in the `deriveFocusHalo` docstring, [design/COLOR-SPEC.md](design/COLOR-SPEC.md) and [design/DESIGN_BRIEF.md](design/DESIGN_BRIEF.md).
+
+**The 4:1 change this report suggested would have made the ring worse.** The notes to the designer offered to raise the pair target from 3:1 to about 4:1, on the reasoning that eight themes sitting at 3.00 to 3.13 were "the ramp stopping at the first step that passes rather than continuing to a comfortable margin". The mechanism was right and the conclusion was wrong: those themes are near the end of the ramp, not early in it. A halo can never beat pure white or pure black against the core, and that ceiling binds hard.
+
+Every figure in the designer's argument was re-derived from the engine before accepting it, and all of it reproduces exactly:
+
+| Claim | Measured |
+|-------|----------|
+| Ceiling on the current pole for each of the eight floor themes | All eight match to two decimals (`catppuccin-latte` 3.07, `solarized-dark` 3.20, `solarized-light` 3.28, `ocean-breeze` 3.28, `default-light` 3.42, `synthwave` 3.45, `forest-whisper` 3.45, `material-light` 4.01) |
+| Highest global target with zero pole flips is 3.07, bound by `catppuccin-latte` | 3.0739, `catppuccin-latte`. Seven of the eight cannot reach 4:1 on their pole at all |
+| At a 4:1 target, eight themes are forced off their pole | Eight, by name, in both directions |
+| Their halo-to-surface contrast collapses | From 12.21 to 17.66 down to 1.05 to 1.62. `default-light` goes from 17.66 to **1.05**, a white halo on a near-white surface |
+| A 3.5:1 target still costs seven flips | Seven |
+| The five dark-pole themes already carry the strongest core separation | Their `core:surf` is 4.10 to 5.72 against a median of 4.42 and a floor of 3.64 |
+
+The trap is that the number being optimised improves while the ring gets worse: `halo:core` is a floor for function, and past the ceiling it can only be bought out of `halo:surf`, which is the contrast that makes the ring findable. **The target stays at 3.** A test now enforces it ("the 3:1 pair target is at the system ceiling, so it must not be raised" in `colorGen.test.ts`), mutation-checked by raising `UI_CONTRAST_MIN` to 4, which fails it and names the theme that became binding. The docstring carries the reason so the next reader does not have to find this entry.
+
+**Geometry confirmed by measurement, not by eye alone.** The designer read the focused chip in the gallery header: `outline: 2px solid rgb(0,142,133)`, `outline-offset: 2px`, `box-shadow: 0 0 0 6px rgb(237,245,251)`, on a 28px control. Exact match to spec. They rendered 1/2/1 and 3/2/3 at true size and rejected both, and noted that a 1px band lands on 1.25 device pixels under Windows display scaling at 125 percent, which is the common case rather than the edge case. Their closing point is the one worth keeping: ring weight cannot be judged magnified, which is the same failure mode as the aperture icon at 16px.
+
+**One process finding, theirs.** Sweeping the host document for the halo rule finds nothing, because the gallery mounts into a shadow root. The designer caught this before reporting the ring as undeployed. Added as a standing note at the top of [guides/ACCESSIBILITY_MANUAL_AUDIT.md](guides/ACCESSIBILITY_MANUAL_AUDIT.md), with the two expressions that inspect the right trees, since it will catch the next outside reviewer otherwise.
 
 ### P77-E (2026-09-10)
 
@@ -683,4 +708,6 @@ What changed, in the order it will matter to someone reading this later:
 - **The suite is honest.** It was red on a clean tree at the start of the phase, and the last track found that it could also be green-looking while running against the wrong application entirely.
 - **The Mantine question has a written answer** with scores, sources and exit conditions, and the user accepted it: an in-house component layer on headless primitives, scheduled as Phases 78 to 81.
 
-Two items outlive the phase and are not blockers for it: the manual wp-admin pass on the flipped default (P77-I notes above), and the designer's in-situ review of the halo ring, for which a note with the measured values across all 23 themes was delivered on 2026-09-10 ([design/correspondences/focus-ring-notes-for-designer-2026-09-10.md](design/correspondences/focus-ring-notes-for-designer-2026-09-10.md)).
+**The designer's review landed on 2026-09-11 and closed P77-F's last open item** with no changes to the ring, plus a correction to how the pole rule was stated and a rejection of the 4:1 target this report had proposed. See the P77-F notes; the argument was re-derived from the engine and reproduces exactly, and the target is now guarded by a test.
+
+**One item outlives the phase and is not a blocker for it:** the manual wp-admin pass on the flipped portal default (P77-I notes above), which CI cannot substitute and which needs a rebuilt, redeployed plugin.

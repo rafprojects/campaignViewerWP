@@ -11,6 +11,28 @@ reflow). Automated coverage (theme-contrast gate, axe structural checks) is desc
 
 ---
 
+## 0. Before you start: the gallery's CSS is not in the page
+
+**The gallery mounts into a shadow root.** Sweeping `document.styleSheets` from the host page
+finds none of the plugin's rules, so a rule you are looking for will appear to be missing when
+it is in fact applied. This has caught a reviewer once already: during the 2026-09-11 focus-ring
+review the auditor searched the host document for the two-tone ring rule, found only stock
+Mantine outlines, and was one step from reporting the ring as undeployed.
+
+Inspect inside the tree, not beside it:
+
+```js
+// the gallery's own styles
+document.getElementById('root').shadowRoot.styleSheets
+// portaled admin chrome (Drawer, Modal, Menu) since P77-I
+document.querySelector('[data-mullion-overlay-root]').shadowRoot.styleSheets
+```
+
+DevTools element inspection and computed styles work normally; it is only document-level
+queries that miss. See [STYLING_GUIDE.md](STYLING_GUIDE.md) §1 for which tree holds what.
+
+---
+
 ## 1. How to use this doc
 
 1. Pick a surface from §4–§6 and work top-to-bottom through its checks.

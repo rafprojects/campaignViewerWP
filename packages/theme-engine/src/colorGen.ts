@@ -187,11 +187,20 @@ export function deriveBorderStrong(
 
 /**
  * Derive the focus-ring halo (P77-F): a neutral drawn from the theme's own
- * ground hue, light on dark themes and dark on light, stepped toward the pole
- * until it clears 3:1 against the ring core (`primaryStroke`). If the
- * scheme's pole cannot clear the core (a luminous accent on a dark theme),
- * the opposite pole is used; the core still carries the ring against the
- * theme's grounds, so the pair keeps its guarantee either way.
+ * ground hue, stepped toward whichever pole clears `minRatio` against the ring
+ * core (`primaryStroke`). The colour scheme only picks which pole to try
+ * first; it does not determine the answer, because the pole is a function of
+ * the core's lightness rather than of the scheme (designer sign-off,
+ * 2026-09-11). Five bundled dark themes have accents light enough that a light
+ * halo cannot separate from the core, and they correctly resolve dark.
+ *
+ * Do not raise `minRatio`. The halo can never exceed pure white or pure black
+ * against the core, and the lowest such ceiling across the bundled themes is
+ * 3.07 (`catppuccin-latte`), so 3 is essentially the system maximum. Any
+ * higher target forces themes onto the opposite pole, where the halo lands on
+ * top of its own surface: at 4 it flips eight themes and collapses their
+ * halo-to-surface contrast from 12-17 down to 1.05-1.62. Guarded by
+ * "the 3:1 pair target is at the system ceiling" in colorGen.test.ts.
  */
 export function deriveFocusHalo(
   core: string,
