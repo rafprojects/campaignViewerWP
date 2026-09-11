@@ -2,7 +2,7 @@
 
 **Status:** Planned, no code yet
 **Created:** 2026-09-10
-**Last updated:** 2026-09-10
+**Last updated:** 2026-09-11 (P78-A measurements folded into B and D)
 
 ### Tracks
 
@@ -84,15 +84,18 @@ A codemod for the direct mappings onto the framework's layout primitive props, w
 
 ### Problem
 
-142 non-test files import `@mantine/core` across 73 symbols. The facade means they can move in any order, and the order should be risk-first.
+142 non-test files import `@mantine/core` across 75 symbols. Counting the other four restricted packages and the test and mock files, the P78-A allow-list starts at 178 entries, 24 of which are test files and seven of those coupled only through a `vi.mock` call that no import scan sees. The facade means they can move in any order, and the order should be risk-first.
+
+Six of those entries are in `packages/shared-ui`, and they are not an ordering problem. That package is published standalone with `@mantine/core` and `@mantine/form` as declared `peerDependencies`, and its isolated `tsconfig.build.json` overrides `paths` to resolve only `@mullion/shared-utils`, so it cannot import `@/ui` at all. Either the framework ships as a package `shared-ui` can depend on, or `shared-ui` merges back into the app. That choice has to be made before the allow-list can reach zero, and it is the only entry on the list that a batch cannot clear on its own.
 
 ### Fix
 
-Batch by surface, not by component. Settings panel, Layout Builder chrome, admin panel, then the gallery and viewer surfaces, then the wp-admin Spaces and Assets apps. Each batch shrinks the ESLint allow-list, which the P78-A test requires to be monotonic.
+Batch by surface, not by component. Settings panel, Layout Builder chrome, admin panel, then the gallery and viewer surfaces, then the wp-admin Spaces and Assets apps. Each batch shrinks the ESLint allow-list, which the P78-A test requires to be monotonic. Decide the `shared-ui` question first, since it determines whether the framework needs a package boundary of its own.
 
 ### Acceptance criteria
 
 - The allow-list shrinks with every batch and never grows.
+- The `packages/shared-ui` question is answered in writing before the first batch, and its six entries have a route to zero.
 - Per batch: full suites green, axe gate green, and a keyboard pass on any surface whose interaction changed.
 - The wp-admin apps work with WordPress styles present and without a global reset, which is the P77-E criterion C10.
 
@@ -133,6 +136,8 @@ Six pieces of this codebase exist only to make Mantine fit: `adapter.ts` (601 li
 ### Fix
 
 Delete them, drop `@mantine/core`, `@mantine/hooks`, `@mantine/modals`, `@mantine/notifications` and `@mantine/form` from `package.json`, and remove Mantine's stylesheet imports from `main.tsx` and `shadowStyles.ts`.
+
+`@mantine/dates` goes too, and it can go at any time: P78-A found it has zero importers anywhere in `src/`, `packages/`, `e2e/` or the stories, so it is a dependency the tree already does not use. It is excluded from the P78-A lint rule for the same reason, a rule with no subject being noise.
 
 Retarget rather than delete the guards that still describe something true: the style-delivery tests, the P77-F ring walk and the 1.4.11 audit all continue to hold, against framework tokens instead of Mantine variables. Delete only the guards whose subject is gone, such as the `styles`-prop flatness tests, and say so in this document so their absence is not later read as a gap.
 

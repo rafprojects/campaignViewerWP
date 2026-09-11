@@ -16,6 +16,8 @@
     "i18n:check": "node scripts/generate-frontend-i18n.mjs --check",
     "i18n:check:locales": "node scripts/check-i18n-locales.mjs",
     "validate:themes": "node scripts/validate-themes.mjs",
+    "ui:allowlist": "node scripts/mantine-boundary.mjs",
+    "ui:allowlist:check": "node scripts/mantine-boundary.mjs --check",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
