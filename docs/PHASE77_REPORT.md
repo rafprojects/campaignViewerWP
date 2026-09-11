@@ -1,22 +1,22 @@
 # Phase 77 - Visual architecture spikes and hardening
 
-**Status:** In progress
+**Status:** Complete (2026-09-10)
 **Created:** 2026-08-28
-**Last updated:** 2026-09-10 (P77-E and P77-H delivered, and their recommendation accepted; P77-I opened to flip the P77-B default; P77-A, P77-G, P77-D, P77-C and P77-F landed)
+**Last updated:** 2026-09-10 (phase closed: all nine tracks done)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
 | P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | **Done** (2026-09-09), see notes | Medium |
-| P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | **Decided** (2026-09-09): overlay root, prototype behind a flag, default unchanged until accepted; see Decision below and the notes | Medium |
+| P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | **Done**: decided 2026-09-09 (overlay root), default flipped in P77-I on 2026-09-10; see Decision below and the notes | Medium |
 | P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | **Done** (2026-09-09), see notes | Small |
 | P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
 | P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | **Done** (2026-09-10): [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md); recommends an in-house layer on headless primitives behind the Phase 78 facade, primitive settled by a spike; see Decision below and the notes | Medium |
 | P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | **Done** (2026-09-09), see notes; designer review in situ still open | Small-Medium |
 | P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
 | P77-H | In-house UI framework study: what a token-driven framework of our own on headless primitives would take, the Theme Manager merge, and the list of Mantine parts to address. Document only | **Done** (2026-09-10): [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md); see the notes | Medium |
-| P77-I | Flip the portal default to the overlay root and retarget the one assertion that depends on the old placement | **Planned** (opened 2026-09-10), the last track of the phase | Small |
+| P77-I | Flip the portal default to the overlay root and retarget the one assertion that depends on the old placement | **Done** (2026-09-10), see notes | Small |
 
 ---
 
@@ -654,6 +654,33 @@ Against the committed baselines the same files differ by 1.1% to 3.1%: header bu
 
 **Two findings worth stating outside the document.** The largest mechanical cost of leaving Mantine is not the behavioural components but the style props and literal scales (about 3,000 occurrences), and that cost is identical under Mantine's own headless mode, so headless Mantine is a fallback rather than a cheaper stepping stone. And the Theme Manager merge is mostly a consolidation of code that already exists in five files; what is new is the runtime editor with audits at save and the lock/follow mode as a provider prop rather than a nested-provider trick.
 
+### P77-I (2026-09-10)
+
+**The flip.** `resolvePortalMode()` now returns `overlay-root` when nothing selects a mode. The three overrides are unchanged in precedence (`window.__MULLION_PORTAL_MODE__`, then `?portal=`, then `VITE_MULLION_PORTAL_MODE`), and `document` became an explicitly recognised value rather than the fallback. That distinction matters: before, any unrecognised string silently meant `document`, so a typo in the flag would have quietly restored the old placement. Now a typo lands on the shipped default and only the literal `document` opts out.
+
+**The retargeted guard.** The P77-A spec asserted the Settings drawer renders under `document.body`, which is exactly the fact this track changes. It now asserts what replaced it, in two halves that fail for different reasons: the drawer's root node is the overlay root's shadow root (what blocks host-page CSS), and the overlay root's host is a direct child of `body` (what keeps it out of any transformed ancestor, the containing-block failure P77-B measured for option (a)). `selectorsIn` gained an `overlay` tree, and two new assertions pin what the overlay root bought: `chrome-portable.scss` reaches it, and so does `global.scss`, which is the defect class behind P76-I-2 and P77-C.
+
+**Mutation-tested, both guards.** Reverting the default to `document` fails the e2e placement assertion by name ("the overlay root must exist under the shipped default") and fails the unit test with `expected 'document' to be 'overlay-root'`. Restored afterwards.
+
+**Baselines, checked properly rather than trusted.** `theme-qa` passed, but its `maxDiffPixelRatio` is 0.1, so a green run is not evidence (the P77-C lesson). Re-capturing every baseline with `--update-snapshots=all` moved two files: the two theme-selector dropdown shots. Decoding both and comparing pixel by pixel showed a **maximum per-channel delta of 1** on a handful of antialiased edge pixels, and zero pixels differing by more than that. Sub-visual rounding, not a layout or colour change. The committed baselines were restored unchanged, so the acceptance criterion is met and is now verified rather than assumed.
+
+**A test-integrity bug found in passing, and fixed.** The first full run reported 45 failures of 46, including the smoke test and "Gallery" heading. None was real. `playwright.config.ts` defaulted to Vite's port 5173, another project on this machine was serving that port, and `reuseExistingServer: true` cannot tell whose server it found, so the entire suite ran against a different application. Every failure looked like an application defect. The config now uses a distinctive port (5180) and carries a comment explaining why; `E2E_BASE_URL` still overrides. This is the P77-D class of defect and it would have cost the next person the same hour.
+
+**Results.** `npx playwright test` with no environment override, so the config starts its own server: 46 passed, twice. `npx vitest run`: 260 files, 3931 tests, all passed. `npx eslint .` and `npx tsc --noEmit`: clean. The prototype's 39 of 40 is now 46 of 46, because the one failure was the assertion this track retargeted.
+
+**Not done here, and it is a real gap.** P77-B's validation marks a manual wp-admin pass as required and not substitutable with CI: drawer over the admin menu, nested modal from within the drawer, Select dropdown inside the drawer, Escape and click-outside dismissal. The author cannot run it. The agent browser MCP is disconnected in this session and the plugin is not rebuilt or redeployed, which is the user's step. **This is the one acceptance criterion of P77-I that is unverified**, and it should be run against a redeployed build before the release phase. Everything CI can reach is green; what is untested is the flip's behaviour inside a real wp-admin page with other plugins present.
+
 ## Outcome
 
-_Pending: P77-B default flip and the designer's in-situ review of the halo ring are the open items; every track's document work is complete._
+**All nine tracks are done.** The phase set out to replace a pattern of per-defect workarounds with a stated contract, a decided boundary, and tests that fail when either is broken. It did that, and it also answered the dependency question the user raised at the start.
+
+What changed, in the order it will matter to someone reading this later:
+
+- **There is one style-delivery contract** ([guides/STYLING_GUIDE.md](guides/STYLING_GUIDE.md)), four mechanisms rather than a folklore list of seven, and four guards that fail when a style is written through a channel that cannot reach its target. Every guard was mutation-tested.
+- **The boundary is decided and shipped.** Portaled chrome renders in an overlay root of ours: host CSS cannot reach it, every theme token does, and the stylesheet-in-the-wrong-tree defect class is closed. The compatibility argument that made this pre-release is discharged.
+- **Three state rules that had never painted now paint**, and the two causes that delivery could not fix (an attribute Mantine does not set, and inline colour outranking every state rule) are written into the contract as traps to check for.
+- **The focus ring is structural rather than audited.** A derived neutral halo means one of the two tones contrasts with any ground, including themes no build-time audit can see.
+- **The suite is honest.** It was red on a clean tree at the start of the phase, and the last track found that it could also be green-looking while running against the wrong application entirely.
+- **The Mantine question has a written answer** with scores, sources and exit conditions, and the user accepted it: an in-house component layer on headless primitives, scheduled as Phases 78 to 81.
+
+Two items outlive the phase and are not blockers for it: the manual wp-admin pass on the flipped default (P77-I notes above), and the designer's in-situ review of the halo ring, for which a note with the measured values across all 23 themes was delivered on 2026-09-10 ([design/correspondences/focus-ring-notes-for-designer-2026-09-10.md](design/correspondences/focus-ring-notes-for-designer-2026-09-10.md)).

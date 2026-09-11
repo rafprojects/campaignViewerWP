@@ -35,15 +35,24 @@ Two surfaces are worth naming because they sit on opposite sides of the line:
   renders inline in `App.tsx`. It is in the gallery tree, inside the shadow
   root under the shipped mount.
 
-**Portal modes (P77-B, prototype).** Where portaled chrome renders is now a
-mount option, `src/portalTarget.ts`: `document` (shipped, everything above
-holds), `shadow` (into the gallery root; rejected, it breaks inside any
-transformed ancestor), and `overlay-root` (a second shadow root of ours on a
-body-level host, carrying the shadow stylesheet plus the builder's sheets and
-both variable sheets). Under `overlay-root` the chrome is in a tree we own, so
-M2 reaches it and host CSS does not; `adminChromeStyles()` still carries the
-locked brand palette. The decision and its measurements are in the Phase 77
-report; until the default flips, the reach columns describe `document`.
+**Portal modes (P77-B, default flipped in P77-I).** Where portaled chrome
+renders is a mount option, `src/portalTarget.ts`. **`overlay-root` is the
+shipped default:** a second shadow root of ours on a body-level host, carrying
+the shadow stylesheet plus the builder's sheets and both variable sheets. The
+chrome is therefore in a tree we own, so M2 reaches it and host-page CSS does
+not. `adminChromeStyles()` still carries the locked brand palette, because the
+nested chrome provider renders its variable sheet in the gallery tree.
+
+The other two are explicit overrides: `document` (the pre-P77-I placement,
+kept for support cases) and `shadow` (into the gallery root; rejected, it
+breaks inside any transformed ancestor). A light mount ignores the mode
+entirely and keeps overlays in the document.
+
+**Reading the reach tables below.** They are written for the two *trees*, and
+under the shipped default portaled chrome is in the overlay root rather than
+the document. Where a row says "portaled chrome", read it as "the overlay
+root" unless the mode is overridden to `document`. The decision and its
+measurements are in the Phase 77 report.
 
 ## 2. Delivery mechanisms
 
@@ -53,7 +62,7 @@ developer writes is one of these, and reach is a property of the mechanism.
 | # | Mechanism | Shadow mount reaches | Light mount reaches |
 |---|-----------|----------------------|---------------------|
 | M1 | **Document stylesheet.** Any `import './x.css'` or CSS module in the bundle. Vite injects a `<style>` per file in dev; in production the plugin enqueues the built CSS from the Vite manifest (`class-mullion-embed.php`) and lazy chunks inject their own `<link>`. | document only: portaled chrome, never the gallery | everything |
-| M2 | **Shadow-root style block.** `shadowStyles.ts` concatenates a fixed list of files with `?inline` and `main.tsx` writes them into `<style data-mullion>` in the shadow root. | gallery tree only, never portaled chrome | not used |
+| M2 | **Shadow-root style block.** `shadowStyles.ts` concatenates a fixed list of files with `?inline` and `main.tsx` writes them into `<style data-mullion>` in the shadow root, and `overlayStyles` (the same list plus Dockview and `builder.css`) into the overlay root. | gallery tree and, since P77-I, the overlay root where portaled chrome now renders | not used |
 | M3 | **Runtime-injected variable sheets.** `ThemeContext` writes `#mullion-theme-vars` (the `--mullion-*` tokens) into the shadow root, or into `document.head` scoped by `[data-mullion-theme-scope]` for a light mount. Mantine writes its own `--mantine-*` sheet at `cssVariablesSelector` (`:host` or `:root`) and a `.mullion-admin-chrome` sheet for the nested chrome provider, both rendered where the React root lives. React 19 also hoists Mantine's responsive style-prop sheets (`__mdi__-*`) into the root container. | gallery tree; the `--mullion-*` tokens never reach portaled chrome in either mount | document, but `--mullion-*` is scoped to the host element and still misses portaled chrome |
 | M4 | **Inline `style` on the element.** Mantine's `styles` prop, its `vars` prop (custom properties), `adminChromeStyles()` and the `--mullion-builder-*` block. Travels with the element wherever it is portaled. | the element | the element |
 
@@ -174,7 +183,8 @@ tree. Until that lands, this guide is the contract, and every channel in it
 stays canonical for the code that exists.
 
 Document rewritten 2026-09-09 for Phase 77 track A and updated the same day
-for tracks C and B; pointer to tracks E and H added 2026-09-10. The previous version
+for tracks C and B; pointer to tracks E and H added 2026-09-10, and the portal
+default updated for track I the same day. The previous version
 (January 2026) predates the shadow-plus-portal findings of Phases 75 and 76
 and described CSS variables as scoped to `.mullion-gallery`, which has not
 been true since the shadow mount became the default.

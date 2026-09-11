@@ -126,6 +126,8 @@ Add two tiers to `generateCssVariables` beside the existing role tokens, as desc
 - **Component tokens**, derived from role tokens by the engine: input border and focus border, control heights, tab colour and active colour, option checked background and foreground, menu hover, switch track, checkbox border, table hover. A theme JSON may override one explicitly, which is what `ThemeDefinition.components` becomes.
 - **Framework constants**, fixed rather than per-theme: focus ring width and halo width, motion durations, the layer scale including a host-safe layer the embed can set from PHP so the WordPress admin bar stops covering the drawer header.
 
+**Backlog cleanup owned by this track.** The host-safe layer token is the fix for the FUTURE_TASKS accessibility entry "WordPress Admin Bar Covers the Settings Drawer Header for Logged-In Users". The token lands here and the framework reads it in P79-C, so the entry is deleted once the drawer actually clears the bar, which is P79-C rather than this track. Leave it in place until then and note the removal in the update log when it goes.
+
 Re-point `uiContrastAudit` at the component tokens it now has names for, keeping the P77-F pair guarantee and its zero exceptions.
 
 ### Acceptance criteria

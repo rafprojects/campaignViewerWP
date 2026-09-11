@@ -87,12 +87,15 @@ One `uiStyles.ts` registration list concatenating the framework's component shee
 
 This is also the FUTURE_TASKS item "Share One Constructable Stylesheet Between the Gallery Root and the Overlay Root", which stops being a separate optimisation once delivery is written once.
 
+**Backlog cleanup owned by this track.** When P79-B is closeable, delete that entry from [FUTURE_TASKS.md](FUTURE_TASKS.md) (Code Quality and Refactoring) and note the removal in the document's update log. It is deliberately left in place until then, because the entry describes a real gap for as long as the overlay root keeps its own `<style>` copy.
+
 ### Acceptance criteria
 
 - Every framework stylesheet reaches the gallery tree, the overlay root and the document, proved in the browser rather than by reading imports.
 - The P77-A guards carry over: every selector scoped, every sheet registered, no inline pseudo-state.
 - Three new static tests from study principle 2: no colour literal in a component sheet, no `!important`, no ancestor scheme selector.
 - One parsed sheet per page rather than one per mount, measured.
+- The FUTURE_TASKS constructable-stylesheet entry is deleted in the same change that closes this track.
 
 ### Validation
 
@@ -121,6 +124,7 @@ One focus rule on `[data-focus-visible]`: a 2px core in `--mullion-color-primary
 - The P77-F ring walk passes against framework components, all four combinations of mount and theme mode, asserting core colour, 2px width, the halo token present and the exact 6px halo.
 - Every component sheet passes the three static tests from P79-B.
 - Storybook covers the set, with the decorator on `MullionProvider` rather than Mantine's.
+- The drawer header clears the WordPress admin bar via the host-safe layer token from P78-C, and the FUTURE_TASKS entry for it is deleted in the same change.
 
 ### Validation
 

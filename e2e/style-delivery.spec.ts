@@ -84,7 +84,7 @@ async function openSettingsDrawer(page: Page) {
 }
 
 /** Every selector text reachable from a tree's stylesheets, whitespace-normalised. */
-async function selectorsIn(page: Page, tree: 'document' | 'shadow'): Promise<string[]> {
+async function selectorsIn(page: Page, tree: 'document' | 'shadow' | 'overlay'): Promise<string[]> {
   return page.evaluate((which) => {
     const out: string[] = [];
     const walk = (rules: CSSRuleList) => {
@@ -95,7 +95,9 @@ async function selectorsIn(page: Page, tree: 'document' | 'shadow'): Promise<str
     };
     const sheets = which === 'document'
       ? document.styleSheets
-      : document.getElementById('root')?.shadowRoot?.styleSheets;
+      : which === 'overlay'
+        ? document.querySelector('[data-mullion-overlay-root]')?.shadowRoot?.styleSheets
+        : document.getElementById('root')?.shadowRoot?.styleSheets;
     for (const s of sheets ?? []) {
       try { walk(s.cssRules); } catch { /* cross-origin sheet */ }
     }
@@ -117,21 +119,40 @@ test.describe('style delivery contract', () => {
     await expect.poll(() => page.evaluate(() => !!document.getElementById('root')?.shadowRoot)).toBe(true);
     await openSettingsDrawer(page);
 
-    // The drawer really is portaled outside the shadow root; otherwise the
-    // document-side assertion below would prove nothing.
-    const dialogInDocument = await page.evaluate(() => {
-      const dialog = document.querySelector('[role="dialog"]');
-      return !!dialog && dialog.getRootNode() === document;
+    // P77-I flipped the shipped default to the overlay root, so the drawer no
+    // longer renders under document.body. Pin where it actually is: inside the
+    // overlay root's shadow tree, whose host is a direct child of body. Both
+    // halves matter. The shadow tree is what blocks host-page CSS, and the
+    // body-level host is what keeps the drawer out of any transformed ancestor
+    // (the containing-block failure P77-B measured for option (a)).
+    const placement = await page.evaluate(() => {
+      const host = document.querySelector('[data-mullion-overlay-root]');
+      const dialog = document.querySelector('[role="dialog"]')
+        ?? host?.shadowRoot?.querySelector('[role="dialog"]');
+      return {
+        hostExists: !!host,
+        hostIsBodyChild: host?.parentElement === document.body,
+        dialogInOverlay: !!dialog && !!host && dialog.getRootNode() === host.shadowRoot,
+        dialogInDocument: !!dialog && dialog.getRootNode() === document,
+      };
     });
-    expect(dialogInDocument, 'Settings drawer must render under document.body for this test to mean anything').toBe(true);
+    expect(placement.hostExists, 'the overlay root must exist under the shipped default').toBe(true);
+    expect(placement.hostIsBodyChild, 'the overlay root host must be a direct child of body').toBe(true);
+    expect(placement.dialogInOverlay, 'the Settings drawer must render inside the overlay root').toBe(true);
+    expect(placement.dialogInDocument, 'the drawer must no longer render directly in the document').toBe(false);
 
     const doc = await selectorsIn(page, 'document');
     const shadow = await selectorsIn(page, 'shadow');
+    const overlay = await selectorsIn(page, 'overlay');
 
     expect(missingFrom(doc, CHROME_PORTABLE), 'chrome-portable.scss selectors missing from the document (main.tsx import)').toEqual([]);
     expect(missingFrom(shadow, CHROME_PORTABLE), 'chrome-portable.scss selectors missing from the shadow root (shadowStyles.ts entry)').toEqual([]);
+    expect(missingFrom(overlay, CHROME_PORTABLE), 'chrome-portable.scss selectors missing from the overlay root, which is the tree the drawer now paints in').toEqual([]);
 
     expect(missingFrom(shadow, GLOBAL), 'global.scss selectors missing from the shadow root').toEqual([]);
+    // What the overlay root bought: global.scss now reaches portaled chrome.
+    // Before P77-B this was the defect class behind P76-I-2 and P77-C.
+    expect(missingFrom(overlay, GLOBAL), 'global.scss selectors missing from the overlay root').toEqual([]);
     expect(GLOBAL.filter((s) => doc.includes(s)), 'global.scss must not be loaded into the document under a shadow mount').toEqual([]);
   });
 

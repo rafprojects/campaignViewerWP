@@ -37,6 +37,12 @@ import { overlayStyles } from './shadowStyles';
 
 export type PortalMode = 'document' | 'shadow' | 'overlay-root';
 
+/**
+ * P77-I: the shipped default is `overlay-root`. Portaled chrome renders in a
+ * shadow root of ours attached to `document.body`, so host-page CSS cannot
+ * reach it and every theme token does. `document` stays reachable by explicit
+ * override for support cases and for the light mount, which ignores the mode.
+ */
 export function resolvePortalMode(): PortalMode {
   const flag = (window as Window & { __MULLION_PORTAL_MODE__?: string }).__MULLION_PORTAL_MODE__;
   // The env fallback lets a dev server run a whole Playwright suite in one
@@ -44,7 +50,7 @@ export function resolvePortalMode(): PortalMode {
   const raw = flag
     ?? new URLSearchParams(window.location.search).get('portal')
     ?? (import.meta.env.VITE_MULLION_PORTAL_MODE as string | undefined);
-  return raw === 'shadow' || raw === 'overlay-root' ? raw : 'document';
+  return raw === 'shadow' || raw === 'document' ? raw : 'overlay-root';
 }
 
 export interface PortalTarget {

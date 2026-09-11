@@ -27,18 +27,24 @@ describe('withPortalTarget', () => {
 });
 
 describe('resolvePortalMode', () => {
-  it('reads the window flag, then the query, and falls back to document', () => {
+  it('reads the window flag, then the query, and falls back to overlay-root', () => {
     const g = window as Window & { __MULLION_PORTAL_MODE__?: string };
     const history = vi.spyOn(window, 'location', 'get');
     history.mockReturnValue({ search: '?portal=shadow' } as Location);
     expect(resolvePortalMode()).toBe('shadow');
     g.__MULLION_PORTAL_MODE__ = 'overlay-root';
     expect(resolvePortalMode()).toBe('overlay-root');
+    // P77-I: an unrecognised value is not an opt-out. Only the explicit
+    // 'document' string selects the pre-P77-I placement.
     g.__MULLION_PORTAL_MODE__ = 'nonsense';
+    expect(resolvePortalMode()).toBe('overlay-root');
+    g.__MULLION_PORTAL_MODE__ = 'document';
     expect(resolvePortalMode()).toBe('document');
     delete g.__MULLION_PORTAL_MODE__;
-    history.mockReturnValue({ search: '' } as Location);
+    history.mockReturnValue({ search: '?portal=document' } as Location);
     expect(resolvePortalMode()).toBe('document');
+    history.mockReturnValue({ search: '' } as Location);
+    expect(resolvePortalMode(), 'the shipped default is the overlay root').toBe('overlay-root');
     history.mockRestore();
   });
 });

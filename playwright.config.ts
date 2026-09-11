@@ -1,6 +1,12 @@
 import { defineConfig } from '@playwright/test';
 
-const baseURL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:5173';
+// P77-I: the port is deliberately not Vite's default 5173. `reuseExistingServer`
+// cannot tell whose server it found, so when another project happened to be
+// serving 5173 the whole suite ran against that app and failed 45 of 46 tests
+// with errors that all looked like application defects. A distinctive port makes
+// that collision unlikely; `E2E_BASE_URL` still overrides for a hand-started server.
+const DEV_PORT = 5180;
+const baseURL = process.env.E2E_BASE_URL ?? `http://127.0.0.1:${DEV_PORT}`;
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,7 +21,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 5173',
+    command: `npm run dev -- --host 127.0.0.1 --port ${DEV_PORT}`,
     url: baseURL,
     reuseExistingServer: true,
   },
