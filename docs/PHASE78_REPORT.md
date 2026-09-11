@@ -2,7 +2,7 @@
 
 **Status:** In progress
 **Created:** 2026-08-28 (as "UI facade")
-**Last updated:** 2026-09-11 (P78-A landed)
+**Last updated:** 2026-09-11 (P78-A and P78-C landed; Decision J settles the shared-ui question)
 
 ### Tracks
 
@@ -10,7 +10,7 @@
 |-------|-------------|--------|--------|
 | P78-A | Establish `src/ui/` and the import boundary: re-export surface plus an ESLint rule forbidding new direct `@mantine/core` imports outside it | **Done** (2026-09-11), see notes | Medium |
 | P78-B | Primitive bake-off: build the same five components on Ark UI and Base UI, measured against fixed tests, and pick one | Planned | Small-Medium |
-| P78-C | Extend the theme engine with the component-token tier and the framework constants the framework will read | Planned | Medium |
+| P78-C | Extend the theme engine with the component-token tier and the framework constants the framework will read | **Done** (2026-09-11), see notes | Medium |
 
 ---
 
@@ -207,6 +207,50 @@ The mocks were the last thing found and they changed the number. Seven test file
 **One defect found and fixed during the track.** The boundary test first listed `src/ui/` with `fs.globSync`, which arrived in Node 22, while all five CI workflows pin Node 20. It passed locally on Node 24 and would have thrown on the first push. Replaced with a walker exported from the detector module, and the mutation re-run confirms the rewritten guard still bites. The guard now also asserts that the walk found `src/ui/index.ts`, so an empty listing cannot pass the check vacuously.
 
 **CI.** `npm run ui:allowlist:check` joins the fast-fail lint job beside `i18n:check`, on the same reasoning: `npm run lint` enforces the boundary and the vitest ratchet keeps the list shrinking, but neither notices a list that is merely stale.
+
+### P78-C (2026-09-11)
+
+**Status: landed.** The tier is in [`packages/theme-engine/src/componentTokens.ts`](../packages/theme-engine/src/componentTokens.ts), emitted by `generateCssVariables`, covered by `componentTokens.test.ts` across all 23 bundled themes, and read by `uiContrastAudit`. 38 new custom properties: 17 derived component tokens, 5 control heights, 16 framework constants. Four mutations applied and caught. **`src/themes/adapter.ts` is untouched**, as the track requires.
+
+**What the measurement changed about the plan.**
+
+| Plan said | Measured |
+|-----------|----------|
+| The adapter holds 31 component override blocks in 601 lines | Both exact. |
+| "A theme JSON may override one explicitly, which is what `ThemeDefinition.components` becomes" | **Not that field.** `adapter.ts:568` reads `def.components` as *Mantine* overrides and is load-bearing until Phase 81, so repurposing it would break the adapter while it is still the thing that paints. A separate `componentTokens` field was added instead; the two coexist and P81 deletes `components` with the adapter. No bundled theme uses either field today, so nothing had to migrate. |
+| Component tokens include "menu hover" | **No derivation exists to lift.** The adapter has no menu hover rule; Mantine's default supplies it. The surface ladder cannot express one either, because a menu dropdown already sits at `surfaceRaised`, the top rung, so there is nothing above it to step to. Emitted as an alpha overlay of the text colour, which matches how `Table.tr` already uses `withAlpha`. This is the one token in the tier that is a new decision rather than a lift, and no designer has seen it. |
+| Component tokens include "control heights" | **Also not a derivation**: no role token describes a height. Measured Mantine's `--input-height-*` and `--button-height-*` from the installed stylesheet rather than recalled, found they agree exactly on all five rungs, and carried that scale as an overridable default with the `var(--mantine-scale)` multiplier dropped. |
+| Nothing about dropdown grounds | `menu-bg` and `menu-bd` had to be added. Three of the nine existing audit checks measure an affordance against `surfaceRaised`, and without a token for that ground the audit could only name half of each pair. Both are straight lifts from the adapter's `Menu` and `Select` dropdown blocks. |
+
+**Why the audit stayed at zero exceptions.** Re-pointing it was a rename, not a re-measurement: every component token resolves to the same colour the role-token form was already checking, so the six value pairs are preserved exactly.
+
+| Was | Is now | Same pair? |
+|-----|--------|-----------|
+| `primaryStroke` on `surface` | `tab-indicator-color` on `surface` | yes |
+| `primaryStroke` on `surface2` | `input-bd-focus` on `input-bg` | yes |
+| `primaryStroke` on `surfaceRaised` | `primaryStroke` on `menu-bg` | yes |
+| `borderStrong` on `surface` | `checkbox-bd` on `surface` | yes |
+| `borderStrong` on `surface2` | `input-bd` on `input-bg`, and `switch-track-bd` on `switch-track-bg` | yes, both |
+| `borderStrong` on `surfaceRaised` | `input-bd` on `menu-bg` | yes |
+
+The three P77-F ring-pair checks are unchanged and stay on role tokens, because the ring is framework geometry rather than a component's own affordance.
+
+**Mutations.**
+
+| Guard | Mutation applied | Result |
+|-------|------------------|--------|
+| the audit reads the tier | `checkbox-bd` derivation weakened from `borderStrong` to `border` | 20 failures across the bundled themes, which is the track's "must fail the audit, not merely change a value" |
+| token completeness | deleted the `table-hover-bg` derivation | emission test fails, and `tsc` fails too because the audit's key type no longer admits it |
+| constants are fixed | `focus-halo-width` set to `0px` | the P77-F geometry test fails |
+| namespace parametrization | hardcoded `--mullion` in the layer `calc()` | the custom-prefix test fails |
+
+**Two defects I introduced and caught.** The layer scale first wrote `calc(var(--mullion-layer-host-offset, 0) + N)` with the prefix hardcoded, which would have left every external consumer of this package unable to escape its host chrome, since P51-L parametrized the namespace precisely so they can pick their own. Fixing it by importing `DEFAULT_CSS_VAR_PREFIX` then created a runtime import cycle between `componentTokens` and `cssVariables`; `tsc` was happy with it because the other direction is type-only. The prefix is a required argument now, which removes both.
+
+**One stale pointer fixed.** `uiContrastAudit`'s docstring sent readers to `src/styles/global.scss` for the focus-ring block. P77-A moved it to `chrome-portable.scss`, and the comment had not followed.
+
+**Rendered output.** The emitted variable block grows by 38 declarations per theme and nothing reads any of them: no component, stylesheet or adapter references a new name. Unused custom properties do not paint, and `theme-qa` confirms it: 24 of 24 with no snapshot differences.
+
+**Validation.** Run at CI parity: `npm run lint` clean, `npx tsc --noEmit` clean, `npm run ui:allowlist:check` green at 178 files, `npm run test:coverage` 4,019 of 4,019 across 262 files with every threshold met (statements 86.15, branches 74.95, functions 82.21, lines 88.19), `npx playwright test` 46 of 46. The suite grew by 79 tests in one file, which is the 76 new token tests plus the three the audit gained.
 
 ## Outcome
 
