@@ -322,6 +322,8 @@ The backend is the part with no seam at all: 32 PHP classes, about 11,000 lines,
 
 **What to implement:** Capture the real trigger through `getRootNode().activeElement` (walking into shadow roots) at open time and pass it as the return target, or wrap the trigger buttons to restore focus themselves on close. Cover with an e2e assertion on `activeElement` after Escape.
 
+**Update, 2026-09-11 (P78-B):** measured rather than described. The bake-off built the same drawer three times and probed focus after Escape: Mantine lands on `BODY`, and **both Ark UI and Base UI return focus to the trigger inside the gallery shadow root with no help from us**. So this is not work we have to do. It goes away when `Drawer` becomes a framework component on Base UI in P80-A, and the hand-rolled capture above is only worth writing if that slips or if a surface needs the fix before then. Numbers in [PHASE78_REPORT.md](PHASE78_REPORT.md) under track P78-B.
+
 **Effort:** Small | **Impact:** Medium — WCAG 2.4.3 focus order on every admin surface.
 
 ---
@@ -367,6 +369,27 @@ P76-I-2, Option D, deferred 2026-08-28 as complementary to the chosen Option A.*
 ---
 
 ## Design & Brand
+
+### Typography Panel Redesign (layout, control choice, and the unit field)
+
+**Origin:** User report from a deployed build, 2026-09-11, after Phase 78 closed. Diagnosed against the code the same day; not yet scheduled as work.
+
+**Context:** Four separate problems in one panel, three of which have a named cause in the source.
+
+1. **The panel jumps on the first edit, and a destructive control appears where the user is looking.** `TypographyEditor.tsx:231` renders the reset row only when `!isEmpty`, so choosing a font *inserts* a row above Font Family and pushes the whole panel down. The row it inserts is a single unlabelled red trash `ActionIcon` whose actual action is `onChange({})`, reset **all** overrides. It reads as "reset the font" because it appears the moment a font is chosen and sits directly above that field. A destructive, unlabelled, reset-everything control should not be the thing that appears next to the field you just edited.
+2. **Line Height is the odd control in its own row.** `TypographyEditor.tsx:357` is a bare `NumberInput`, so it gets Mantine's stacked up/down spin buttons, while Letter Spacing and Word Spacing beside it in the same `<Group grow>` are `CssValueInput` scrub fields with a drag-to-adjust label. Three fields in one row, one of which behaves differently. The user's instinct is the right one: it should scrub like its neighbours. `UnitScrubField` already makes the unit selector conditional (`showUnitSelector = allowedUnits.length > 1`), so a unitless scrub variant is a small change rather than a new control.
+3. **The split value/unit fields are taller than every other field in the panel.** `TypographyEditor` passes `size="xs"` to all 12 of its own `Select`s and `NumberInput`s. `UnitScrubField.tsx:86` passes no `size` at all, so every `CssValueInput` renders at Mantine's default `sm`. `CssValueInput` has no `size` prop to pass through. That is the whole cause of the height mismatch against Title Text and Color.
+4. **The unit selector is a `Select` layered inside another input's `rightSection`.** `UnitScrubField.tsx:127-158` nests a `variant="unstyled"` `Select` in the `NumberInput`'s right section, sized by a hand-computed `rightSectionWidth` (`Math.max(34, longestUnit * 7 + 24)`) and held together by four `styles` overrides forcing `height: 100%` and a synthetic `borderLeft`. Mantine's `styles` prop is inline style, which is the P76-I-1 trap, and the seam between the two controls is what reads as a bad overlay. Its dropdown is also pinned `comboboxProps={{ withinPortal: false }}`, written before the overlay root existed (P77-B/P77-I), so it renders inline inside the field rather than portaling like the rest of the chrome.
+
+**What to implement:** Redesign the panel rather than patching the four symptoms. The row grouping, the placement and labelling of reset, and the choice of control per field are design questions and should go to the designer with the current panel as the before. The number-plus-unit field is the one piece that is not a design question: it should become a single framework component with the unit as a first-class part, not a `Select` posted into another input's right section.
+
+**Sequencing:** This is claimed by **P81-B's Settings-panel batch**, which is the first surface batch and is where `TypographyEditor`, `CssValueInput` and `UnitScrubField` are rewritten against the framework anyway. Phase 81 Decision B already makes that phase the one where pixels are allowed to move, with the designer, so the redesign lands with the migration instead of being ported forward and then fixed twice. It depends on **P80-A** shipping a number field with a unit slot; that dependency is noted in the track.
+
+**Files:** `src/components/Common/TypographyEditor.tsx`, `src/components/Common/CssValueInput.tsx`, `src/components/Common/UnitScrubField.tsx`, `src/components/Settings/TypographySettingsSection.tsx`.
+
+**Effort:** Medium (the unit field is the real work; the rest is layout and a designer pass) | **Impact:** Medium. The Typography panel is a primary authoring surface and currently looks unfinished next to the fields around it.
+
+---
 
 ### Move the Plugin Header `Author:` / `Author URI:` to Astragal
 

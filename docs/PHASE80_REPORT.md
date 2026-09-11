@@ -52,6 +52,8 @@
 
 Wrap the primitive's dialog, popover, tooltip and menu, taking the portal container from the provider rather than each call site. Wrap its field and input primitives, with our own label, description and error composition. `Textarea` autosize is ours; it is named in the study's section 4 as behavioural code we write.
 
+The number field takes a **unit slot as a first-class part**. Today `UnitScrubField` posts a `variant="unstyled"` `Select` into a Mantine `NumberInput`'s `rightSection`, sized by a hand-computed width and held together by four `styles` overrides forcing `height: 100%`; the seam between the two controls is visible and the field is taller than its neighbours. That is the blocker for the Typography panel redesign claimed by P81-B, so the slot has to exist here rather than be improvised there.
+
 Every state that used to need an inline colour is a token read by a data-attribute selector, per study principle 2.
 
 ### Acceptance criteria
