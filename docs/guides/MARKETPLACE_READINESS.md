@@ -29,11 +29,11 @@ Two prior phases got us here:
 Distribution model is **freemium** (expanded 2026-07-10): a paid build sold via **Freemius**
 (the *merchant of record*, so EU-VAT / US sales-tax is handled for you) **plus a free "lite"
 build on WordPress.org** as top-of-funnel. The premium build is ready today; the free WP.org
-build is new engineering work — tracks **P62-F–K** in [../PHASE62_REPORT.md](../PHASE62_REPORT.md),
+build is new engineering work — tracks **P62-F–K** in [PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md),
 detailed in §10. See `docs/MONETIZATION_OPTIONS.md` for the full decision and
 [PRO_FEATURES.md](PRO_FEATURES.md) for the gating architecture.
 
-**Track status** (validated 2026-07-06, see [PHASE62_REPORT.md](../PHASE62_REPORT.md)):
+**Track status** (validated 2026-07-06, see [PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md)):
 
 | Track | State |
 |---|---|
@@ -55,7 +55,7 @@ tracks **P62-F–K** — see §10; those do not block the premium launch.
 
 > **These milestones are defined here for the first time.** Across the phase docs "M1–M4"
 > were referenced but never enumerated; this section is the canonical definition. The mapping
-> was inferred from the "Next" line of [PHASE62_REPORT.md](../PHASE62_REPORT.md) and is made
+> was inferred from the "Next" line of [PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) and is made
 > authoritative here.
 
 | # | Milestone | What you do | Unblocks |
@@ -280,7 +280,7 @@ mode**:
 `MONETIZATION_OPTIONS.md` §7 stage 3: a free "lite" build on the WordPress.org directory as
 top-of-funnel for the paid plugin. **As of 2026-07-10 this is in scope** — the distribution model
 expanded from premium-only to freemium — and is tracked in
-[../PHASE62_REPORT.md](../PHASE62_REPORT.md) as **P62-F–I**. It requires:
+[PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) as **P62-F–I**. It requires:
 
 - **A free/paid code split (P62-F spike → P62-G).** WP.org forbids locked/premium code in a
   hosted plugin — *all* hosted code must be free and fully functional — so the Pro code must be
@@ -334,4 +334,4 @@ WCAG work and the 1–10 day WP.org review off the paid-launch critical path.
 
 _See also: [PRO_FEATURES.md](PRO_FEATURES.md) (what Pro is + how to build new Pro features),
 [LICENSE_ACTIVATION.md](LICENSE_ACTIVATION.md) (buyer activation), and
-[../PHASE62_REPORT.md](../PHASE62_REPORT.md) (track detail)._
+[PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) (track detail)._

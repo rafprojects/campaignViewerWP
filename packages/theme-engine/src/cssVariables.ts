@@ -63,6 +63,7 @@ export function generateCssVariables(
   vars.push(`${PREFIX}-color-primary: ${rc.primaryFill};`);
   vars.push(`${PREFIX}-color-primary-stroke: ${rc.primaryStroke};`);
   vars.push(`${PREFIX}-color-primary-on: ${rc.primaryOnFill};`);
+  vars.push(`${PREFIX}-color-focus-halo: ${rc.focusHalo};`);
   vars.push(`${PREFIX}-color-success: ${rc.success};`);
   vars.push(`${PREFIX}-color-warning: ${rc.warning};`);
   vars.push(`${PREFIX}-color-error: ${rc.error};`);

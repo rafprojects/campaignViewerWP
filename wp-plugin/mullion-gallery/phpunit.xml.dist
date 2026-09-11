@@ -15,4 +15,7 @@
 			<exclude>./tests/_class_check.php</exclude>
 		</testsuite>
 	</testsuites>
+	<extensions>
+		<extension class="Mullion_Test_Isolation_Hook"/>
+	</extensions>
 </phpunit>

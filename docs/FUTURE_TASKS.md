@@ -122,7 +122,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 **What to implement:**
 - Add an optional `href` (+ link behavior, e.g. same-tab/new-tab) to `LayoutTextLayer`; absent = plain text, so existing text layers stay back-compatible.
 - Render a CTA layer as a real anchor (`<a>` / `role="link"`) with correct keyboard focus + Enter/Space activation and an accessible name — reuse the slot click/keydown a11y pattern already in `LayoutBuilderGallery.tsx` (`role`/`tabIndex`/key handling).
-- Add a URL field + link controls to `TextPropertiesPanel.tsx` (the P59-B panel), and decide Pro-gating placement (text layers are flagged as a natural Pro feature in P59 Decision D / [PHASE62_REPORT.md](PHASE62_REPORT.md)).
+- Add a URL field + link controls to `TextPropertiesPanel.tsx` (the P59-B panel), and decide Pro-gating placement (text layers are flagged as a natural Pro feature in P59 Decision D / [PHASE62_REPORT.md](archive/phases/PHASE62_REPORT.md)).
 - Sanitize the URL on save and on render.
 
 **Files:** `src/types/index.ts` (`LayoutTextLayer`), `src/components/Admin/LayoutBuilder/TextPropertiesPanel.tsx`, `src/components/Galleries/Adapters/layout-builder/LayoutBuilderGallery.tsx`.
@@ -171,7 +171,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ---
 
-*"`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns (P70-H remainder)" was promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) track **P72-E** (2026-07-23) and removed from this backlog.*
+*"`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns (P70-H remainder)" was promoted to [PHASE72_REPORT.md](archive/phases/PHASE72_REPORT.md) track **P72-E** (2026-07-23) and removed from this backlog.*
 
 ---
 
@@ -197,7 +197,7 @@ This document tracks deferred and exploratory work remaining. Items promoted to 
 
 ### Contract Tests — Frontend Request Payloads vs. REST Route-Arg Enums
 
-**Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-I** (2026-08-26).
+**Origin:** [PHASE75_REPORT.md](archive/phases/PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-I** (2026-08-26).
 
 **Context:** P75-I was a two-phase-old, always-reproducible bug — every space access grant failed with `Invalid parameter(s): access_level` — that **both** test suites were green through, because neither suite can see the other side:
 
@@ -222,7 +222,9 @@ Scope decision worth settling first: whether the manifest is **hand-maintained a
 
 ---
 
-### Portal Admin Chrome Into the Shadow Root (remove the CSS-variable boundary)
+### ~~Portal Admin Chrome Into the Shadow Root (remove the CSS-variable boundary)~~ — DECIDED (P77-B, 2026-09-09)
+
+> **Decided 2026-09-09 in [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B.** Portaling into the gallery's shadow root, which this entry describes, was prototyped and measured to fail inside any transformed ancestor (the drawer lands 500px above the viewport). The accepted direction is an overlay root: a second shadow root of ours on a body-level host. The risk analysis below stayed accurate about stacking contexts and was the reason the alternative was found.
 
 **Origin:** Deferred from [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) **P76-H** Key Decision B (2026-08-27). P76-H ships option (b) — inlining the variables — and explicitly keeps this option open rather than rejecting it.
 
@@ -237,6 +239,53 @@ The codebase works around this per-consumer rather than structurally, and has al
 **Dependencies / risk:** This is the reason it was deferred rather than taken. The Drawer portals to `document.body` specifically to escape the host page's stacking context, so moving it inside the shadow root changes **z-index behaviour against wp-admin** — including against whatever plugins a given customer has installed — plus **focus trapping** and **click-outside** detection. That failure mode surfaces in support tickets, not in CI, which is a poor trade for closing a gap P76-D measured at 3 of 58 painted colour combinations. Re-evaluate when the variable-consuming surface grows enough to justify it; P76-H makes that cheaper, not harder, by centralising the mechanism it would replace.
 
 **Effort:** Medium-Large (small diff, large validation surface — needs real wp-admin testing across plugin combinations) | **Impact:** Medium — architectural cleanup that removes a recurring tax, not a user-visible fix.
+
+---
+
+### Share One Constructable Stylesheet Between the Gallery Root and the Overlay Root
+
+**Origin:** [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B (2026-09-09).
+
+**Context:** The overlay root (`src/portalTarget.ts`) carries its own `<style>` copy of `overlayStyles`, about 315 KB of CSS text per mount, on top of the gallery root's copy of `shadowStyles`. `adoptedStyleSheets` with one `CSSStyleSheet` built once per page would share the parsed sheet between every root the plugin creates, including multi-shortcode pages.
+
+**What to implement:** Build the sheets once with `replaceSync`, adopt them in `mountWithShadow` and in the overlay root, and keep the `<style>` path as the fallback for browsers without constructable stylesheets. Do it only after the overlay root is the shipped default.
+
+**Effort:** Small | **Impact:** Low-Medium — memory and parse time on multi-mount pages.
+
+---
+
+### Host Decoupling: Run Mullion on Any Web App ("Mullion-next")
+
+**Origin:** User request, 2026-09-10, raised alongside the [UI dependency evaluation](UI_DEPENDENCY_EVALUATION.md). Supersedes the abandoned dual WP/non-WP experiment as the *approach*, not as the goal.
+
+**Context:** The product is a React gallery app that currently assumes WordPress for seven host services: authentication and identity, the REST data layer, the media library, settings persistence, capabilities and roles, i18n string loading, and page embedding. Two of those already have a real seam, and it works: `src/services/auth/AuthProvider.ts` is a host-neutral interface with `WpNonceProvider` and `WpJwtProvider` behind it, and `src/services/http/HttpTransport.ts` documents in its own header that WordPress glue "lives at the wiring site" so the transport stays free of `window.__MULLION_*` reads. The remaining coupling is 44 non-test source files, concentrated in `src/hooks` (13), `src/services/api` (8) and `src/components/Admin` (8).
+
+The backend is the part with no seam at all: 32 PHP classes, about 11,000 lines, 86 registered REST routes. That is not glue around a portable core. For data, media, permissions and export it *is* the server.
+
+**The three meanings of "decoupled", which cost wildly different amounts.** This entry cannot be promoted until the user picks one, per evaluation criterion 5:
+
+| Meaning | What it takes | Where the existing backlog sits |
+|---------|---------------|----------------------------------|
+| (1) **Headless WordPress.** The SPA runs anywhere; WordPress stays the backend, reached cross-origin | JWT auth, CORS policy, build and routing changes, deployment docs. Mostly already scoped below | "JWT In-Memory Token Auth (Standalone SPA)", "CORS Origin Allow-List", "JWT Token Refresh" in **Access Control** are exactly this work, and the section intro already says so |
+| (2) **Pluggable host, WordPress as one implementation.** A `HostAdapter` interface for all seven services; the WP plugin becomes the reference implementation; a second adapter (Supabase, a Node service, a static demo) proves the boundary | The 44-file frontend cleanup plus a written host contract. Backend still required per host, but each host supplies its own | New work. The auth and transport seams are the precedent to copy |
+| (3) **Portable product.** A first-party non-WordPress backend so Mullion runs standalone end to end | Re-implementing the 86 REST routes and the domain logic behind them on a portable server, plus media storage, plus an install and upgrade story | New work, and by far the largest thing in this backlog |
+
+**What to implement (recommended shape, whichever meaning is chosen):** a single codebase with one host boundary, never a fork. Define `HostAdapter` as a set of small interfaces (`AuthProvider` is already one of them) covering auth, data transport, media, settings, capabilities, i18n loading and mount/embed. Wire the concrete implementation once at the entry point, exactly as `HttpTransport` already documents. Push host-neutral code into workspace packages (`@mullion/theme-engine` is already framework-neutral with zero runtime peers, and `@mullion/shared-utils` has no dependencies) so "does this import WordPress?" becomes a lint rule rather than a judgement call.
+
+**Why not a separate "Mullion-next" repository or build:** the user's own concern is drift, and drift is what a fork guarantees. Two builds of the same product diverge at the speed of whichever one is shipping. One codebase with one boundary and two adapters cannot drift, because the shared half has exactly one copy. The earlier dual WP/non-WP attempt is evidence for this reading rather than against it: it failed as scattered per-call-site conditionals, which is drift inside a single file rather than across two repositories. The lesson is "one seam, wired once", not "abstraction does not work here", and the auth provider shipped later on exactly that pattern and has held.
+
+**Dependencies / risk:**
+- Meaning (1) is a prerequisite for (2) and (3) in practice: the app has to survive not being same-origin before it can survive not being WordPress.
+- Ordering against the in-house UI work is genuinely open. The two touch disjoint layers (component layer versus service layer), so they do not block each other, and the host boundary is what makes `@mullion/ui` cleanly publishable if that is ever wanted. Sequencing is a product call, not a technical one.
+- The premium/licensing model (Freemius, `MULLION_PREMIUM` build flag) assumes a WordPress distribution channel. A non-WP host needs its own licensing answer, which is a **Monetization & Distribution** question, not an engineering one.
+- The WP media library is the deepest assumption. Attachment IDs appear in campaign data, export formats and the REST contract; a media abstraction has a data-migration tail, not only an interface.
+
+**Open questions:**
+- Q1: Which of the three meanings above is the actual goal?
+- Q2: If (2) or (3), what is the second host, concretely? A boundary with one implementation is a guess, exactly as P77 Key Decision A argued about the facade.
+- Q3: Does the WordPress plugin remain the flagship, or become one distribution among several? This decides whether the WP adapter may keep privileged shortcuts.
+
+**Effort:** (1) Medium-Large | (2) Large | (3) Very Large, multi-phase | **Impact:** High. It is a market-expansion item rather than a quality item, and the largest single scope increase currently in this backlog.
 
 ---
 
@@ -265,9 +314,33 @@ The codebase works around this per-consumer rather than structurally, and has al
 
 ## Accessibility
 
+### Focus Return After Closing Portaled Chrome Lands on `body`
+
+**Origin:** [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B (2026-09-09), measured in every portal mode.
+
+**Context:** Mantine's `useFocusReturn` records `document.activeElement` when a Drawer or Modal opens. When the trigger sits inside the gallery's shadow root that value is the shadow host, not the button, so on close focus goes to `body`. Keyboard users lose their place after every Settings panel or Layout Builder session. Independent of the shadow-versus-portal boundary decision.
+
+**What to implement:** Capture the real trigger through `getRootNode().activeElement` (walking into shadow roots) at open time and pass it as the return target, or wrap the trigger buttons to restore focus themselves on close. Cover with an e2e assertion on `activeElement` after Escape.
+
+**Effort:** Small | **Impact:** Medium — WCAG 2.4.3 focus order on every admin surface.
+
+---
+
+### WordPress Admin Bar Covers the Settings Drawer Header for Logged-In Users
+
+**Origin:** [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B (2026-09-09), measured on wordpress.lan.
+
+**Context:** `#wpadminbar` is `position: fixed` at `z-index: 99999`; Mantine's Drawer sits at 450, so the drawer's Cancel, Save and Close buttons render under the bar on the front end whenever the admin bar is shown. Same in every portal mode.
+
+**What to implement:** Either offset the drawer by the admin bar's height when `body.admin-bar` is present (WordPress already exposes `--wp-admin--admin-bar--height`), or raise the chrome's z-index above the bar. The offset is the more conventional choice in the WordPress ecosystem.
+
+**Effort:** Small | **Impact:** Medium — every logged-in admin on the front end hits it.
+
+---
+
 ### Structural a11y (axe) gate — grow coverage beyond `LayoutTemplateList`
 
-**Origin:** [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H (component structural axe harness, 2026-07-11) — the automatable half of the structural work, deferred here after the harness landed. *The concrete `LayoutTemplateList` fixes this entry used to include (icon-only SegmentedControl accessible names; nested-interactive Card/Menu button) were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) track **P72-G** (2026-07-23) — this entry now covers only the open-ended remainder below.*
+**Origin:** [PHASE62_REPORT.md](archive/phases/PHASE62_REPORT.md) P62-H (component structural axe harness, 2026-07-11) — the automatable half of the structural work, deferred here after the harness landed. *The concrete `LayoutTemplateList` fixes this entry used to include (icon-only SegmentedControl accessible names; nested-interactive Card/Menu button) were promoted to [PHASE72_REPORT.md](archive/phases/PHASE72_REPORT.md) track **P72-G** (2026-07-23) — this entry now covers only the open-ended remainder below.*
 
 **Context:** A jsdom axe harness (`src/test/axe.ts` → `expectNoA11yViolations`) runs structural WCAG A/AA checks (roles/names/labels/ARIA; contrast excluded) in the blocking Vitest CI, and `test-utils` mirrors the app's global Mantine CloseButton `aria-label`. Two clean surfaces are gated (`ConfirmModal`, `LayoutBuilderLayersPanel`); `LayoutTemplateList` becomes a third once P72-G lands. Growing the gate further is a living, component-by-component effort — the full backlog + the "how to add coverage" pattern are in [guides/ACCESSIBILITY.md](guides/ACCESSIBILITY.md) ("structural a11y backlog").
 
@@ -325,7 +398,7 @@ P76-I-2, Option D, deferred 2026-08-28 as complementary to the chosen Option A.*
 
 **Why this stays deliberately unscoped:** the Astragal/Mullion website does not exist yet, so its actual asset needs — hero images, feature callouts, aspect ratios, light vs. dark theme by default — are unknown. Locking a shot list now would be guessing. This entry records the *decision* (bundle the extra capture into the same session) without prematurely scoping the *list*.
 
-**What to do when the capture pass happens:** after the 5 required shots and the 3 hover-glow verification shots, spend one bounded extra pass — not open-ended — on a small set of additional variety (a few more adapters, a couple of alternate themes, one mobile-width shot) explicitly for future website use. Revisit the actual list once the website's design is underway and its needs are concrete. Tracked as part of the screenshot capture item on [PHASE80_REPORT.md](PHASE80_REPORT.md) §D.
+**What to do when the capture pass happens:** after the 5 required shots and the 3 hover-glow verification shots, spend one bounded extra pass — not open-ended — on a small set of additional variety (a few more adapters, a couple of alternate themes, one mobile-width shot) explicitly for future website use. Revisit the actual list once the website's design is underway and its needs are concrete. Tracked as part of the screenshot capture item on [PHASE83_REPORT.md](PHASE83_REPORT.md) §D.
 
 **Effort:** Small (marginal time on top of an already-scheduled capture session) | **Impact:** Low — convenience for a future website build; nothing gates on it.
 
@@ -355,7 +428,7 @@ P76-I-2, Option D, deferred 2026-08-28 as complementary to the chosen Option A.*
 
 **Origin:** [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-E — surfaced while auditing data handling for `docs/PRIVACY.md`. These are documented honestly in `PRIVACY.md`'s "Follow-Ons" as **known gaps**, not present features; each is a code change deferred out of the P60-E content track.
 
-*"WordPress Core Privacy Integration (DSAR Export/Erase)" and "Retention / Auto-Purge for Email & Audit-Log Tables" were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) tracks **P72-B** and **P72-F** (2026-07-23) and removed from this backlog.*
+*"WordPress Core Privacy Integration (DSAR Export/Erase)" and "Retention / Auto-Purge for Email & Audit-Log Tables" were promoted to [PHASE72_REPORT.md](archive/phases/PHASE72_REPORT.md) tracks **P72-B** and **P72-F** (2026-07-23) and removed from this backlog.*
 
 ### Google Fonts Self-Host Variant
 
@@ -413,7 +486,7 @@ P39-CM1 ships background ZIP generation via `Mullion_Export_Engine` with a 100 M
 
 ### Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns
 
-**Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
+**Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](archive/phases/PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
 
 **Context:** P65-B fixed `export_media_library_binary()` to filter a campaign's media by `attachmentId` instead of the always-zero `id`. But any campaign whose media was sideloaded via ZIP import **before** Phase 65 landed (when `attachmentId` was never stamped on sideloaded items) still has no `attachmentId` on those items — the campaign-filtered export silently returns an empty archive for exactly those campaigns, same symptom P65-B fixed, different root cause (stale data vs. wrong filter key). This is consistent with an existing codebase convention — `Mullion_CLI::media_orphans()` has the identical blind spot today, items without `attachmentId` are already invisible to it — but there is no signal anywhere distinguishing "campaign genuinely has no media" from "media exists but predates the `attachmentId` fix."
 
@@ -427,7 +500,7 @@ P39-CM1 ships background ZIP generation via `Mullion_Export_Engine` with a 100 M
 
 ### Binary Campaign Export Downloads Non-File URLs for Embed/External Media
 
-**Origin:** Surfaced during the Phase 65 post-landing PR review (2026-07-18) while verifying a fix for dropped `embedUrl`/`provider` fields — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
+**Origin:** Surfaced during the Phase 65 post-landing PR review (2026-07-18) while verifying a fix for dropped `embedUrl`/`provider` fields — [PHASE65_REPORT.md](archive/phases/PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass".
 
 **Context:** `Mullion_Export_Engine::build_zip()` treats every `media_items[].url` as a downloadable file and fetches it via `wp_safe_remote_get()`. For `source:"external"`/`"oembed"` items (YouTube, Vimeo, etc.) `url` is the original webpage link, not a media file — `normalize_external_media()` deliberately keeps the real embeddable link in a separate `embedUrl` field. So a binary (ZIP) campaign export either downloads garbage bytes (an HTML page) and stores them under a made-up filename, or the entry fails WordPress's file-type validation on re-import and silently lands in `media_skipped` — a video/embed item never meaningfully round-trips through the ZIP transport, only through JSON (where P65-D's fix already works, since JSON never touches `build_zip()`). This predates Phase 65 — the `build_zip()` download loop wasn't touched by the P65 commits — and is a deeper change than the metadata-preservation fix that shipped in the post-landing pass, so it was documented rather than fixed on the spot.
 
@@ -441,7 +514,7 @@ P39-CM1 ships background ZIP generation via `Mullion_Export_Engine` with a 100 M
 
 ### Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths
 
-**Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass". Noted but not fixed in that pass, to avoid widening the diff's blast radius on freshly-landed, already-tested consolidation code.
+**Origin:** Phase 65 post-landing PR review (2026-07-18) — [PHASE65_REPORT.md](archive/phases/PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass". Noted but not fixed in that pass, to avoid widening the diff's blast radius on freshly-landed, already-tested consolidation code.
 
 **Context:** Four small duplication/indirection items surfaced during the review, none a correctness bug:
 1. `Mullion_Campaign_IO::build_url_media_items()`/`upload_media_item()`/`normalize_media_type()` re-derive the same type/source whitelisting `Mullion_Cpt::sanitize_media_items()` already implements as the registered meta sanitizer.
@@ -461,7 +534,7 @@ P39-CM1 ships background ZIP generation via `Mullion_Export_Engine` with a 100 M
 
 Phase-owned follow-on in this area: per-campaign RBAC now lives in [PHASE33_REPORT.md](archive/phases/PHASE33_REPORT.md). The remaining backlog items here are all prerequisites or components of the standalone cross-origin deployment scenario.
 
-*Per-space authorization scoping of ephemeral export-job resources was promoted out of this backlog into Phase 63 and **completed** on 2026-07-15 — see [PHASE63_REPORT.md](PHASE63_REPORT.md) Track **P63-I** (follow-on to P63-E / P63-E-2). Export-job read/download now enforces tier + creator-ownership + all-contributing-spaces.*
+*Per-space authorization scoping of ephemeral export-job resources was promoted out of this backlog into Phase 63 and **completed** on 2026-07-15 — see [PHASE63_REPORT.md](archive/phases/PHASE63_REPORT.md) Track **P63-I** (follow-on to P63-E / P63-E-2). Export-job read/download now enforces tier + creator-ownership + all-contributing-spaces.*
 
 ### Granular Custom-Role Permission Engine (GitHub-style)
 
@@ -506,7 +579,7 @@ The JWT code (`src/services/auth/WpJwtProvider.ts`) is **live, working code toda
 **What it would take:**
 - New PHP endpoint: `POST /mullion/v1/token/refresh` — validates the httpOnly cookie, issues a new JWT with a 15-minute TTL.
 - Modify `WpJwtProvider.ts` (live today, flag-gated — not commented out): replace `localStorage.setItem/getItem` with a module-scoped `let accessToken: string | null`.
-- **Permissions-cache staleness (from the 2026-07-13 React review, § B-4, tracked as Phase 69 P69-E):** `WpJwtProvider.getPermissions()` returns the cached `mullion_permissions` `localStorage` entry with **no TTL** — it is only cleared on logout, so a revoked grant persists in the client UI until the user logs out (display-only; the server still enforces on every request). Fold the fix into this rework: add a TTL to the cache, or drop it entirely since the `/permissions` endpoint is cheap. See [PHASE69_REPORT.md → P69-E](PHASE69_REPORT.md#track-p69-e---jwt-providers-localstorage-permissions-cache-never-expires-tracking-only).
+- **Permissions-cache staleness (from the 2026-07-13 React review, § B-4, tracked as Phase 69 P69-E):** `WpJwtProvider.getPermissions()` returns the cached `mullion_permissions` `localStorage` entry with **no TTL** — it is only cleared on logout, so a revoked grant persists in the client UI until the user logs out (display-only; the server still enforces on every request). Fold the fix into this rework: add a TTL to the cache, or drop it entirely since the `/permissions` endpoint is cheap. See [PHASE69_REPORT.md → P69-E](archive/phases/PHASE69_REPORT.md#track-p69-e---jwt-providers-localstorage-permissions-cache-never-expires-tracking-only).
 - Add a `useTokenRefresh` hook that calls the refresh endpoint 1 minute before expiry and on window `focus` events.
 - `apiClient.ts`: attach `Authorization: Bearer <in-memory-token>` only when the env-var opt-in `Mullion_ENABLE_JWT=1` is set.
 - Server-side: set the refresh cookie on `POST /mullion/v1/token` (login) and clear it on `DELETE /mullion/v1/token` (logout).
@@ -537,11 +610,11 @@ Transparent silent refresh of the in-memory JWT access token before expiry via a
 
 ## Settings & Admin UI
 
-> Two prior entries — "Admin Notice on Unresolved Shortcode Space Reference" and "Unify settings-write authorization behavior (space-panel silent drop vs. explicit 403)" — were promoted to [PHASE72_REPORT.md](PHASE72_REPORT.md) tracks **P72-D** and **P72-C** (2026-07-23) and removed from this backlog.
+> Two prior entries — "Admin Notice on Unresolved Shortcode Space Reference" and "Unify settings-write authorization behavior (space-panel silent drop vs. explicit 403)" — were promoted to [PHASE72_REPORT.md](archive/phases/PHASE72_REPORT.md) tracks **P72-D** and **P72-C** (2026-07-23) and removed from this backlog.
 
 ### Spaces Admin — UX Pass, Including Restore-Archived-Spaces
 
-**Origin:** [PHASE75_REPORT.md](PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-J** (2026-08-26). The restore gap is what forced P75-J's decision (a) — a slug collision with an archived space had to be resolved by suffixing (`test` → `test-2`) rather than by pointing the user at the archived original, because there is no way to see or restore one. Widened to a full UX pass at the user's direction after manual QA of P75-I/J: *"currently it's a bit cumbersome, for one selecting a space, then switching tabs to change its configuration."*
+**Origin:** [PHASE75_REPORT.md](archive/phases/PHASE75_REPORT.md) § Follow-On Candidates, from track **P75-J** (2026-08-26). The restore gap is what forced P75-J's decision (a) — a slug collision with an archived space had to be resolved by suffixing (`test` → `test-2`) rather than by pointing the user at the archived original, because there is no way to see or restore one. Widened to a full UX pass at the user's direction after manual QA of P75-I/J: *"currently it's a bit cumbersome, for one selecting a space, then switching tabs to change its configuration."*
 
 **Context:** `SpaceManagementView` (rendered both in the admin-panel modal and standalone on the WP-admin **Spaces** page) is a four-tab surface — Spaces / Settings / Access / Library — where three of the four tabs are `disabled` until a space is selected, and selection happens only by clicking a row in the Spaces tab's table. Every configuration action therefore costs a tab round-trip. The specific frictions, in the order a user meets them:
 
@@ -681,13 +754,13 @@ When promoting future tasks to an active phase:
 
 *Updated: June 23, 2026 (P55/P56/P57 planning) — Promoted the entire **Code Quality & Refactoring** section (adapter data-extraction / registration-seam / field-map unification + large-file decomposition) to [PHASE55_REPORT.md](archive/phases/PHASE55_REPORT.md); **Gallery — Admin-Control Additions** (all four pieces, incl. listing-mode exposure) to [PHASE56_REPORT.md](archive/phases/PHASE56_REPORT.md); and the two **Settings & Admin UI** items plus the LayoutBuilder **Design-Tool Affordances** (swatches/eyedropper, persistent guides, rotation handles) and the layer-search slice of **Editor UX Polish** to [PHASE57_REPORT.md](archive/phases/PHASE57_REPORT.md). Emptied sections (Code Quality & Refactoring, Settings & Admin UI) keep their headers with a "No tasks here yet" placeholder. Trimmed "Editor UX Polish" to its remaining deferred clipboard + alignment-shortcut pieces.*
 
-*Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE62_REPORT.md](PHASE62_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*
+*Updated: June 26, 2026 (P58–P61 planning) — Promoted LayoutBuilder **Editor UX Polish** → [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-A, **Responsive / Per-Breakpoint Editing** → P58-B, and **Text / Caption Layers** → [PHASE59_REPORT.md](archive/phases/PHASE59_REPORT.md). Added four net-new LayoutBuilder tracks directly from planning (Starter Template Library, Marquee Multi-Select, Slot Entrance Animations, Auto-Grid Generator — P58-C/D/E/F). Added three new Builder backlog entries in their place (History Persistence, Reusable Symbol/Linked Slots, Slot Constraints/Pinning). Scoped the `.pot`/user-facing i18n slice and the admin-flow a11y slice into [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) P60-B/P60-D while keeping the **full** admin i18n migration and **full** WCAG AA audit deferred as the WP.org public-listing gate. Promoted **Licensing + Update Infrastructure** → [PHASE62_REPORT.md](archive/phases/PHASE62_REPORT.md) (Freemius premium target chosen); the free WP.org "lite" tier stays deferred.*
 
 *Updated: June 26, 2026 (P58-A batch-1 execution) — Added Builder entry "LayoutBuilder — Align/Distribute Keyboard Shortcuts", deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-A during implementation (binding scheme needs design); the remaining P58-A pieces — clipboard, slot opacity, nudge steps — ship in batch 1.*
 
 *Updated: June 29, 2026 (P58-B execution) — Added two Builder entries deferred from [PHASE58_REPORT.md](archive/phases/PHASE58_REPORT.md) P58-B: "Published Responsive Canvas Sizing (Breakpoint Render Model)" (the on-page sizing / progressive-shrink problem needs a manual-testing pass + careful planning) and "Faithful Preview (Breakpoint Render + Runtime Effects)" (align the builder Preview path with the published render and surface glow/bounce/entrance/tilt effects in Preview).*
 
-*Updated: July 10, 2026 (P62 freemium expansion) — The distribution model expanded from premium-only to **freemium** (free WP.org "lite" build + premium via Freemius). Promoted **Full WCAG AA Audit** → [PHASE62_REPORT.md](PHASE62_REPORT.md) P62-H and **Store Listing Artwork** → P62-I and **removed both from the queue** (the Accessibility and Monetization & Distribution sections are now empty placeholders); the previously-deferred free WP.org "lite" tier is now **in scope** as P62-F–I (spike → code split → WCAG AA → WP.org submission).*
+*Updated: July 10, 2026 (P62 freemium expansion) — The distribution model expanded from premium-only to **freemium** (free WP.org "lite" build + premium via Freemius). Promoted **Full WCAG AA Audit** → [PHASE62_REPORT.md](archive/phases/PHASE62_REPORT.md) P62-H and **Store Listing Artwork** → P62-I and **removed both from the queue** (the Accessibility and Monetization & Distribution sections are now empty placeholders); the previously-deferred free WP.org "lite" tier is now **in scope** as P62-F–I (spike → code split → WCAG AA → WP.org submission).*
 
 *Updated: July 11, 2026 (P62-H) — Added Accessibility entry "Structural a11y (axe) gate — grow coverage + fix found issues", deferred from P62-H after the component axe harness landed (the automatable half; the manual AT audit is a separate human task). Concrete backlog seeded from the harness's first findings in `LayoutTemplateList`.*
 
@@ -697,9 +770,9 @@ When promoting future tasks to an active phase:
 
 *Updated: July 5, 2026 (P60 post-phase PR review) — Added Internationalization entry "i18n Review Follow-Ons — Sentence Composition + Locale Re-Translation", deferred from the [PHASE60_REPORT.md](archive/phases/PHASE60_REPORT.md) post-phase code-review pass: `ArchiveCompanyModal` sentence-fragment composition (needs `<Trans>`) and re-translating the four changed media-import toast strings across the five packs (fold in the `ru_RU` 3-plural). Both English-safe; the review's material fix (i18next colon-key resolution) shipped on-branch.*
 
-*Updated: July 18, 2026 (Phase 65 post-landing PR review) — Added three Campaign Management entries deferred from the [PHASE65_REPORT.md](PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass": "Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns" (legacy sideloaded media lacks `attachmentId`, narrow/consistent with an existing `media_orphans()` limitation), "Binary Campaign Export Downloads Non-File URLs for Embed/External Media" (a deeper, pre-existing gap surfaced while verifying the embedUrl/provider fix — video/embed items don't meaningfully round-trip through the ZIP transport), and "Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths" (four small reuse findings, no correctness bug). The two actual bugs found in that review (binary import dropping `embedUrl`/`provider`; multi-campaign batch export filename mismatch) were fixed on-branch, not deferred here.*
+*Updated: July 18, 2026 (Phase 65 post-landing PR review) — Added three Campaign Management entries deferred from the [PHASE65_REPORT.md](archive/phases/PHASE65_REPORT.md) "Post-Landing PR Review & Fix Pass": "Campaign-Filtered Media Export Misses Pre-Phase-65 ZIP-Imported Campaigns" (legacy sideloaded media lacks `attachmentId`, narrow/consistent with an existing `media_orphans()` limitation), "Binary Campaign Export Downloads Non-File URLs for Embed/External Media" (a deeper, pre-existing gap surfaced while verifying the embedUrl/provider fix — video/embed items don't meaningfully round-trip through the ZIP transport), and "Consolidate Duplicated Sanitization / Truncation-Flag Logic in the Campaign IO / Export Paths" (four small reuse findings, no correctness bug). The two actual bugs found in that review (binary import dropping `embedUrl`/`provider`; multi-campaign batch export filename mismatch) were fixed on-branch, not deferred here.*
 
-*Updated: July 23, 2026 (Phase 72 planning) — Created [PHASE72_REPORT.md](PHASE72_REPORT.md) (Planned, 7 mixed-domain tracks). **Promoted and removed from this backlog:** "WordPress Core Privacy Integration (DSAR Export/Erase)" → P72-B, "Retention / Auto-Purge for Email & Audit-Log Tables" → P72-F, "Admin Notice on Unresolved Shortcode Space Reference" → P72-D, "Unify settings-write authorization behavior" → P72-C (Settings & Admin UI is now an empty placeholder), "`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns" → P72-E, and the `LayoutTemplateList`-fix half of "Structural a11y (axe) gate — grow coverage + fix found issues" → P72-G (the "extend coverage further" half stays here, retitled). **Backfilled** (Follow-On Candidates from Phases 68-70 that were never recorded here — found while verifying the backlog is current, cross-checked every archived phase report's Follow-On Candidates table against this doc): "Full Server-Driven `CardGallery` Host Pagination" (PHASE68_REPORT.md, under Campaign Management), "Google Fonts Self-Host Variant" (PHASE69_REPORT.md, under Privacy & Compliance), "`ApiClient` Facade → Namespaces" and "Promote Inline Sub-Components" (both PHASE70_REPORT.md, under Code Quality & Refactoring) — none of the four were promoted into Phase 72, since each is explicitly conditional/opportunistic in its own origin phase's deferral rationale, not bounded phase-shaped work.*
+*Updated: July 23, 2026 (Phase 72 planning) — Created [PHASE72_REPORT.md](archive/phases/PHASE72_REPORT.md) (Planned, 7 mixed-domain tracks). **Promoted and removed from this backlog:** "WordPress Core Privacy Integration (DSAR Export/Erase)" → P72-B, "Retention / Auto-Purge for Email & Audit-Log Tables" → P72-F, "Admin Notice on Unresolved Shortcode Space Reference" → P72-D, "Unify settings-write authorization behavior" → P72-C (Settings & Admin UI is now an empty placeholder), "`AdminPanel.tsx` — Extract the Remaining Tab-State Concerns" → P72-E, and the `LayoutTemplateList`-fix half of "Structural a11y (axe) gate — grow coverage + fix found issues" → P72-G (the "extend coverage further" half stays here, retitled). **Backfilled** (Follow-On Candidates from Phases 68-70 that were never recorded here — found while verifying the backlog is current, cross-checked every archived phase report's Follow-On Candidates table against this doc): "Full Server-Driven `CardGallery` Host Pagination" (PHASE68_REPORT.md, under Campaign Management), "Google Fonts Self-Host Variant" (PHASE69_REPORT.md, under Privacy & Compliance), "`ApiClient` Facade → Namespaces" and "Promote Inline Sub-Components" (both PHASE70_REPORT.md, under Code Quality & Refactoring) — none of the four were promoted into Phase 72, since each is explicitly conditional/opportunistic in its own origin phase's deferral rationale, not bounded phase-shaped work.*
 
 *Updated: August 27, 2026 (P76-I-1) — Added Code Quality & Refactoring entry "Three e2e specs fail on a clean tree", found while verifying P76-I-1 and confirmed pre-existing against an unmodified tree. Not deferred work from Phase 76; filed so a permanently-red e2e floor has an owner.*
 
@@ -709,7 +782,7 @@ When promoting future tasks to an active phase:
 
 *Updated: August 28, 2026 (Phase 76 retrospective) — Added three architectural spikes to Code Quality & Refactoring after the user challenged the project's visual architecture as accumulating workarounds: "One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", and "UI Component Dependency: Mantine, Alternative, or In-House". They are sequenced deliberately — the dependency question runs last, because Phase 76's evidence attributes most of the pain to the shadow/portal boundary rather than to Mantine, and resolving that first materially narrows the case for replacement. The existing "Portal Admin Chrome Into the Shadow Root" entry is retained as the tactical version of one mount-strategy option.*
 
-*Updated: August 28, 2026 (Phase 77/78/79 planning) — **Promoted and removed:** the three architecture spikes added earlier today ("One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", "UI Component Dependency") became [PHASE77_REPORT.md](PHASE77_REPORT.md) tracks A, B and E; "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode" became P77-C; "Three e2e specs fail on a clean tree" and "Vacuous e2e test — theme-qa persists to localStorage" merged into P77-D. The UI facade became [PHASE78_REPORT.md](PHASE78_REPORT.md), and the former Phase 77 (release pipeline hygiene) was renumbered to [PHASE79_REPORT.md](PHASE79_REPORT.md) — the user chose to settle the visual architecture before release rather than ship on top of it. "Portal Admin Chrome Into the Shadow Root" is **not** promoted: it is retained, marked superseded, as the risk analysis behind option (a) of P77-B.*
+*Updated: August 28, 2026 (Phase 77/78/79 planning) — **Promoted and removed:** the three architecture spikes added earlier today ("One Canonical Style-Delivery Seam", "Re-evaluate the Shadow-DOM Mount Strategy", "UI Component Dependency") became [PHASE77_REPORT.md](PHASE77_REPORT.md) tracks A, B and E; "`global.scss` rules aimed at portaled admin chrome are dead in shadow mode" became P77-C; "Three e2e specs fail on a clean tree" and "Vacuous e2e test — theme-qa persists to localStorage" merged into P77-D. The UI facade became [PHASE78_REPORT.md](PHASE78_REPORT.md), and the former Phase 77 (release pipeline hygiene) was renumbered to Phase 79, later Phase 82 ([PHASE82_REPORT.md](PHASE82_REPORT.md)) — the user chose to settle the visual architecture before release rather than ship on top of it. "Portal Admin Chrome Into the Shadow Root" is **not** promoted: it is retained, marked superseded, as the risk analysis behind option (a) of P77-B.*
 
 *Updated: September 1, 2026 (designer response to the v2 design docs) — **Promoted:** "Two-Tone ('Halo') Focus Ring" to [PHASE77_REPORT.md](PHASE77_REPORT.md) track P77-F, on the designer's build-it sign-off plus the two constraints that were its open design questions (neutral halo from the theme's own grounds; constant ring geometry across themes). **Added:** new Design & Brand section with "Hover-Glow Default Over Hostile Imagery" (three verification screenshots for the designer, non-blocking), and Monetization & Distribution entry "Naming Defense — Trademark Filings + Fallback Domains" (product-owner actions from the designer's §0, none gating design or release). The remaining code/doc items from the same response — `accentPurple: #923bde` on `default-light`, ΔE unit labels, the v1 criterion-wording record, the screenshot-manifest reorder — went to [PHASE76_REPORT.md](archive/phases/PHASE76_REPORT.md) as tracks P76-J and P76-K rather than here, since Phase 76 is the in-progress colour-follow-ons phase.*
 
@@ -717,4 +790,20 @@ When promoting future tasks to an active phase:
 
 *Updated: September 9, 2026 (P76-C closed) — **Added:** Design & Brand entry "Move the Plugin Header `Author:` / `Author URI:` to Astragal", deferred out of P76-C because `Author URI:` needs a live destination to point at. The WordPress.org account (`astragal`) is registered and the `Contributors:` field now credits it; the naming-defense entry was also rewritten to point at the new [`docs/design/BRAND-CLEARANCE.md`](design/BRAND-CLEARANCE.md) reference card rather than restating the findings.*
 
-*Updated: September 9, 2026 (Phase 76 closed; Phase 80 drafted) — **Added:** "Expand the Screenshot Capture Pass for the Astragal/Mullion Website" to Design & Brand — the 5 required WP.org screenshots are still uncaptured, and the same seeded environment can produce marketing shots for the future website at near-zero marginal cost. Deliberately left unscoped (the website does not exist yet); the bounded version is folded into the new [PHASE80_REPORT.md](PHASE80_REPORT.md) track P80-D. Phase 76 is now archived at [`archive/phases/PHASE76_REPORT.md`](archive/phases/PHASE76_REPORT.md); links to it above corrected accordingly.*
+*Updated: September 9, 2026 (Phase 76 closed; Phase 80 drafted) — **Added:** "Expand the Screenshot Capture Pass for the Astragal/Mullion Website" to Design & Brand — the 5 required WP.org screenshots are still uncaptured, and the same seeded environment can produce marketing shots for the future website at near-zero marginal cost. Deliberately left unscoped (the website does not exist yet); the bounded version is folded into the go-live phase ([PHASE83_REPORT.md](PHASE83_REPORT.md)) track P83-D. Phase 76 is now archived at [`archive/phases/PHASE76_REPORT.md`](archive/phases/PHASE76_REPORT.md); links to it above corrected accordingly.*
+
+*Updated: September 9, 2026 (P77-A implementation) — No new entries. Two findings were routed straight into [PHASE77_REPORT.md](PHASE77_REPORT.md) instead: the `MediaCard` / `MediaTab` CSS modules are dead in the shipped shadow mount (added to P77-C alongside the `global.scss` rules, which turned out to be dead per surface rather than per rule), and the plugin enqueues only the entry chunk's CSS so Mantine's base stylesheet reaches the production document only when a dynamic chunk preloads it (proposed as P77-G, awaiting a decision).*
+
+*Updated: September 9, 2026 (P77-C implementation): No new entries. The three `global.scss` state rules and the two Media CSS modules are fixed and recorded in [PHASE77_REPORT.md](PHASE77_REPORT.md); the one finding that outlives the track (the Admin panel's own Select dropdown portals to the document and resolves no `--mantine-*` variable under the shipped mount) is logged there as a data point for P77-B rather than filed here, because B decides the boundary that causes it.*
+
+*Updated: September 9, 2026 (P77-B decision): **Decided:** "Portal Admin Chrome Into the Shadow Root" is struck through; the option it described was prototyped, measured to fail inside transformed ancestors, and replaced by an overlay root, recorded in [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-B. **Added:** "Share One Constructable Stylesheet Between the Gallery Root and the Overlay Root" (Code Quality), "Focus Return After Closing Portaled Chrome Lands on `body`" and "WordPress Admin Bar Covers the Settings Drawer Header for Logged-In Users" (Accessibility), all found during the B measurements and independent of the boundary decision.*
+
+*Updated: September 9, 2026 (P77-F implementation): No new entries. The promoted "Two-Tone (Halo) Focus Ring" entry above is delivered in [PHASE77_REPORT.md](PHASE77_REPORT.md) P77-F: a derived neutral halo token, the ring rule through the P77-A canonical channel, and the WCAG 1.4.11 audit re-modelled as a pair guarantee. The designer's in-situ review remains open and is tracked on the phase report, not here.*
+
+*Updated: September 10, 2026 (P77-E and P77-H delivered): No new entries. The UI dependency evaluation is [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md) (recommends an in-house component layer on headless primitives behind the Phase 78 facade, primitive settled by a spike, Mantine headless as the fallback) and the in-house framework study is [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md). Two candidates were routed to [PHASE77_REPORT.md](PHASE77_REPORT.md) Follow-On Candidates rather than filed here because they depend on the user re-planning Phase 78: the primitive spike, and lazy-loading admin chrome so the visitor path stops shipping `vendor-mantine-core` statically (P77-E section 4.3 measured that the visitor bundle is a code-splitting question more than a library question).*
+
+*Updated: September 10, 2026 (host decoupling): **Added:** "Host Decoupling: Run Mullion on Any Web App (Mullion-next)" to Code Quality & Refactoring, at the user's request. Recorded as an umbrella entry over the existing standalone-SPA items in **Access Control** (JWT auth, CORS allow-list, JWT refresh), which turn out to be one of its three possible meanings rather than separate work. The entry deliberately does not pick between the three meanings (headless WordPress, pluggable host, portable product); that is its first open question and it should not be promoted before the user answers it.*
+
+*Updated: September 10, 2026 (P77-E accepted, phases re-planned): No new entries. The user accepted the P77-E recommendation and chose to build the in-house component framework before release. The work is now [PHASE78_REPORT.md](PHASE78_REPORT.md) (boundary, primitive bake-off, token model), [PHASE79_REPORT.md](PHASE79_REPORT.md) (framework core and theme manager), [PHASE80_REPORT.md](PHASE80_REPORT.md) (behavioural components) and [PHASE81_REPORT.md](PHASE81_REPORT.md) (migration and Mantine removal). Release pipeline hygiene moved from Phase 79 to [PHASE82_REPORT.md](PHASE82_REPORT.md) and go-live from Phase 80 to [PHASE83_REPORT.md](PHASE83_REPORT.md); links above are corrected. Two backlog items are now owned by the new phases and stay here only until those phases land: "Share One Constructable Stylesheet Between the Gallery Root and the Overlay Root" becomes part of P79-B, and the WordPress admin bar covering the drawer header is closed by the host-safe layer token in P78-C.*
+
+*Updated: September 10, 2026 (P77-I, Phase 77 closed): No new entries. The portal default is now `overlay-root`, so the two accessibility entries that describe the old placement are re-scoped rather than removed: "Focus Return After Closing Portaled Chrome Lands on `body`" is unchanged and still real, because it is Mantine's `useFocusReturn` reading `document.activeElement` rather than a placement problem, and it is closed by the framework in Phase 80 where all three headless candidates resolve the active element through the shadow tree. "WordPress Admin Bar Covers the Settings Drawer Header" is likewise unchanged and is owned by the host-safe layer token in P78-C. One test-integrity fix landed with P77-I and is recorded there rather than here: `playwright.config.ts` defaulted to Vite's port 5173, another project on the machine was serving it, and `reuseExistingServer` ran the whole suite against that application, producing 45 phantom failures.*

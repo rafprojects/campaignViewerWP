@@ -9,11 +9,11 @@ This document tracks the findings of a full review of the plugin's PHP surface (
 
 | Findings | Phase |
 |---|---|
-| A-1, A-2, B-2, B-3, B-4, B-5, B-6, B-7 | [PHASE63_REPORT.md](PHASE63_REPORT.md) — Rate Limiting, Security Header & SSRF Hardening Completion |
-| A-7, A-8, A-13, A-14, B-1, C-2 | [PHASE64_REPORT.md](PHASE64_REPORT.md) — Access Request, Grants & Auth Correctness |
-| C-1, A-4, A-5, A-12, E-4, G-4 | [PHASE65_REPORT.md](PHASE65_REPORT.md) — Campaign Import/Export Consolidation |
-| A-3, A-6, A-10, A-11, C-3, F-1 | [PHASE66_REPORT.md](PHASE66_REPORT.md) — Campaign & Analytics Data Integrity, Lifecycle Bookkeeping |
-| D-1, D-2, C-4, C-5, C-6, E-1, E-2, E-3, E-5, A-9, G-1, G-2, G-3 | [PHASE67_REPORT.md](PHASE67_REPORT.md) — PHP Code Quality: Refactor, Efficiency & Dead-Code Sweep |
+| A-1, A-2, B-2, B-3, B-4, B-5, B-6, B-7 | [PHASE63_REPORT.md](../phases/PHASE63_REPORT.md) — Rate Limiting, Security Header & SSRF Hardening Completion |
+| A-7, A-8, A-13, A-14, B-1, C-2 | [PHASE64_REPORT.md](../phases/PHASE64_REPORT.md) — Access Request, Grants & Auth Correctness |
+| C-1, A-4, A-5, A-12, E-4, G-4 | [PHASE65_REPORT.md](../phases/PHASE65_REPORT.md) — Campaign Import/Export Consolidation |
+| A-3, A-6, A-10, A-11, C-3, F-1 | [PHASE66_REPORT.md](../phases/PHASE66_REPORT.md) — Campaign & Analytics Data Integrity, Lifecycle Bookkeeping |
+| D-1, D-2, C-4, C-5, C-6, E-1, E-2, E-3, E-5, A-9, G-1, G-2, G-3 | [PHASE67_REPORT.md](../phases/PHASE67_REPORT.md) — PHP Code Quality: Refactor, Efficiency & Dead-Code Sweep |
 
 ---
 

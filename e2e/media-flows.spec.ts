@@ -115,12 +115,30 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
+  // P28-D made uploads a batch: the endpoint answers with per-file results and
+  // the client then POSTs the successes to campaigns/{id}/media/batch. The old
+  // single-file mock shape made the client throw before any toast appeared.
   await page.route('**/wp-json/mullion-gallery/v1/media/upload', async (route) => {
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
-      body: JSON.stringify({ attachmentId: '99', url: 'https://example.com/file.jpg', mimeType: 'image/jpeg' }),
+      body: JSON.stringify({
+        results: [{ filename: 'upload.jpg', success: true, attachmentId: 99, url: 'https://example.com/file.jpg', thumbnail: 'https://example.com/file.jpg', mimeType: 'image/jpeg' }],
+        total: 1,
+        succeeded: 1,
+        failed: 0,
+      }),
     });
+  });
+  await page.route('**/wp-json/mullion-gallery/v1/campaigns/101/media/batch', async (route) => {
+    const body = route.request().postDataJSON() as { items?: any[] } | any[];
+    const items = Array.isArray(body) ? body : body?.items ?? [];
+    const added = items.map((item: any) => {
+      const created = { id: `m${mediaItems.length + 1}`, order: mediaItems.length + 1, ...item };
+      mediaItems.push(created);
+      return created;
+    });
+    await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ added, failed: [] }) });
   });
 
   await page.route('**/wp-json/mullion-gallery/v1/oembed?**', async (route) => {
@@ -153,8 +171,9 @@ test('admin media flows: upload, external add, edit, delete, reorder', async ({ 
     mimeType: 'image/jpeg',
     buffer: Buffer.from('upload'),
   });
-  await addMediaDialog.getByRole('button', { name: 'Upload' }).click();
-  await expect(page.getByText('Media uploaded and added to campaign.')).toBeVisible();
+  await addMediaDialog.getByRole('button', { name: 'Upload', exact: true }).click();
+  // useMediaUpload's batch summary toast (mediaup_complete_msg).
+  await expect(page.getByText(/1 of 1 file uploaded successfully/)).toBeVisible();
 
   // External add flow
   await page.getByRole('button', { name: 'Add Media' }).click();

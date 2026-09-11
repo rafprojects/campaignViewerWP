@@ -34,6 +34,7 @@ Engine-derived roles (not authored; resolved at startup):
 | `primaryFill` | `#007870` (ramp index 5) | `#006e66` (ramp index 6) |
 | `primaryStroke` | `#008e85` (index 4) | `#006e66` (= fill; it already clears 3:1) |
 | `primaryOnFill` | `#ffffff` | `#ffffff` |
+| `focusHalo` (P77-F) | `#edf5fb` | `#101416` |
 
 Optional accents: `default-dark` authors `info` `#1ad1c4`, `accentGreen` `#56b93e`,
 `accentPurple` `#a855f7`. `default-light` authors none of the three; the engine's fallbacks
@@ -62,6 +63,8 @@ model (i.e. the ones the adapter actually paints), measured on `default-light`:
 |---|---|
 | primaryStroke on surface / surface2 / surfaceRaised | 5.85 / 5.96 / 6.14 |
 | borderStrong on surface / surface2 / surfaceRaised | 3.48 / 3.55 / 3.65 |
+| focus halo against ring core (P77-F) | 3.02 |
+| focus ring pair on surface / surfaceRaised (halo carries it) | 17.66 / 18.52 |
 
 Additional pure-math checks (not audit pairs, still true): `text` clears 14.25 on the page;
 `textMuted` `#5f6c71` is 4.64 on `background`; the status colours `#227b00` / `#8e6200` /

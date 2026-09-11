@@ -1,6 +1,6 @@
 # Phase 67 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE67_REPORT.md](PHASE67_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE66_MANUAL_QA_RUNBOOK.md](PHASE66_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE67_REPORT.md](../archive/phases/PHASE67_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE66_MANUAL_QA_RUNBOOK.md](PHASE66_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P67-A … P67-J, plus **P67-R** (§4) — the four fixes from the post-landing PR review pass, which amend P67-F, P67-G, P67-H and P67-I. Phase 67 is a **code-quality** phase — refactors, duplicate-code extraction, query-count efficiency fixes, and dead-code removal. Unlike Phase 66 (100% behavior-visible lifecycle bookkeeping), **most of Phase 67 is deliberately invisible**: the correct manual-QA result for a refactor/deletion track is "nothing changed." Several sub-items therefore have **no** hand-QA script at all — for those this doc states the *rationale* (why an automated test or a repo-wide grep is the only meaningful check) in place of steps. The tracks that *do* have an observable effect (P67-F/G query counts, P67-H webhook latency, P67-I size sort) carry real before/after scripts.
 
@@ -557,7 +557,7 @@ npx wp-env run cli wp option get mullion_filesize_backfilled   # → 1 once ever
 
 ## 4. Review-fix verification — P67-R
 
-The PR review pass over the landed phase found four defects. Each is folded into its own track section above; this block is the consolidated check, and the one place to start if you are re-verifying the phase after the fixes rather than working through it track by track. Full rationale: [PHASE67_REPORT.md → PR Review & Fix Pass](PHASE67_REPORT.md#pr-review--fix-pass--p67-r-2026-07-19).
+The PR review pass over the landed phase found four defects. Each is folded into its own track section above; this block is the consolidated check, and the one place to start if you are re-verifying the phase after the fixes rather than working through it track by track. Full rationale: [PHASE67_REPORT.md → PR Review & Fix Pass](../archive/phases/PHASE67_REPORT.md#pr-review--fix-pass--p67-r-2026-07-19).
 
 **R1 — cache priming targeted a taxonomy instead of an object type.** The single highest-value check in this block, because the two efficiency tracks' priming was doing *nothing*. The distinction is easy to re-break, so verify the core contract first and the plugin behaviour second:
 

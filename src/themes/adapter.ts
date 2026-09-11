@@ -10,6 +10,7 @@
  * Gold source: docs/THEME_SYSTEM_ASSESSMENT.md §2.5
  */
 
+import type { CSSProperties } from 'react';
 import type { MantineThemeOverride, MantineColorShade } from '@mantine/core';
 import { colorsTuple } from '@mantine/core';
 import type { ThemeDefinition, ResolvedColors } from '@mullion/theme-engine';
@@ -173,14 +174,23 @@ function generateComponentOverrides(
       defaultProps: { gap: 'sm' },
     },
 
+    // P77-C: tab colours travel as variables, not inline `color`. An inline
+    // colour outranked the `[data-active]` rule everywhere it reached, so the
+    // active tab never brightened; chrome-portable.scss reads these instead.
     Tabs: {
       classNames: {
         tab: TABS_TAB_CLASS,
       },
+      vars: () => ({
+        root: {
+          '--tabs-color': stroke,
+          '--mullion-tabs-tab-color': rc.textMuted,
+          '--mullion-tabs-tab-active-color': rc.text,
+        },
+      }),
       styles: () => ({
         root: { borderColor: rc.border },
         tab: {
-          color: rc.textMuted,
           fontWeight: FONT_WEIGHT_MEDIUM,
         },
         panel: { color: rc.text },
@@ -215,10 +225,19 @@ function generateComponentOverrides(
       }),
     },
 
+    // P77-C: Mantine reads `--sc-label-color` on the active label, so the
+    // active colour is its own variable; the resting colour is ours and is
+    // read by chrome-portable.scss rather than pinned inline.
     SegmentedControl: {
       classNames: {
         label: SEGMENTED_CONTROL_LABEL_CLASS,
       },
+      vars: () => ({
+        root: {
+          '--sc-label-color': rc.text,
+          '--mullion-segmented-control-label-color': rc.textMuted,
+        },
+      }),
       styles: () => ({
         root: {
           backgroundColor: rc.surface,
@@ -226,9 +245,6 @@ function generateComponentOverrides(
         },
         indicator: {
           backgroundColor: rc.surface2,
-        },
-        label: {
-          color: rc.textMuted,
         },
       }),
     },
@@ -277,6 +293,10 @@ function generateComponentOverrides(
       }),
     },
 
+    // P77-C: option text inherits from the dropdown (Mantine's option rule is
+    // `color: inherit`), so Mantine's own highlight colour is no longer
+    // outranked by an inline colour. The checked-state pair rides on the
+    // dropdown as custom properties because the dropdown may be portaled.
     Select: {
       classNames: {
         option: SELECT_OPTION_CLASS,
@@ -285,10 +305,10 @@ function generateComponentOverrides(
         dropdown: {
           backgroundColor: rc.surfaceRaised,
           border: `1px solid ${rc.border}`,
-        },
-        option: {
           color: rc.text,
-        },
+          '--mullion-select-option-checked-bg': fill,
+          '--mullion-select-option-checked-color': onFill,
+        } as CSSProperties,
       }),
     },
 
@@ -528,6 +548,7 @@ export function adaptTheme(def: ThemeDefinition): MantineThemeOverride {
         borderStrong: rc.borderStrong,
         primaryFill: rc.primaryFill,
         primaryStroke: rc.primaryStroke,
+        focusHalo: rc.focusHalo,
         success: rc.success,
         warning: rc.warning,
         error: rc.error,

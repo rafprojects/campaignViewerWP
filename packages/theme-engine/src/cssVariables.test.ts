@@ -78,6 +78,7 @@ describe('generateCssVariables', () => {
     expect(result).toContain(`--mullion-color-primary: ${rc.primaryFill}`);
     expect(result).toContain(`--mullion-color-primary-stroke: ${rc.primaryStroke}`);
     expect(result).toContain(`--mullion-color-primary-on: ${rc.primaryOnFill}`);
+    expect(result).toContain(`--mullion-color-focus-halo: ${rc.focusHalo}`);
   });
 
   it('includes all 10 primary shade variables', () => {

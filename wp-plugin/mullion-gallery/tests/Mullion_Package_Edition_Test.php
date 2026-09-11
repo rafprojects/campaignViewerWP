@@ -32,13 +32,23 @@ class Mullion_Package_Edition_Test extends WP_UnitTestCase {
         );
     }
 
+    public function test_default_marker_path_points_at_the_build_output() {
+        $this->assertStringEndsWith( 'assets/mullion-edition.json', mullion_edition_marker_path() );
+    }
+
     public function test_defaults_premium_without_marker_file() {
-        $path = mullion_edition_marker_path();
-        $this->assertStringEndsWith( 'assets/mullion-edition.json', $path );
-        $this->assertFileDoesNotExist(
-            $path,
-            'PHPUnit must not see a build-emitted edition marker; delete wp-plugin/mullion-gallery/assets/mullion-edition.json if a local build left one'
+        // P77-D: point the lookup at a path that cannot exist instead of
+        // asserting the real build output is absent. `npm run build:wp` writes
+        // assets/mullion-edition.json, so the old assertion failed on any host
+        // that had built the plugin, which is every developer machine.
+        $missing = sys_get_temp_dir() . '/mullion-edition-missing-' . uniqid( '', true ) . '.json';
+        add_filter(
+            'mullion_edition_marker_path',
+            static function () use ( $missing ) {
+                return $missing;
+            }
         );
+        $this->assertFileDoesNotExist( $missing );
         $this->assertTrue( mullion_is_premium_package() );
     }
 

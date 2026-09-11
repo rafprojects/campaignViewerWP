@@ -1,6 +1,6 @@
 # Phase 66 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE66_REPORT.md](PHASE66_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE65_MANUAL_QA_RUNBOOK.md](PHASE65_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE66_REPORT.md](../archive/phases/PHASE66_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE65_MANUAL_QA_RUNBOOK.md](PHASE65_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P66-A … P66-F. Phase 66 is entirely a **backend / lifecycle-bookkeeping** change — there is no new frontend surface. You verify it through the REST API, WP-CLI, WP-Cron, and direct DB/postmeta inspection. Do the shared setup once (§1), then run the tracks in any order **except** that P66-B builds on P66-A (archive something through any entry point first, then watch the purge clock key off it).
 

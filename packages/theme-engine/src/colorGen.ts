@@ -185,6 +185,50 @@ export function deriveBorderStrong(
   return best;
 }
 
+/**
+ * Derive the focus-ring halo (P77-F): a neutral drawn from the theme's own
+ * ground hue, stepped toward whichever pole clears `minRatio` against the ring
+ * core (`primaryStroke`). The colour scheme only picks which pole to try
+ * first; it does not determine the answer, because the pole is a function of
+ * the core's lightness rather than of the scheme (designer sign-off,
+ * 2026-09-11). Five bundled dark themes have accents light enough that a light
+ * halo cannot separate from the core, and they correctly resolve dark.
+ *
+ * Do not raise `minRatio`. The halo can never exceed pure white or pure black
+ * against the core, and the lowest such ceiling across the bundled themes is
+ * 3.07 (`catppuccin-latte`), so 3 is essentially the system maximum. Any
+ * higher target forces themes onto the opposite pole, where the halo lands on
+ * top of its own surface: at 4 it flips eight themes and collapses their
+ * halo-to-surface contrast from 12-17 down to 1.05-1.62. Guarded by
+ * "the 3:1 pair target is at the system ceiling" in colorGen.test.ts.
+ */
+export function deriveFocusHalo(
+  core: string,
+  background: string,
+  colorScheme: 'light' | 'dark',
+  minRatio: number = UI_CONTRAST_MIN,
+): string {
+  const hue = chroma(background).lch()[2];
+  const h = Number.isFinite(hue) ? hue : 0;
+  const ramp = (pole: 'light' | 'dark'): { hex: string; ratio: number } => {
+    const start = pole === 'light' ? 96 : 12;
+    const end = pole === 'light' ? 100 : 0;
+    let best = { hex: chroma.lch(start, 4, h).hex(), ratio: 0 };
+    for (let i = 0; i <= 20; i++) {
+      const t = i / 20;
+      const hex = chroma.lch(start + (end - start) * t, 4 * (1 - t), h).hex();
+      const ratio = chroma.contrast(hex, core);
+      if (ratio > best.ratio) best = { hex, ratio };
+      if (ratio >= minRatio) return { hex, ratio };
+    }
+    return best;
+  };
+  const preferred = ramp(colorScheme === 'dark' ? 'light' : 'dark');
+  if (preferred.ratio >= minRatio) return preferred.hex;
+  const opposite = ramp(colorScheme === 'dark' ? 'dark' : 'light');
+  return opposite.ratio > preferred.ratio ? opposite.hex : preferred.hex;
+}
+
 function labStops(from: string, to: string, count: number): string[] {
   return chroma.scale([from, to]).mode('lab').colors(count).map((c) => chroma(c).hex());
 }
@@ -399,6 +443,7 @@ export function resolveColors(
     chroma.contrast('#ffffff', primaryFill) >= chroma.contrast('#000000', primaryFill)
       ? '#ffffff'
       : '#000000';
+  const focusHalo = deriveFocusHalo(primaryStroke, colors.background, colorScheme);
 
   return {
     background: colors.background,
@@ -420,6 +465,7 @@ export function resolveColors(
     primaryFillIndex: fillIndex,
     primaryStroke,
     primaryOnFill,
+    focusHalo,
 
     success: colors.success,
     warning: colors.warning ?? '#f59e0b',

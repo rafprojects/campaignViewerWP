@@ -1,6 +1,6 @@
 # Phase 69 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE69_REPORT.md](PHASE69_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE69_REPORT.md](../archive/phases/PHASE69_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P69-A … P69-E. Phase 69 is a **security/privacy hardening & compliance-polish** phase — no exploitable vulnerability was found in the source review; every track either flips a default to the less-invasive choice, documents an existing third-party data flow, or closes a small information-exposure gap. Several tracks are therefore **documentation-only** (P69-A, P69-E) and have no runtime behavior to click through — for those this doc states the *rationale* (why a diff review is the only meaningful check) in place of steps, the same way [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md) handles its no-behavior-change tracks.
 
@@ -220,7 +220,7 @@ Covers: public viewer (no `isAdmin`, no debug) sees generic copy and **not** the
 
 ## 5. PR review & validation log (2026-07-21, PR #83)
 
-A full reviewer pass ran over the branch's two commits — line-by-line code review plus a live validation run. Full write-up (correctness verification per track, prototype-pollution/no-regression proof, fixes applied) is in [PHASE69_REPORT.md → PR Review & Validation Pass](PHASE69_REPORT.md#pr-review--validation-pass-2026-07-21-pr-83). Result: **the implementation is correct as written**; the only changes were two doc/test-accuracy nits (this runbook's §2 `parseNodeConfig` location; a mislabeled `mountConfig.test.ts` case).
+A full reviewer pass ran over the branch's two commits — line-by-line code review plus a live validation run. Full write-up (correctness verification per track, prototype-pollution/no-regression proof, fixes applied) is in [PHASE69_REPORT.md → PR Review & Validation Pass](../archive/phases/PHASE69_REPORT.md#pr-review--validation-pass-2026-07-21-pr-83). Result: **the implementation is correct as written**; the only changes were two doc/test-accuracy nits (this runbook's §2 `parseNodeConfig` location; a mislabeled `mountConfig.test.ts` case).
 
 | Check (this pass) | Result |
 |---|---|

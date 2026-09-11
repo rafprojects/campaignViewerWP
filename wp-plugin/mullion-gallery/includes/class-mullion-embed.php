@@ -30,11 +30,9 @@ class Mullion_Embed {
             // imports as distinct module URLs, duplicating app state.
             wp_register_script($handle, $script_url, [], null, true);
 
-            if (!empty($entry['css'])) {
-                foreach ($entry['css'] as $index => $css_file) {
-                    $style_handle = $handle . '-style-' . $index;
-                    wp_register_style($style_handle, $base_url . $css_file, [], null);
-                }
+            foreach (self::get_entry_css_files($manifest) as $index => $css_file) {
+                $style_handle = $handle . '-style-' . $index;
+                wp_register_style($style_handle, $base_url . $css_file, [], null);
             }
 
             // Add filter to load script as ES module (required for Vite code splitting)
@@ -274,14 +272,10 @@ class Mullion_Embed {
             }
         }
 
-        $manifest = self::get_manifest();
-        $entry = isset($manifest['index.html']) ? $manifest['index.html'] : null;
-        if ($entry && !empty($entry['css'])) {
-            foreach ($entry['css'] as $index => $css_file) {
-                $style_handle = 'mullion-gallery-app-style-' . $index;
-                if (!wp_style_is($style_handle, 'enqueued')) {
-                    wp_enqueue_style($style_handle);
-                }
+        foreach (array_keys(self::get_entry_css_files(self::get_manifest())) as $index) {
+            $style_handle = 'mullion-gallery-app-style-' . $index;
+            if (!wp_style_is($style_handle, 'enqueued')) {
+                wp_enqueue_style($style_handle);
             }
         }
 
@@ -643,6 +637,49 @@ JS;
                 'href'   => '#' . $slug,
                 'meta'   => ['html' => true],
             ]);
+        }
+    }
+
+    /**
+     * Every stylesheet the entry needs at load, in the order Vite's own
+     * index.html links them: the CSS of each statically imported chunk
+     * (recursively, depth first) and then the entry's own CSS.
+     *
+     * P77-G: `cssCodeSplit` attaches Mantine's base stylesheet and Dockview's to
+     * the vendor chunks they belong to, so they live under those chunks' `css`
+     * keys rather than the entry's. Reading `$entry['css']` alone shipped a
+     * production document with no Mantine base rules until some dynamic chunk
+     * happened to preload them; portaled chrome rendered from the entry chunk
+     * was unstyled in that window.
+     *
+     * @param array $manifest Decoded Vite manifest.
+     * @return string[] Zero-indexed list of asset paths relative to assets/.
+     */
+    public static function get_entry_css_files($manifest) {
+        if (!is_array($manifest) || !isset($manifest['index.html'])) {
+            return [];
+        }
+        $seen_chunks = [];
+        $files = [];
+        self::collect_chunk_css($manifest, 'index.html', $seen_chunks, $files);
+        return array_values(array_unique($files));
+    }
+
+    private static function collect_chunk_css($manifest, $key, &$seen_chunks, &$files) {
+        if (isset($seen_chunks[$key]) || !isset($manifest[$key]) || !is_array($manifest[$key])) {
+            return;
+        }
+        $seen_chunks[$key] = true;
+        $chunk = $manifest[$key];
+        if (!empty($chunk['imports']) && is_array($chunk['imports'])) {
+            foreach ($chunk['imports'] as $import_key) {
+                self::collect_chunk_css($manifest, $import_key, $seen_chunks, $files);
+            }
+        }
+        if (!empty($chunk['css']) && is_array($chunk['css'])) {
+            foreach ($chunk['css'] as $css_file) {
+                $files[] = $css_file;
+            }
         }
     }
 

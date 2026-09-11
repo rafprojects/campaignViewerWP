@@ -124,6 +124,7 @@ One accent seed produces **three resolved roles** (P75-E — this replaced a har
 | `primaryFill`   | `#007870` (index 5) | the authored `primaryShade` rung — filled buttons, selected backgrounds |
 | `primaryStroke` | `#008e85` (index 4) | nearest rung clearing 3:1 against `surface` / `surface2` / `surfaceRaised` — focus rings, active-tab and builder outlines, input focus borders. Equals `primaryFill` when the fill already passes (10 of 23 themes) |
 | `primaryOnFill` | `#ffffff` | white or black, whichever contrasts better on `primaryFill` |
+| `focusHalo` | `#edf5fb` | P77-F: a neutral from the background's hue, stepped toward whichever pole clears 3:1 against `primaryStroke`. The scheme picks which pole is tried first, not the answer: five bundled dark themes have accents light enough that the halo correctly resolves dark. The focus ring's second tone; never a second accent. The 3:1 target is at the system ceiling and must not be raised (designer sign-off, 2026-09-11) |
 
 The split exists because the two jobs pull the criterion in opposite directions: the fill
 answers 4.5:1 *under white text*, and that same rung often fails 3:1 *as a thin line on a
@@ -132,7 +133,13 @@ dark panel* (Rig Cyan fill on surface: 2.95:1). 13 of 23 bundled themes need the
 The focus ring is genuinely painted from `primaryStroke` product-wide (P76-I-2 re-pointed
 Mantine's global `:focus-visible` ring at it, replacing `primaryFill`, which failed 3:1 on
 13 of 23 themes as painted), and inputs signal focus through `--input-bd-focus` set to the
-same token.
+same token. Since P77-F the ring is two-tone: the 2px `primaryStroke` core sits inside a
+6px `focusHalo` box-shadow, so 2px of halo shows on either side of the core. The geometry is
+the same on every theme; only the two colours resolve per theme. The point is structural:
+a single-colour ring is only as visible as its contrast with whatever is behind it, and a
+user-authored theme can put it under 3:1 where no build-time audit can see. With a light
+neutral halo on dark themes and a dark one on light, one of the two tones contrasts with
+any ground.
 
 ## 4. The CI gates — what is enforced, with measured values
 
@@ -155,6 +162,8 @@ drops below the bar fails CI rather than shipping.
 |---|---|
 | primaryStroke on surface / surface2 / surfaceRaised | 3.92 / 3.69 / 3.19 |
 | borderStrong on surface / surface2 / surfaceRaised | 3.81 / 3.59 / 3.11 |
+| focus halo against ring core (the pair contrasts with itself) | 3.66 |
+| focus ring pair on surface / surfaceRaised (halo carries it) | 14.33 / 12.50 |
 
 Scope caveat (recorded in the audit's own header): these gates cover **theme-derived
 chrome**. Gallery content borders (`card_border_color`, `tile_border_color`, …) are arbitrary

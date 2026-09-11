@@ -1,6 +1,6 @@
 # Phase 63 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE63_REPORT.md](PHASE63_REPORT.md) → *Manual QA & Validation* (the one-line-per-track table). This document is the **detailed HOW**: exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test.
+**Companion to:** [PHASE63_REPORT.md](../archive/phases/PHASE63_REPORT.md) → *Manual QA & Validation* (the one-line-per-track table). This document is the **detailed HOW**: exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test.
 
 **Scope:** tracks P63-A … P63-I. Each track section is self-contained. Do the shared setup once (§1–§3), then run the tracks in any order — except note the environment caveats called out per track (e.g. P63-A needs a *non*-persistent-object-cache host; P63-C needs a *built* plugin).
 

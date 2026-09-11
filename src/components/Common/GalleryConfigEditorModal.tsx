@@ -1,3 +1,4 @@
+import type { DrawerProps } from '@mantine/core';
 import { Accordion, Button, Drawer, Group, Menu, NumberInput, Stack, Tabs, Text, TextInput } from '@mantine/core';
 import { IconChevronDown } from '@tabler/icons-react';
 import { useEffect, useState, type ReactElement } from 'react';
@@ -21,6 +22,7 @@ import {
 } from '@/types';
 import { useLazyAccordion } from '@mullion/shared-utils';
 import { cloneGalleryConfig } from '@/utils/galleryConfig';
+import { getMullionDebugProps } from '@/utils/mullionDebug';
 
 import {
   GALLERY_BREAKPOINTS,
@@ -62,6 +64,17 @@ interface GalleryConfigEditorModalProps {
   unifiedAdapterDescription?: string | undefined;
   zIndex?: number | undefined;
   blurEnabled?: boolean | undefined;
+  /**
+   * P77-D: where the editor's Drawer renders. Inline (the default) keeps it in
+   * the caller's tree, which is right inside the shadow-mounted CampaignViewer.
+   * The Settings panel must pass `withinPortal` instead: rendered inline there
+   * it sits inside the outer Drawer's transformed, scrolling content, so
+   * `position: fixed` resolves against that box and the editor scrolls out of
+   * view with the outer body. Measured in e2e/mantine8-runtime-qa.spec.ts.
+   */
+  withinPortal?: boolean | undefined;
+  /** Mantine Drawer props the caller needs on a portaled editor (admin chrome scoping). */
+  drawerProps?: Pick<DrawerProps, 'classNames' | 'attributes' | 'styles' | 'portalProps'> | undefined;
 }
 
 type NamedComponent<Props = Record<string, never>> = ((props: Props) => ReactElement) & {
@@ -276,6 +289,8 @@ export function GalleryConfigEditorModal({
   unifiedAdapterEnabled = true,
   unifiedAdapterDescription,
   zIndex,
+  withinPortal = false,
+  drawerProps,
   blurEnabled,
 }: GalleryConfigEditorModalProps) {
   const { t } = useTranslation('mullion');
@@ -338,7 +353,8 @@ export function GalleryConfigEditorModal({
     <Drawer
       opened={opened}
       onClose={onClose}
-      withinPortal={false}
+      withinPortal={withinPortal}
+      {...drawerProps}
       title={
         <Group w="100%" justify="space-between" wrap="nowrap" gap="sm">
           <Text fw={600} size="sm" style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</Text>
@@ -376,7 +392,9 @@ export function GalleryConfigEditorModal({
       overlayProps={{
         backgroundOpacity: 0.6,
         blur: blurEnabled !== false ? 4 : 0,
+        ...getMullionDebugProps('GalleryConfigEditorModal', 'overlay'),
       }}
+      closeButtonProps={getMullionDebugProps('GalleryConfigEditorModal', 'close')}
     >
       <Stack gap="md">
         <GalleryConfigEditorIntro

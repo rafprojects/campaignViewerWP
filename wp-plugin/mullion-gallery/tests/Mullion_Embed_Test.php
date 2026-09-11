@@ -379,4 +379,87 @@ class Mullion_Embed_Test extends WP_UnitTestCase {
         $this->assertNotNull( $registered );
         $this->assertNull( $registered->ver );
     }
+
+    // ------------------------------------------------- chunk CSS (P77-G)
+
+    /** A manifest shaped like the real build: vendor CSS hangs off imported chunks. */
+    private function chunked_manifest() {
+        return [
+            'index.html' => [
+                'file'    => 'assets/index-abc123.js',
+                'isEntry' => true,
+                'css'     => [ 'assets/index-abc123.css' ],
+                'imports' => [ '_vendor-query.js', '_vendor-mantine-core.js', '_vendor-dockview.js' ],
+            ],
+            '_vendor-query.js'        => [ 'file' => 'assets/vendor-query.js' ],
+            '_vendor-mantine-core.js' => [
+                'file'    => 'assets/vendor-mantine-core.js',
+                'css'     => [ 'assets/vendor-mantine-core.css' ],
+                'imports' => [ '_vendor-mantine-helpers.js', '_vendor-query.js' ],
+            ],
+            '_vendor-mantine-helpers.js' => [ 'file' => 'assets/vendor-mantine-helpers.js' ],
+            '_vendor-dockview.js'     => [
+                'file'    => 'assets/vendor-dockview.js',
+                'css'     => [ 'assets/vendor-dockview.css' ],
+                // Cycle on purpose: chunk graphs can have them and the walk must terminate.
+                'imports' => [ '_vendor-mantine-core.js', '_vendor-dockview.js' ],
+            ],
+            // A dynamic-only chunk: its CSS is Vite's preload helper's job, not ours.
+            '_AdminPanel.js'          => [ 'file' => 'assets/AdminPanel.js', 'css' => [ 'assets/AdminPanel.css' ], 'isDynamicEntry' => true ],
+        ];
+    }
+
+    public function test_get_entry_css_files_walks_static_imports_in_vite_order() {
+        $files = Mullion_Embed::get_entry_css_files( $this->chunked_manifest() );
+
+        // Imported chunks' CSS first (depth first, each chunk once), entry CSS last.
+        $this->assertSame(
+            [ 'assets/vendor-mantine-core.css', 'assets/vendor-dockview.css', 'assets/index-abc123.css' ],
+            $files
+        );
+        $this->assertNotContains( 'assets/AdminPanel.css', $files );
+    }
+
+    public function test_get_entry_css_files_handles_missing_or_bare_manifest() {
+        $this->assertSame( [], Mullion_Embed::get_entry_css_files( [] ) );
+        $this->assertSame( [], Mullion_Embed::get_entry_css_files( null ) );
+        $this->assertSame(
+            [ 'assets/only.css' ],
+            Mullion_Embed::get_entry_css_files( [ 'index.html' => [ 'file' => 'a.js', 'css' => [ 'assets/only.css' ] ] ] )
+        );
+    }
+
+    public function test_register_assets_registers_a_style_handle_for_every_entry_stylesheet() {
+        foreach ( [ 0, 1, 2, 3 ] as $i ) {
+            wp_deregister_style( 'mullion-gallery-app-style-' . $i );
+        }
+        $ref = new ReflectionProperty( Mullion_Embed::class, 'manifest_cache' );
+        $ref->setAccessible( true );
+        $ref->setValue( null, $this->chunked_manifest() );
+
+        Mullion_Embed::register_assets();
+
+        $styles = wp_styles()->registered;
+        $this->assertStringEndsWith( 'assets/vendor-mantine-core.css', $styles['mullion-gallery-app-style-0']->src );
+        $this->assertStringEndsWith( 'assets/vendor-dockview.css', $styles['mullion-gallery-app-style-1']->src );
+        $this->assertStringEndsWith( 'assets/index-abc123.css', $styles['mullion-gallery-app-style-2']->src );
+        $this->assertArrayNotHasKey( 'mullion-gallery-app-style-3', $styles );
+    }
+
+    public function test_render_shortcode_enqueues_every_entry_stylesheet() {
+        foreach ( [ 0, 1, 2 ] as $i ) {
+            wp_dequeue_style( 'mullion-gallery-app-style-' . $i );
+            wp_deregister_style( 'mullion-gallery-app-style-' . $i );
+        }
+        $ref = new ReflectionProperty( Mullion_Embed::class, 'manifest_cache' );
+        $ref->setAccessible( true );
+        $ref->setValue( null, $this->chunked_manifest() );
+
+        Mullion_Embed::register_assets();
+        Mullion_Embed::render_shortcode( [] );
+
+        foreach ( [ 0, 1, 2 ] as $i ) {
+            $this->assertTrue( wp_style_is( 'mullion-gallery-app-style-' . $i, 'enqueued' ), "style handle $i should be enqueued" );
+        }
+    }
 }

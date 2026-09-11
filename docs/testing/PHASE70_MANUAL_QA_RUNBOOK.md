@@ -1,6 +1,6 @@
 # Phase 70 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE70_REPORT.md](PHASE70_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand. It follows the format of [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE70_REPORT.md](../archive/phases/PHASE70_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand. It follows the format of [PHASE69_MANUAL_QA_RUNBOOK.md](PHASE69_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P70-A … P70-H (P70-E and P70-I are deferred to a follow-on — see PHASE70_REPORT.md). Phase 70 is a **structure / abstraction / duplication-cleanup** phase: **nothing changes behaviour.** Every track either extracts shared code that renders identically, splits an oversized file into re-exported pieces, or collapses duplicated logic into one place.
 
@@ -253,7 +253,7 @@ The new unit test drives each handler: media export (scoped/unscoped job start �
 
 ## 5. Pre-merge review sign-off (2026-07-22)
 
-A pre-merge PR review was performed over the four batched commits (`ab88e069`, `d944863b`, `7dd350c2`, `7af1ce44`) — the reviewer role, with **no external comments to address**. Per this runbook's golden rule, the operative check for a pure refactor is *"existing tests pass unmodified + `tsc -b` clean + a diff review confirms the extraction is faithful"* — that is exactly what this sign-off records. Full rationale and per-track findings live in [PHASE70_REPORT.md](PHASE70_REPORT.md) → **PR Review & Fix Process (2026-07-22)**.
+A pre-merge PR review was performed over the four batched commits (`ab88e069`, `d944863b`, `7dd350c2`, `7af1ce44`) — the reviewer role, with **no external comments to address**. Per this runbook's golden rule, the operative check for a pure refactor is *"existing tests pass unmodified + `tsc -b` clean + a diff review confirms the extraction is faithful"* — that is exactly what this sign-off records. Full rationale and per-track findings live in [PHASE70_REPORT.md](../archive/phases/PHASE70_REPORT.md) → **PR Review & Fix Process (2026-07-22)**.
 
 **Method.** For each track, the committed diff was audited **against the pre-phase source** (`git show <commit>^:<path>`) for behavioural equivalence — not just a plausibility read. Specific equivalence points confirmed: the two heading shapes and the five identical lightbox props (P70-A); the conditional-last `whiteSpace` badge spread that keeps the serialized `style` byte-identical (P70-B); that `fetchNonceFrom`'s `?? null` return is gated by truthy `if (nonce)` at all three call sites so `''` behaves as before (P70-C); all 17 preserved history labels and 20 field-correct call-site remappings (P70-F); the 73-export set with no `export *` name collisions (P70-G); and the explicit `mediaCampaignId` argument with no dangling `AdminPanel` references (P70-H).
 

@@ -1,45 +1,48 @@
-# Phase 78 - UI facade
+# Phase 78 - UI boundary, primitive bake-off, token model
 
-**Status:** Planned — no code yet
-**Created:** 2026-08-28
-**Last updated:** 2026-08-28
+**Status:** Planned, no code yet
+**Created:** 2026-08-28 (as "UI facade")
+**Last updated:** 2026-09-10 (re-planned after the user accepted the P77-E recommendation)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P78-A | Establish `src/ui/` and the import boundary — re-export surface plus an ESLint rule forbidding new direct `@mantine/core` imports outside it | Planned — gated on Phase 77 | Medium |
-| P78-B | Migrate the theming-critical components first — the ones the theme adapter actually fights with | Planned | Medium |
-| P78-C | Migrate the remaining consumers, incrementally | Planned | Large |
+| P78-A | Establish `src/ui/` and the import boundary: re-export surface plus an ESLint rule forbidding new direct `@mantine/core` imports outside it | Planned | Medium |
+| P78-B | Primitive bake-off: build the same five components on Ark UI and Base UI, measured against fixed tests, and pick one | Planned | Small-Medium |
+| P78-C | Extend the theme engine with the component-token tier and the framework constants the framework will read | Planned | Medium |
 
 ---
 
 ## Rationale
 
-1. **What triggered it.** The Phase 76 retrospective. The user's stated goal is not "remove Mantine" for its own sake — it is *"to allow for more ease to adjustments and expansions, and to minimize the chance of chaos if we need to make changes to a component of the app like we did with the color system."* A facade delivers exactly that, and it delivers it whether or not Mantine is ever replaced.
+1. **What this phase is now.** It was "UI facade" and it is now the decide-and-prepare phase for the in-house component framework. Phase 77 track E recommended building a component layer whose theme model, styling and API are ours and whose interaction behaviour is bought from a headless primitive library ([UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md)), and track H described what that framework takes ([IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md)). The user accepted both on 2026-09-10 and chose to do the work before release rather than after.
 
-2. **Why it belongs together, and why after Phase 77.** Today **153 of 434** source files import `@mantine/core` directly across **44 distinct components** (~35% of the codebase). Any change to how a component is themed, styled or swapped has to be made in 153 places, which is precisely the chaos the user described. A facade converts that into one place.
+2. **Why these three tracks belong together.** They are the three things that must be true before a single framework component can be written, and none of them is the framework. A is the boundary that makes an incremental migration safe. B answers the one question the evaluation deliberately left open, because three candidates finished within three points of each other and the difference is not resolvable on paper. C puts the theme model in the engine, where the audits can see it, so the framework has something to read on its first day.
 
-   It runs after Phase 77 by explicit decision: P77-B may delete whole categories of workaround — if chrome renders inside the shadow root, `chrome-portable.scss`, `adminChromeStyles()` and the `--mullion-builder-*` bridge could all become unnecessary — and P77-E decides whether the facade is wrapping Mantine permanently or preparing to swap it. Drawing the boundary before those answers exist means guessing at what it must abstract.
+3. **Why the facade still comes first, and unchanged.** It was worth doing when the answer was "stay on Mantine" and it is worth more now. `@mantine/core` is imported directly in 142 non-test files. Without a boundary the migration is a 142-file diff that cannot be split; with one it is a series of small changes behind a stable import path, and the intermediate state where both implementations coexist is safe by construction. The user confirmed on 2026-09-10 that the facade lands first regardless of the outcome.
 
-3. **Why a facade rather than a replacement.** This is the middle path from P77-E, and it is expected to be the recommendation there. It buys the optionality without the rewrite: consumers stop depending on a third-party API, the theming contract from P77-A gets a natural home, and a future swap becomes a change behind a boundary instead of a 153-file migration. It is also **incremental by construction** — a strangler pattern needs no freeze and no big-bang diff.
+4. **Why the bake-off is a track and not a decision.** The evaluation scored Ark UI first, with Base UI and React Aria Components within three points. That gap is inside the judgement error of a 1-to-5 rubric, and the criteria that actually matter here are ones only a measurement can settle: does the primitive's overlay behave correctly inside our overlay root, does focus return reach a trigger inside the gallery shadow root, does the axe gate stay green, what does it cost in bytes. Picking on paper would be the same guess Phase 77 Key Decision A warned about.
 
-4. **Success.** A developer changing how inputs are themed edits one file. `@mantine/core` appears only inside `src/ui/`. Nothing about the rendered product changes.
+5. **Success.** A developer cannot import `@mantine/core` in new code. The primitive is chosen with measurements on the record, including the one that lost. The engine emits a token for every affordance the framework will style, and the contrast audits cover those tokens rather than Mantine's variable names.
 
 ## Key Decisions
 
 | # | Decision | Resolution |
 |---|----------|------------|
-| A | Facade before or after the Phase 77 spikes? | **After.** Agreed with the user 2026-08-28: *"the spikes must be done first before we do anything, including the facade."* |
-| B | Before or after release? | **Before.** The user chose to settle the visual architecture ahead of shipping rather than build on top of it, and is explicitly not in a rush to release. Note this is a *preference*, not a technical necessity — the facade is purely internal, has no external contract, and would be no harder after release. Recorded so the trade is visible if priorities change. |
-| C | Big-bang migration or incremental? | **Incremental, enforced at the boundary.** A-B-C below: create the layer, ban *new* direct imports with lint, migrate the theming-critical components, then let the long tail migrate. A half-migrated layer is only harmful if nothing prevents the two styles from mixing — the ESLint rule is what makes the intermediate state safe. |
-| D | Does the facade re-implement behaviour, or only re-export? | **Re-export plus prop surface, no behaviour.** The moment the facade starts reimplementing focus management or overlay behaviour, it becomes the in-house library P77-E was supposed to decide on first. If P77-E recommends in-house, that is its own phase. |
+| A | Facade before or after the Phase 77 spikes? | **After.** Agreed with the user 2026-08-28: *"the spikes must be done first before we do anything, including the facade."* Satisfied; Phase 77 is complete apart from P77-I. |
+| B | Before or after release? | **Before, and now so is the whole framework.** The user chose on 2026-09-10 to build the component layer ahead of release rather than ship on Mantine and migrate for v2. Recorded as a deliberate trade: it moves the release out by several phases in exchange for shipping on the final architecture. The author's written recommendation was the opposite, and the user's call is on the record as theirs. |
+| C | Big-bang migration or incremental? | **Incremental, enforced at the boundary.** Unchanged. The ESLint rule is what makes the intermediate state safe. |
+| D | Does the facade re-implement behaviour, or only re-export? | **Re-export only, in this phase.** Behaviour arrives in Phase 80, from the primitive. The facade never becomes the place where interaction code accumulates. |
+| E | What did P77-E decide, and what does it change here? | **An in-house layer on headless primitives.** P78-A is unchanged. The former P78-B and P78-C (migrate Mantine consumers behind the facade) are superseded: migration now targets the new components and lives in Phase 81. |
+| F | Does the facade wrap Mantine or the primitive during the migration? | **Both, one name at a time.** A name in `src/ui/` resolves to the Mantine re-export until its framework component exists, then to the framework component. That is the strangler pattern the boundary exists to enable, and it is why A can land before B is decided. |
+| G | Who picks the primitive if the bake-off is close? | **The measurements decide, and a tie goes to coverage.** Ark UI has a direct counterpart for every behavioural component in use; Base UI lacks pagination, tags input and colour picker. If the fixed tests do not separate them, the coverage gap is the tiebreak, because each gap is a component we would write and own. |
 
 ## Execution Priority
 
-1. **P78-A** — the boundary is worth more than any migration. Once new code cannot import Mantine directly, the problem stops growing even if the tail takes months.
-2. **P78-B** — the components the theme adapter fights with: the Input family, Checkbox, Switch, Table, Anchor, Drawer/Modal. These are where Phase 76's defects lived, so they benefit first and validate the design.
-3. **P78-C** — the long tail, opportunistically, as files are touched for other reasons.
+1. **P78-A** first. Once new code cannot import Mantine directly the problem stops growing, and that is true whatever B decides.
+2. **P78-B** next, and it is the gate for Phase 79. Nothing in the framework can be built against an unchosen primitive.
+3. **P78-C** beside B. It touches the engine and not the app, so it does not compete for the same files, and Phase 79 needs it on day one.
 
 ---
 
@@ -47,67 +50,97 @@
 
 ### Problem
 
-`@mantine/core` is imported directly in 153 files. There is no seam at which the component library could be configured, wrapped, or replaced.
+`@mantine/core` is imported directly in 142 non-test source files of 357, across 73 distinct symbols. There is no seam at which the component library could be configured, wrapped, or replaced, so every change to how a component is themed is a change in 142 places.
 
 ### Fix
 
-Create `src/ui/` exporting the components the app actually uses, initially as thin re-exports with our own prop surface where the Mantine prop is a poor fit. Add an ESLint rule (`no-restricted-imports`) forbidding `@mantine/core` outside `src/ui/`, with the existing 153 files allow-listed so the rule constrains *new* code from day one without requiring a big-bang migration.
+Create `src/ui/` exporting the components the app actually uses, initially as thin re-exports with our own prop surface where the Mantine prop is a poor fit. Add `no-restricted-imports` forbidding `@mantine/core`, `@mantine/hooks`, `@mantine/modals`, `@mantine/notifications` and `@mantine/form` outside `src/ui/`, with the existing files allow-listed so the rule constrains new code from day one without a big-bang migration.
 
-Whatever the P77-A style contract concluded lives here — this is the natural home for "how a component gets themed".
+The allow-list is data, not prose: a generated file with a test asserting it only shrinks, so re-adding an entry is an explicit act with a diff.
 
 ### Acceptance criteria
 
 - `src/ui/` exists and exports the components in current use.
-- An ESLint rule fails on a new direct `@mantine/core` import outside `src/ui/`, verified by adding one deliberately.
-- The allow-list shrinks monotonically — a test or lint config that makes re-adding an entry an explicit act.
-- No rendered output changes. `theme-qa` baselines are untouched.
+- A new direct `@mantine/core` import outside `src/ui/` fails lint, verified by adding one deliberately.
+- The allow-list shrinks monotonically, enforced by a test.
+- No rendered output changes. `theme-qa` shows zero baseline movement.
 
 ### Validation
 
-- `npx vitest run`, `npx playwright test`, `npm run build`.
+- `npx vitest run`, `npx playwright test`, `npm run build`, `npm run lint`.
 - `theme-qa` must show **zero** baseline changes. This track is a refactor; any pixel movement is a bug.
 
 ---
 
-## Track P78-B - Migrate the theming-critical components
+## Track P78-B - Primitive bake-off
 
 ### Problem
 
-The components the theme adapter manipulates are where every Phase 76 defect occurred: the Input family (`Input`, `TextInput`, `PasswordInput`, `Select`, `NumberInput`, `ColorInput`), `Checkbox`, `Switch`, `Table`, `Anchor`, and the overlay pair `Drawer` / `Modal`.
+The evaluation scored Ark UI 82, Base UI 79 and React Aria Components 79 of 95 under the user's weights. Three points is inside the noise of the rubric, and the decisive properties are behavioural: how each behaves inside the overlay root, across the shadow boundary, and under the accessibility gate. Those cannot be read off a repository.
 
 ### Fix
 
-Route these through `src/ui/` first, and move their adapter configuration behind the facade so the theming decisions and the components live together.
+Build the same five components twice, once on Ark UI and once on Base UI, on two throwaway branches that are both discarded. React Aria Components is the third candidate and is built only if one of the first two fails outright.
+
+The five, chosen because each exercises something the others do not: a **Drawer** in the overlay root (portal container, focus trap, scroll lock), a **Select** with a portaled listbox (the P77-C state-attribute problem, a nested portal inside a portal), a **Slider** (pointer and keyboard interaction, a thumb that must carry the ring), a **NumberInput** (spin buttons, formatting, locale), and **Tabs** (roving focus, the P77-C active-state colour).
+
+Measure against tests that already exist and already caught real defects, not impressions:
+
+| Measurement | Source |
+|-------------|--------|
+| The style-delivery guards still hold for the new components | `src/styles/__tests__/styleDelivery.test.ts`, `e2e/style-delivery.spec.ts` |
+| The focus ring pair paints, core and halo, on every ring | the P77-F ring walk in `e2e/theme-qa.spec.ts` |
+| Overlays survive a hostile host page | the P77-B probe: transformed ancestor, page scrolled 600px, sticky header at `z-index` 9999 |
+| Focus returns to a trigger inside the gallery shadow root | new; this is the defect Mantine has today |
+| Outside-click and Escape cross the boundary | the P77-B dismissal checks |
+| The axe gate stays green | `src/test/axe.ts`, the existing structural gate |
+| Bytes | esbuild, the same method as the evaluation's section 4.3 |
+
+Record the losing branch's measurements in this document. A bake-off whose loser is undocumented cannot be re-run when the question comes back.
 
 ### Acceptance criteria
 
-- No file outside `src/ui/` imports these components from `@mantine/core`.
-- The P76-I guards still pass unchanged — the nested-selector check across 23 themes, and the painted-focus-ring e2e test.
-- No rendered output changes.
+- Both branches build all five components and every measurement above is recorded for each.
+- A written pick with the measurement that decided it, and the coverage tiebreak applied if the measurements do not separate them.
+- Both branches deleted. No bake-off code is merged.
+- If both candidates fail the boundary tests, the recorded outcome is the P77-E fallback (Mantine headless behind the same facade) and Phase 79 is re-planned against it.
 
 ### Validation
 
-- The full unit and e2e suites, plus `theme-qa` with zero baseline changes.
+- The measurements are the validation. This track merges no production code.
 
 ---
 
-## Track P78-C - Migrate the remaining consumers
+## Track P78-C - Component tokens and framework constants in the engine
 
 ### Problem
 
-The long tail of the 153 files.
+The theme adapter currently holds 31 component override blocks that derive per-component colours from the resolved palette: the checkbox border from `borderStrong`, tab colours from `textMuted` and `text`, option checked colours from `primaryFill` and `primaryOnFill`, input focus from `primaryStroke`. Those derivations are real theme decisions living in a translation layer, which is why `uiContrastAudit` has to know which Mantine variable an affordance reads in order to audit it.
+
+The framework will read tokens, not an adapter. The derivations have to move to where the audits can see them before there is anything to read.
 
 ### Fix
 
-Migrate opportunistically as files are touched for other reasons, shrinking the ESLint allow-list as it goes. This track has no deadline and should not block the phase from being considered successful.
+Add two tiers to `generateCssVariables` beside the existing role tokens, as described in the study's section 3.3:
+
+- **Component tokens**, derived from role tokens by the engine: input border and focus border, control heights, tab colour and active colour, option checked background and foreground, menu hover, switch track, checkbox border, table hover. A theme JSON may override one explicitly, which is what `ThemeDefinition.components` becomes.
+- **Framework constants**, fixed rather than per-theme: focus ring width and halo width, motion durations, the layer scale including a host-safe layer the embed can set from PHP so the WordPress admin bar stops covering the drawer header.
+
+**Backlog cleanup owned by this track.** The host-safe layer token is the fix for the FUTURE_TASKS accessibility entry "WordPress Admin Bar Covers the Settings Drawer Header for Logged-In Users". The token lands here and the framework reads it in P79-C, so the entry is deleted once the drawer actually clears the bar, which is P79-C rather than this track. Leave it in place until then and note the removal in the update log when it goes.
+
+Re-point `uiContrastAudit` at the component tokens it now has names for, keeping the P77-F pair guarantee and its zero exceptions.
 
 ### Acceptance criteria
 
-- The allow-list is empty, or the residue is documented with a reason.
+- Every component token is emitted for all 23 bundled themes and covered by `cssVariables.test.ts`.
+- The 1.4.11 audit reads component tokens where they exist, keeps the P77-F ring-pair checks, and still has zero exceptions across 23 themes.
+- Nothing in the app reads the new tokens yet, and no rendered output changes. `theme-qa` shows zero baseline movement.
+- The adapter is untouched in this track. It is deleted in Phase 81, not weakened here.
 
 ### Validation
 
-- Full suites per batch; `theme-qa` zero baseline changes throughout.
+- `npx vitest run` including the engine's own suites; `theme-qa` with zero baseline changes.
+- Mutation check: removing a derivation from the engine must fail the audit, not merely change a value.
 
 ---
 
@@ -115,12 +148,14 @@ Migrate opportunistically as files are touched for other reasons, shrinking the 
 
 | Candidate | Why it is deferred |
 |-----------|--------------------|
-| Actually replacing Mantine | Only if P77-E recommends it. This phase deliberately makes that a later, cheaper decision rather than taking it now. |
-| Re-implementing behaviour inside the facade | Explicitly out of scope — see Key Decision D. That is an in-house component library, which is a different phase and a different risk profile. |
+| The framework itself | Phase 79. It cannot start before B picks the primitive and C lands the tokens. |
+| Migrating any consumer onto a framework component | Phase 81. Nothing exists to migrate onto yet. |
+| Deleting `adapter.ts`, `chromeTheme.ts`, `chrome-portable.scss` | Phase 81, with the removal track. Each is load-bearing until its replacement ships. |
+| Publishing `@mullion/theme-engine` as a standalone package | The engine is already framework-neutral with zero runtime peers, so this is cheap. It is a product decision rather than an engineering one, and belongs after the framework proves the token model. |
 
 ## Implementation Notes
 
-_None yet — phase is Planned._
+_None yet, phase is Planned._
 
 ## Outcome
 

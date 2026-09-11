@@ -1,6 +1,6 @@
 # Phase 68 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE68_REPORT.md](PHASE68_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, steps, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE68_REPORT.md](../archive/phases/PHASE68_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, steps, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format of [PHASE67_MANUAL_QA_RUNBOOK.md](PHASE67_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P68-A … P68-E. Unlike Phase 67 (a PHP-only code-quality phase), Phase 68 is **mostly front-end correctness** — the public campaign-fetch-and-render path (`src/App.tsx`, `src/services/*`, `public/sw.js`) plus one cross-side PHP change (P68-B gates a nonce in `class-mullion-embed.php`). Verification therefore leans on the browser (devtools Network/Application panels) and the vitest suite rather than WP-CLI/PHPUnit, with WP-CLI used only to seed fixtures (e.g. >10 campaigns) and to observe the PHP side of P68-B.
 
@@ -233,13 +233,13 @@ npx vitest run src/services/http/HttpTransportImpl.test.ts
 | P68-C | A grant approved elsewhere appears on tab refocus, no reload; no refetch when unchanged | `AuthContext.test.tsx` focus-refresh + `AuthProvider.test.ts` digest green; full FE suite green | ☐ |
 | P68-E | Simulated 204/empty 2xx resolves `undefined` without a parse error | `HttpTransportImpl.test.ts` 204 cases green; existing JSON endpoints unaffected | ☐ |
 
-**Automated baseline (must be green alongside manual QA):** full FE vitest suite (**243 files / 3707 tests** at Batch 3), `npx tsc -b` clean, `npx eslint .` clean; PHP `Mullion_Embed_Test` (18 tests / 30 assertions) green via the `/php-testing` wp-env path. See [PHASE68_REPORT.md](PHASE68_REPORT.md) → each track's *Implementation* block for the per-track rationale and the line-citation corrections surfaced during execution.
+**Automated baseline (must be green alongside manual QA):** full FE vitest suite (**243 files / 3707 tests** at Batch 3), `npx tsc -b` clean, `npx eslint .` clean; PHP `Mullion_Embed_Test` (18 tests / 30 assertions) green via the `/php-testing` wp-env path. See [PHASE68_REPORT.md](../archive/phases/PHASE68_REPORT.md) → each track's *Implementation* block for the per-track rationale and the line-citation corrections surfaced during execution.
 
 ---
 
 ## 5. Review-pass sign-off (PR #82, 2026-07-21)
 
-A post-implementation PR review over the branch commits (P68-A/D `84a7e036`, P68-B `8c4ca9c1`, P68-C/E `25246535`) found **no open review threads** and required **no code changes** — every track was verified correct against source. The full rationale is in [PHASE68_REPORT.md](PHASE68_REPORT.md) → *PR Review & Validation Pass*. This section records what the reviewer re-ran so the result is reproducible.
+A post-implementation PR review over the branch commits (P68-A/D `84a7e036`, P68-B `8c4ca9c1`, P68-C/E `25246535`) found **no open review threads** and required **no code changes** — every track was verified correct against source. The full rationale is in [PHASE68_REPORT.md](../archive/phases/PHASE68_REPORT.md) → *PR Review & Validation Pass*. This section records what the reviewer re-ran so the result is reproducible.
 
 **Automated re-validation (all green, no source changed):**
 

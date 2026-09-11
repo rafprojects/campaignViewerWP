@@ -5,14 +5,14 @@ This document tracks the findings of a full review of the plugin's React/TypeScr
 **Review date:** 2026-07-13 (branch `feat/phase62-monetization-licensing`, v0.90.0)
 **Method:** full manual read of the core infrastructure (bootstrap, transport, auth providers, query layer, contexts, builder state hooks, service worker), targeted audit sweeps of the whole tree for DOM-injection sinks, storage access, URL handling, and duplicated patterns, structural review of the largest components/hooks, and REST-contract tracing into the PHP controllers where a front-end behavior depends on server semantics. `tsc -b` and `eslint .` both run **completely clean** (0 errors, 0 warnings).
 
-**Triage (2026-07-14):** every finding below was independently re-verified against current source — all 24 confirmed accurate, zero real disputes (a few line-count/count estimates drifted slightly, e.g. C-5's `apiClient.ts` is 422 lines not ~300, D-1's `useState` count is 24 not ~30 — same direction, no change to the fix). All are now planned across four phase reports. Section G's cross-side items are folded into these phases directly (A-2, B-1, E-1 as both-sides tracks within them); the two items that live primarily in the PHP backlog (PHP A-14, PHP A-3) were cross-referenced back into [PHASE64_REPORT.md](PHASE64_REPORT.md) and [PHASE66_REPORT.md](PHASE66_REPORT.md) respectively rather than duplicated here.
+**Triage (2026-07-14):** every finding below was independently re-verified against current source — all 24 confirmed accurate, zero real disputes (a few line-count/count estimates drifted slightly, e.g. C-5's `apiClient.ts` is 422 lines not ~300, D-1's `useState` count is 24 not ~30 — same direction, no change to the fix). All are now planned across four phase reports. Section G's cross-side items are folded into these phases directly (A-2, B-1, E-1 as both-sides tracks within them); the two items that live primarily in the PHP backlog (PHP A-14, PHP A-3) were cross-referenced back into [PHASE64_REPORT.md](../phases/PHASE64_REPORT.md) and [PHASE66_REPORT.md](../phases/PHASE66_REPORT.md) respectively rather than duplicated here.
 
 | Findings | Phase |
 |---|---|
-| A-1, A-2, A-3, A-4, A-5 | [PHASE68_REPORT.md](PHASE68_REPORT.md) — React Correctness: Listing, Freshness & SW Cache Fixes |
-| B-1, B-2, B-3, B-4, E-1 | [PHASE69_REPORT.md](PHASE69_REPORT.md) — React Security, Privacy & Hardening Defaults |
-| C-1, C-2, C-3, C-4, C-5, C-6, D-1, D-2, D-3 | [PHASE70_REPORT.md](PHASE70_REPORT.md) — React Structure, Abstraction & Duplication Cleanup |
-| E-2, E-3, E-4, E-5, F-1 | [PHASE71_REPORT.md](PHASE71_REPORT.md) — React Efficiency & i18n Consistency Sweep |
+| A-1, A-2, A-3, A-4, A-5 | [PHASE68_REPORT.md](../phases/PHASE68_REPORT.md) — React Correctness: Listing, Freshness & SW Cache Fixes |
+| B-1, B-2, B-3, B-4, E-1 | [PHASE69_REPORT.md](../phases/PHASE69_REPORT.md) — React Security, Privacy & Hardening Defaults |
+| C-1, C-2, C-3, C-4, C-5, C-6, D-1, D-2, D-3 | [PHASE70_REPORT.md](../phases/PHASE70_REPORT.md) — React Structure, Abstraction & Duplication Cleanup |
+| E-2, E-3, E-4, E-5, F-1 | [PHASE71_REPORT.md](../phases/PHASE71_REPORT.md) — React Efficiency & i18n Consistency Sweep |
 
 ---
 

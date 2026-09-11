@@ -62,7 +62,28 @@ export function intendedUiContrastChecks(
   minRatio: number = UI_CONTRAST_MIN,
 ): UiContrastCheck[] {
   const rc = resolveColors(colors, colorScheme);
+  // P77-F: the focus ring is a pair, core (`primaryStroke`) plus a neutral
+  // halo. The guarantee is that the pair contrasts with itself and that one
+  // of the two tones contrasts with each ground the ring sits on. The single
+  // core-on-ground checks below stay for the affordances that have no halo
+  // (input focus borders, active tabs, builder outlines).
+  const better = (ground: string): { fg: string; tone: string } =>
+    (contrastRatio(rc.focusHalo, ground) ?? 0) >= (contrastRatio(rc.primaryStroke, ground) ?? 0)
+      ? { fg: rc.focusHalo, tone: 'halo' }
+      : { fg: rc.primaryStroke, tone: 'core' };
+  const pairOn = (name: string, ground: string): UiContrastCheck => {
+    const { fg, tone } = better(ground);
+    return { label: `focus ring pair on ${name} (${tone} carries it)`, fg, bg: ground, minRatio };
+  };
   return [
+    {
+      label: 'focus halo against ring core (the pair contrasts with itself)',
+      fg: rc.focusHalo,
+      bg: rc.primaryStroke,
+      minRatio,
+    },
+    pairOn('surface', rc.surface),
+    pairOn('surfaceRaised', rc.surfaceRaised),
     {
       label: `primaryStroke on surface (builder outline, tab, gallery focus)`,
       fg: rc.primaryStroke,

@@ -7,7 +7,38 @@ reflow). Automated coverage (theme-contrast gate, axe structural checks) is desc
 
 > **Status:** living document — started 2026-07-11. We add surfaces/checks as coverage grows.
 > Track progress in §8 (Coverage tracker) and log issues in §7. Nothing here blocks a launch on its
-> own — WCAG AA is the project's quality bar (see [PHASE62_REPORT.md](../PHASE62_REPORT.md) P62-H).
+> own — WCAG AA is the project's quality bar (see [PHASE62_REPORT.md](../archive/phases/PHASE62_REPORT.md) P62-H).
+
+---
+
+## 0. Before you start: the gallery's CSS is not in the page
+
+**The gallery mounts into a shadow root.** Sweeping `document.styleSheets` from the host page
+finds none of the plugin's rules, so a rule you are looking for will appear to be missing when
+it is in fact applied. This has caught a reviewer once already: during the 2026-09-11 focus-ring
+review the auditor searched the host document for the two-tone ring rule, found only stock
+Mantine outlines, and was one step from reporting the ring as undeployed.
+
+Inspect inside the tree, not beside it:
+
+```js
+// the gallery's own styles
+document.getElementById('root').shadowRoot.styleSheets
+// portaled admin chrome (Drawer, Modal, Menu) since P77-I
+document.querySelector('[data-mullion-overlay-root]').shadowRoot.styleSheets
+```
+
+DevTools element inspection and computed styles work normally; it is only document-level
+queries that miss. See [STYLING_GUIDE.md](STYLING_GUIDE.md) §1 for which tree holds what.
+
+**Coordinate-based automated clicks can miss content two shadow roots deep.** Found running
+the P77-I manual pass (2026-09-11): a synthetic pointer click at the exact on-screen coordinates
+of a button inside the overlay root (portaled chrome under the shipped default) sometimes hit
+nothing, even though `getBoundingClientRect()` reported the right numbers and the element was
+confirmed not to move on scroll (so it was not a real containing-block bug). A direct
+`element.click()` always worked. If a click through an automation tool silently does nothing
+two levels of shadow DOM down, prefer dispatching the click on the element itself over
+coordinate-based input before concluding the app is broken.
 
 ---
 

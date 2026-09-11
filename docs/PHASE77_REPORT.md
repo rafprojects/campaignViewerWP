@@ -1,19 +1,22 @@
 # Phase 77 - Visual architecture spikes and hardening
 
-**Status:** Planned — no code yet
+**Status:** Complete (2026-09-10)
 **Created:** 2026-08-28
-**Last updated:** 2026-09-01 (P77-F promoted from FUTURE_TASKS on the designer's sign-off)
+**Last updated:** 2026-09-11 (the manual wp-admin pass verified on the redeployed build; phase fully closed)
 
 ### Tracks
 
 | Track | Description | Status | Effort |
 |-------|-------------|--------|--------|
-| P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | Planned | Medium |
-| P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | Planned | Medium |
-| P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | Planned | Small |
-| P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test | Planned | Small-Medium |
-| P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | Planned — gated on A and B | Medium |
-| P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | Planned — gated on A and C; promoted 2026-09-01 | Small-Medium |
+| P77-A | Style-delivery seam — inventory every channel, name one canonical channel per job, enforce it with tests | **Done** (2026-09-09), see notes | Medium |
+| P77-B | Mount strategy — decide whether portaled admin chrome moves inside the shadow root, and record the decision before release | **Done**: decided 2026-09-09 (overlay root), default flipped in P77-I on 2026-09-10; see Decision below and the notes | Medium |
+| P77-C | Fix the `global.scss` rules that have never reached portaled admin chrome in shadow mode | **Done** (2026-09-09), see notes | Small |
+| P77-D | Test-suite integrity — three e2e specs failing on a clean tree, plus the vacuous `theme-qa` persistence test; PHP suite failures folded in 2026-09-09 | **Done** (2026-09-09) | Small-Medium |
+| P77-E | UI dependency evaluation — Mantine, an alternative, or in-house. Decision document only | **Done** (2026-09-10): [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md); recommends an in-house layer on headless primitives behind the Phase 78 facade, primitive settled by a spike; see Decision below and the notes | Medium |
+| P77-F | Two-tone ("halo") focus ring — neutral halo from the theme's grounds around the P76-I-2 ring, making focus visibility structural for themes no audit can see | **Done** (2026-09-09); designer signed off in situ 2026-09-11 with no changes, see notes | Small-Medium |
+| P77-G | The plugin enqueues only the entry's own CSS; Mantine's base stylesheet and Dockview's reach the production document only when a dynamic chunk happens to preload them | **Done** (2026-09-09), verified on the redeployed dev site | Small |
+| P77-H | In-house UI framework study: what a token-driven framework of our own on headless primitives would take, the Theme Manager merge, and the list of Mantine parts to address. Document only | **Done** (2026-09-10): [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md); see the notes | Medium |
+| P77-I | Flip the portal default to the overlay root and retarget the one assertion that depends on the old placement | **Done** (2026-09-10), see notes | Small |
 
 ---
 
@@ -46,6 +49,14 @@
 | C | Is dropping shadow DOM a live option in B? | **No. Rejected, and recorded as rejected so it is not re-proposed.** See P77-B below — it trades away the only protection the plugin cannot obtain any other way. |
 | D | Does E risk becoming a migration instead of an evaluation? | **Constrain it to a decision document.** E produces criteria, scores and a recommendation with exit conditions. It writes no component code. A half-migrated component layer is worse than either endpoint. |
 | E | Should release-adjacent backlog items be pulled in to pad the phase? | **No.** The privacy items are Low impact (Sentry is off by default without a DSN; the Google Fonts data flow is documented in `PRIVACY.md` with opt-outs), CORS is explicitly meaningless for the shortcode deployment actually shipped, and the a11y gate's own entry says WCAG AA is a quality bar rather than a WP.org submission gate. Adding them would pad the phase without protecting the release. |
+| F | Does the "roll our own" study belong inside E or in its own track? | **Its own track, P77-H** (2026-09-10). The user asked for a separate document and left the split to the author. E decides; H describes what the decided path takes and lists the Mantine parts to address. Keeping them apart lets H stand whether or not E's recommendation is followed. |
+| G | Where does behaviour come from if we roll our own? | **Headless behaviour primitives** (user, 2026-09-10). Keyboard, focus and ARIA come from a primitive library; styling, theming and the component API are ours. Writing behaviours from scratch and vendoring behaviour code were both declined. |
+| H | How much release delay may a migration cost? | **Correctness over timing** (user, 2026-09-10). No ceiling; the evaluation states the delay each option implies and weights migration cost at 1. |
+| I | Which criteria weigh most? | **Theming fidelity and designer control over the visual language** (user, 2026-09-10), both at weight 3. Shadow-DOM friendliness and maintenance viability are gates, not scores. Maintainer capacity is undecided, so longevity sits at neutral weight. |
+| J | What does "merge the Theme Manager with the theming implementation" absorb? | **All four** (user, 2026-09-10): the engine's model as the only theme model; registry, switching and persistence; runtime theme editing by users; per-instance scoping and lock/follow mode. Requirements of P77-H section 3. |
+| K | Do the wp-admin Spaces and Assets pages fall under the same decision? | **Same framework everywhere** (user, 2026-09-10). `@wordpress/components` is scored only as a surface-specific option and rejected. |
+| L | Does the Phase 78 facade land first regardless of E's outcome? | **Yes** (user, 2026-09-10). Every migration option is scored behind it. |
+| M | Visual parity or refresh if we replace? | **A refresh with the designer is welcome** (user, 2026-09-10). No option is charged for failing to reproduce Mantine's look; the theme-qa baselines are recaptured per component as the refresh lands. |
 
 ## Execution Priority
 
@@ -57,6 +68,9 @@
    through the canonical channel once it exists rather than adding another delivery-channel
    customer first and migrating it later.
 6. **P77-E** last. Gated on A and B by construction.
+7. **P77-G** slots in as soon as it is accepted: it is small, it is a production delivery bug rather than architecture, and A's contract already describes the mechanism it repairs.
+8. **P77-H** beside E, written after E's scoring so it describes the path E recommends rather than a path in the abstract.
+9. **P77-I** last, once E's recommendation is accepted. It is the only track in the phase that changes shipped behaviour, and it is sequenced after the decision because the framework should be built against the boundary it will actually ship on.
 
 ---
 
@@ -147,6 +161,37 @@ Evaluate, and prototype the leading option:
 - `npx playwright test` in full, not only `theme-qa` — this touches overlay behaviour, which the visual snapshots do not cover.
 - Manual wp-admin QA is **required** for (a) or (b) and cannot be substituted with CI. Use the `/php-testing` skill's wp-env setup, and exercise at least: Drawer over the admin menu, nested Modal from within the Drawer, Select dropdown inside the Drawer, Escape and click-outside dismissal.
 
+### Decision (2026-09-09)
+
+**Keep the shadow boundary around the gallery, and move portaled chrome into a second shadow root of ours, attached to a host appended to `document.body` (the "overlay root"). Prototype landed behind a flag; the shipped default stays `document` until the user accepts the flip.**
+
+The plan's leading option (a), portaling into the gallery's own shadow root, was prototyped alongside and is **rejected on measurement**. Every mode was driven through the same script on the dev server, with and without a hostile host page: an element-selector stylesheet (`button { background: red !important }`), a sticky header at `z-index: 9999`, and a wrapper around the mount carrying `transform` and `overflow: hidden`, with the page scrolled 600px before the drawer opens. Any theme or page-builder motion effect produces that wrapper, because `transform` (like `filter`, `perspective`, `will-change` and `contain`) makes an element the containing block for every `position: fixed` descendant.
+
+| Property, Settings drawer open | (d) `document`, shipped | (a) gallery shadow root | overlay root |
+|--------------------------------|-------------------------|-------------------------|--------------|
+| Drawer box inside the transformed wrapper | viewport, `0,0 1280x900` | `0,-500`: above the viewport, clipped, click-outside dead, Theme select unreachable | viewport, `0,0 1280x900` |
+| Host `button` rule reaches the drawer's Cancel button | **yes** (red, 0 radius) | no | no |
+| `--mullion-*` tokens on the drawer | unset | set | set |
+| Mantine variables on the Admin panel's own dropdown | Mantine fallbacks (`#424242`) | theme | theme |
+| Escape, click outside, nested editor, Select in drawer | work | work, except inside the wrapper | work |
+| Layout Builder | styled | not measured | unstyled until the overlay sheet gained Dockview and `builder.css` (zero `.dv-` rules); styled after |
+| Full Playwright suite in that mode | 40 passed | 39 passed | 39 passed |
+| theme-qa visual snapshots | baseline | pass | pass |
+
+The one failure in each alternative mode is the P77-A contract test asserting the drawer renders under `document.body`, which is the fact these modes change; it is left as is until the default flips.
+
+Against a real page (wordpress.lan, Twenty Twenty-Five, logged in), 5 of the 1422 host rules on the page already match elements inside the shipped drawer: heading weight, size, letter-spacing and line-height from the theme's global styles, `text-wrap` from the theme, and a border-style rule from the block library. That is a gentle theme. The chrome is the one surface of the plugin with no protection at all today, and the overlay root gives it the same protection the gallery has.
+
+**Rejected, and why.** (a) fails inside any transformed ancestor, above. (b) split mount: the wp-admin pages are already separate light-DOM apps with their own provider, so the front-end shortcode is the only place the question exists, and there the chrome is the exposed piece. (c) dropping shadow DOM: rejected as planned, for the reason stated in the Problem. (d) status quo: the measured exposure plus the per-consumer tax P77-A documents, five defects deep in Phase 76.
+
+**What the overlay root does not do.** The nested chrome provider (`AdminChromeProvider`) renders its scoped variable sheet in the gallery tree, so in lock mode the brand palette still reaches the drawer only through `adminChromeStyles()`. That bridge and the `--mullion-builder-*` block stay load-bearing after the flip; they carry a theming choice (chrome locked to the brand), not a boundary defect. What the overlay root removes is the whole "stylesheet in the wrong tree" class: `global.scss`, CSS modules and both variable sheets reach the chrome, and `chrome-portable.scss` stops being special under a shadow mount. Mirroring the nested sheet into the overlay root, which would retire `adminChromeStyles()`, is a follow-on.
+
+**Post-release compatibility, in plain language.** Today a site owner's CSS reaches the Settings panel and Layout Builder because they render under `document.body`; it cannot reach the gallery. After the flip it reaches neither. Flipping before release changes nothing anyone relies on. Flipping after release would silently strip styles from any site that had targeted the chrome, so the default flip belongs in this phase, before the release pipeline phase, on the user's call.
+
+**Cost.** One more shadow root per mount, carrying its own copy of the shadow stylesheet plus Dockview and `builder.css` (about 315 KB of CSS text) and two small variable sheets kept in sync by `OverlayRootSync`. A shared constructable stylesheet (`adoptedStyleSheets`) would remove the duplication; filed as a follow-on.
+
+**How to exercise it.** `?portal=overlay-root` on any page, `window.__MULLION_PORTAL_MODE__` for the plugin to set, or `VITE_MULLION_PORTAL_MODE` for a dev server running a whole suite in one mode. `?shadow=0` light mounts ignore the flag.
+
 ---
 
 ## Track P77-C - Fix the dead `global.scss` rules
@@ -169,6 +214,12 @@ Under the shipped shadow mount it goes into the shadow root instead, while porta
 | `.mullion-mantine-checkbox-input` (P76-I-2, `chrome-portable.scss`) | Yes |
 
 The select-option rule is the sharpest case: its own comment states it exists *because* dropdowns portal. The ancestor problem was correctly identified; the delivery problem underneath it was not. The selected-option highlight in every themed dropdown has been falling back to Mantine's default.
+
+**Scope corrected by P77-A's measurement (2026-09-09).** Three findings change the shape of this track:
+
+1. **Dead is per surface, not per rule.** The Admin panel renders inline in the gallery tree (`App.tsx`), not in a portal, so `.mullion-mantine-tabs-tab[data-active]` is live for the Admin panel's tabs and dead only for the Settings drawer's. Moving the rule to `chrome-portable.scss` keeps the Admin panel unchanged and makes the drawer match it. The segmented-control rule is the third of the set; it matched only inside the gallery tree in the surfaces probed, so treat it the same way rather than assuming it is dead everywhere.
+2. **Two CSS modules are dead in the shipped mount.** `MediaCard.module.scss` and `MediaTab.module.scss` are consumed by the Media tab inside the Admin panel (shadow tree) but are not registered in `shadowStyles.ts`, so Vite delivers them to the document only. Measured with the Media tab open: elements carry the classes, no sheet in the shadow root matches them. The hover lift, the focus ring and the grid max-width never apply. Register both in `shadowStyles.ts`; that is an appearance change and needs the same deliberate baseline review as the rules above.
+3. **Both sets are encoded as allowlists** in `src/styles/__tests__/styleDelivery.test.ts` (`GLOBAL_SCSS_KNOWN_DEAD_UNTIL_P77C`, `MODULES_KNOWN_DEAD_UNTIL_P77C`). This track empties them; the test fails on a stale entry, so it cannot be forgotten.
 
 ### Fix
 
@@ -249,6 +300,25 @@ A decision document. No component code.
 
 - No automated validation. The deliverable is a document; review it with the user before Phase 78 begins.
 
+### Decision (2026-09-10)
+
+**Recommendation:** an in-house component layer whose behaviour comes from a headless primitive library and whose styling and theming are ours, driven directly by the engine's tokens, migrated behind the Phase 78 facade. The primitive is not settled here: Ark UI scores first on our measured needs, Base UI and React Aria Components sit within three points, and a bounded spike (the same five components on the top two, measured against the P77-A guards, the P77-F ring walk, the P77-B hostile-host probe, focus return through the shadow boundary and the axe gate) decides. Fallback if both fail: Mantine in headless mode behind the same facade. Full scoring, evidence and exit conditions in [UI_DEPENDENCY_EVALUATION.md](UI_DEPENDENCY_EVALUATION.md).
+
+**Why not stay.** Mantine does expose the seams the plugin needed, and P77-B has settled the boundary that caused most of Phase 76. What remains is structural and is exactly what the user's two heaviest criteria measure: the theme model is a translation target (a 601-line adapter with 31 override blocks), the stylesheet is a specificity opponent (`chrome-portable.scss` doubles every class), `styles` is inline CSS in disguise, colour-scheme rules key on an ancestor attribute, and `useFocusReturn` still reads `document.activeElement` in 9.6.1. Under the user's weights the recommended option leads staying-behind-the-facade by seventeen points of ninety-five; under equal weights by four of fifty-five; under a ship-soon weighting staying wins narrowly, which is the honest statement of the trade.
+
+**Accepted, and scheduled (2026-09-10).** The user accepted the recommendation and chose to build the framework **before release** rather than ship on Mantine and migrate for v2. The author's written advice was the opposite; the trade is recorded in [PHASE78_REPORT.md](PHASE78_REPORT.md) Key Decision B rather than buried here. The work is distributed over four phases and the two release phases shift down:
+
+| Phase | Content |
+|-------|---------|
+| [78](PHASE78_REPORT.md) | UI boundary, primitive bake-off, token model (was "UI facade") |
+| [79](PHASE79_REPORT.md) | Framework core and theme manager |
+| [80](PHASE80_REPORT.md) | Behavioural components |
+| [81](PHASE81_REPORT.md) | Consumer migration and Mantine removal |
+| [82](PHASE82_REPORT.md) | Release pipeline hygiene (was Phase 79) |
+| [83](PHASE83_REPORT.md) | Go-live (was Phase 80) |
+
+Release does not wait for full Mantine removal: it waits for the framework, the behavioural components and the theming-critical surfaces, with the long tail migrating behind the facade afterwards ([PHASE81_REPORT.md](PHASE81_REPORT.md) Key Decision A).
+
 ---
 
 ## Track P77-F - Two-tone ("halo") focus ring
@@ -309,6 +379,109 @@ so the `primaryStroke`-on-ground checks need re-derivation rather than deletion.
 
 ---
 
+## Track P77-G - Enqueue every stylesheet the entry needs
+
+### Problem
+
+`class-mullion-embed.php` registers and enqueues `$manifest['index.html']['css']` and nothing else. With `cssCodeSplit` and the vendor `manualChunks`, Vite attaches Mantine's base stylesheet (`vendor-mantine-core-*.css`, 221 KB, core plus notifications) and Dockview's to the vendor chunks they belong to. Vite's own `dist/index.html` links three stylesheets; the plugin links one.
+
+Measured on the production site (2026-09-09, signed out, no campaigns): `document.styleSheets` held no sheet containing Mantine's `.mantine-focus-auto:focus-visible` at page load. The shadow root had its own copy from `shadowStyles.ts`, so the gallery looked right. The two vendor sheets appeared only when a dynamic chunk whose preload list includes them was fetched: every gallery adapter and every admin chunk lists `vendor-mantine-core-*.css` in `__vite__mapDeps`. Signed in with campaigns present the adapter chunk loads immediately and the gap closes within the first paint or two; the exposure is the window before that, and any page where no such chunk ever loads, on which portaled chrome rendered from the entry chunk (the auth bar's admin `Menu`) has no Mantine base rules at all.
+
+This is a delivery bug in what the P77-A contract calls mechanism M1, not a new channel. It is the same shape as the P76 defects: a rule present in the source, absent from the tree that paints.
+
+### Fix
+
+Walk the manifest the way Vite's HTML generation does: for the entry, the CSS of every statically imported chunk (recursively, depth first, each chunk once) and then the entry's own CSS. Register a `mullion-gallery-app-style-N` handle per file in that order and enqueue the same list on render. Dynamic-only chunks stay with Vite's preload helper, which already handles them. The wp-admin renderers already enqueue every registered handle by index, so they need no change.
+
+### Acceptance criteria
+
+- `Mullion_Embed::get_entry_css_files()` returns, for the real manifest, exactly the stylesheets `dist/index.html` links, in the same order.
+- PHPUnit covers the walk (order, deduplication, cycles, dynamic chunks excluded) and the registration and enqueue of every handle.
+- On the production site, `document.styleSheets` contains Mantine's base sheet at page load, signed out, before any dynamic chunk is fetched.
+
+### Validation
+
+- `Mullion_Embed_Test.php` and the full PHPUnit suite through wp-env.
+- A rebuilt and redeployed plugin checked in the browser as above.
+
+---
+
+## Track P77-H - In-house UI framework study
+
+Added 2026-09-10 at the user's request alongside P77-E: consider what it would take to "roll our own" styling framework that completely replaces Mantine, addresses the shortcomings met so far, and merges the custom Theme Manager with the theming implementation; deliver a separate document with the thoughts and discoveries and a short list of the parts of Mantine to address.
+
+### Problem
+
+The evaluation answers whether to leave Mantine. It does not say what a replacement built for this plugin would look like, which of Mantine's roles it must take over, or which of Mantine's shortcomings it is the chance to design out. Without that, "in-house" is a word rather than a plan, and the Phase 78 facade would be drawn without knowing what it will eventually front.
+
+### Fix
+
+A design study, no code. Principles, architecture (packages, provider, three-tier token model, styling layer, delivery, component API), behaviour sourcing for every one of the 62 components in use against the three primitive candidates, the "need to address" and "should address" lists, effort classes per step driven by measured counts, and risks. The Theme Manager merge is specified as provider concerns (scope, portal, lock and follow, persistence, runtime `defineTheme` with audits at save).
+
+### Acceptance criteria
+
+- A document a reader can use to plan the framework phase without re-deriving the inventory.
+- The Mantine inventory covers everything this codebase touches, measured, and nothing it does not.
+- No `src/ui/` or framework code.
+
+### Validation
+
+- None automated. Reviewed with the user together with P77-E.
+
+---
+
+## Track P77-I - Flip the portal default to the overlay root
+
+Opened 2026-09-10, after the user accepted the P77-E recommendation and confirmed the flip
+should happen in this phase.
+
+### Problem
+
+P77-B decided the mount strategy and landed the overlay root behind a flag, but the shipped
+default is still `document`. The decision's own compatibility argument has a deadline: today a
+site owner's CSS reaches the Settings panel and Layout Builder because they render under
+`document.body`, and after the flip it reaches neither. Flipping before release changes nothing
+anyone relies on. Flipping after release would silently strip styles from any site that had
+targeted the chrome.
+
+Two further reasons to flip now rather than later. The framework phases that follow build
+overlays against a portal boundary, and they should build against the one that ships. And
+while the default is `document`, the P77-A contract's legacy surfaces (`adminChromeStyles()`,
+the `--mullion-builder-*` bridge) cannot begin to retire.
+
+### Fix
+
+Change the fallback in `resolvePortalMode()` from `document` to `overlay-root`, keeping every
+override intact (`?portal=`, `window.__MULLION_PORTAL_MODE__`, `VITE_MULLION_PORTAL_MODE`) so a
+site owner or a support case can put it back without a build.
+
+Retarget the one P77-A guard that asserts the Settings drawer renders under `document.body`.
+That assertion encodes the placement this track changes, so it is rewritten to assert the new
+contract: the drawer renders inside the overlay root, and the overlay root is a direct child of
+`document.body`.
+
+### Acceptance criteria
+
+- The shipped default is `overlay-root`; all three overrides still select `document` and
+  `shadow`.
+- The retargeted P77-A guard fails if the drawer renders outside the overlay root, verified by
+  mutation.
+- The full Playwright suite passes twice consecutively at 100 percent, not the 39 of 40 the
+  P77-B prototype measured, because the one failure was this assertion.
+- `theme-qa` baselines do not move. The overlay root measured identical drawer geometry, so any
+  pixel movement is a defect rather than an expected consequence.
+- The wp-admin manual pass P77-B's validation requires: drawer over the admin menu, nested
+  modal from within the drawer, Select dropdown inside the drawer, Escape and click-outside
+  dismissal.
+
+### Validation
+
+- `npx playwright test` twice, `npx vitest run`, and a rebuilt plugin checked on the dev site.
+- The manual wp-admin pass above, which P77-B's validation section marks as required and not
+  substitutable with CI.
+
+---
+
 ## Follow-On Candidates
 
 | Candidate | Why it is deferred |
@@ -319,11 +492,233 @@ so the `primaryStroke`-on-ground checks need re-derivation rather than deletion.
 | Privacy items (Sentry PHP scrubber, Google Fonts self-hosting, analytics salt rotation) | All Low / Low-Medium impact; Sentry is off without a DSN and the Google Fonts flow is documented with opt-outs. Would pad the phase without protecting the release. |
 | CORS allow-list | Its own entry states it is meaningless for the shortcode deployment actually shipped. |
 | Structural a11y gate growth | Its entry states WCAG AA is a quality bar, not a WP.org submission gate, and can grow post-launch. |
+| Share one constructable stylesheet between the gallery root and the overlay root (`adoptedStyleSheets`) | The overlay root duplicates about 315 KB of CSS text per mount. Cheap to do once the overlay root is the default; pointless before. Recorded in FUTURE_TASKS under P77-B. |
+| Mirror the nested chrome provider's variable sheet into the overlay root, then retire `adminChromeStyles()` | Only makes sense after the default flips; the inline bridge is correct until then. |
+| Generalise `adminChromeStyles()` to carry the full `--mullion-*` token set | Would let chrome stylesheets and admin CSS modules read the same tokens the gallery root does, removing per-token special cases and `color-mix()` fallbacks. Deferred to P77-B by agreement on 2026-09-09: if the boundary goes, the mechanism goes with it. |
+| Primitive spike (Ark UI against Base UI, React Aria Components third) | The first code of the framework phase, not of this one; P77-E section 9 fixes its protocol and measurements. |
+| Re-plan Phase 78 B and C as migrations onto the new components | Depends on the user accepting the P77-E recommendation; P78-A is unchanged either way. |
+| Lazy-load admin chrome so the visitor path stops shipping `vendor-mantine-core` statically | Available under every option; P77-E section 4.3 shows the visitor bundle is a code-splitting question more than a library question. Worth a FUTURE_TASKS entry when Phase 78 is re-planned. |
 
 ## Implementation Notes
 
-_None yet — phase is Planned._
+### P77-A (2026-09-09)
+
+**Status: landed.** Contract in [docs/guides/STYLING_GUIDE.md](guides/STYLING_GUIDE.md), three static guards in `src/styles/__tests__/styleDelivery.test.ts`, one browser guard in `e2e/style-delivery.spec.ts`. All five mutations fail as intended.
+
+**Step 1: measure, do not read.** A throwaway Playwright probe (scratchpad, not committed) compiled `chrome-portable.scss` and `global.scss` with `sass`, parsed them with `new CSSStyleSheet().replaceSync()`, and compared each selector against `document.styleSheets` and the shadow root's sheets, with the Settings drawer open and with the Admin panel's Media tab open, in both mount modes and both `applyThemeEverywhere` states. The fixture trap from P76-I was avoided by setting the flag explicitly for every run. The production site was cross-checked through the browser (sheet sources and rule counts per tree on `wordpress.lan`) and matched the dev picture for every sheet that loads at page start.
+
+**What the measurement changed about the plan.**
+
+| Plan said | Measured |
+|-----------|----------|
+| Seven channels | Four mechanisms (document sheet, shadow `<style>`, runtime variable sheets, inline style) and eleven authoring surfaces. CSS modules split into registered and unregistered, and `builder.css` / `wpAdminFormReset.css` were missing from the list. Reach is a property of the mechanism, so the contract is written mechanism-first and the surface table derives from it. |
+| Two dead `global.scss` rules | Three rules in the set, and dead only for portaled surfaces. The Admin panel is not portaled, so its tabs get the rule today. Recorded under P77-C. |
+| Nothing about CSS modules | `MediaCard` and `MediaTab` modules are dead in the shipped mount. Recorded under P77-C. |
+| Inline styles travel with the element | True for the `styles` and `vars` props and for the chrome variable blocks. Mantine's *responsive* style props are different: with `deduplicateInlineStyles` on they render a hoistable `<style>` that React places in the root container. Measured in the same tree as their elements on every surface probed; no portaled element used one. Recorded as a constraint, not a defect. |
+| The plugin enqueues the built CSS | Only the entry's own CSS. Vite's `dist/index.html` links three stylesheets (`vendor-mantine-core`, `vendor-dockview`, `index`); the manifest hangs the first two off statically imported vendor chunks, and `class-mullion-embed.php` walks `$entry['css']` only. On the production home page the document had no Mantine base sheet at load; it arrives only when a dynamic chunk whose preload list includes it (every gallery adapter, the Admin panel) is fetched. The `AuthBar` admin menu portals to the document from the entry chunk, so on a page where no such chunk has loaded yet it renders without Mantine's base rules. Not fixed here: it is a loader bug, not a channel, and this track introduces no new channel by its own acceptance criteria. Proposed as **P77-G**; the fix is to enqueue the `css` of every chunk in the entry's `imports`, recursively, the way Vite's HTML does. Needs a signed-in check of the production drawer to size the visible impact, which the author could not do from the agent browser. |
+
+**Canonical channels.** Named in the guide's section 4. The short form: state colour through `vars`; pseudo-state Mantine has no variable for through `classNames` plus `chrome-portable.scss`; gallery structure through `global.scss` under `.mullion-gallery` or a registered CSS module; tokens for chrome through `adminChromeStyles()` until P77-B. `styles` is constrained to flat keys, `adminChromeStyles()` and the `--mullion-builder-*` bridge are legacy and load-bearing, and both are consequences of the boundary P77-B decides.
+
+**Channel count.** The acceptance criterion offered "lower than seven, or each survivor has a stated reason". The mechanism count is four. The surface count is eleven, higher than the plan's seven because the inventory was incomplete, and every survivor carries its reason in the guide's surface table. Nothing was deleted in this track: every collapse candidate depends on whether the shadow-plus-portal boundary survives P77-B, and deleting ahead of that decision would be the same guess the phase rationale warns against.
+
+**Tests and mutations.**
+
+| Guard | Mutation applied | Result |
+|-------|------------------|--------|
+| `global.scss` scope | appended `.mullion-mantine-menu-item[data-hovered] { color: red }` | fails naming the selector |
+| module registry | created an unregistered `ProbeMutation.module.scss` | fails naming the file |
+| component `styles={}` flatness | inserted `'&:hover'` into `AuthBar`'s `styles` | fails naming file and key |
+| e2e, document side | commented out the `chrome-portable.scss` import in `main.tsx` | fails with "missing from the document (main.tsx import)" |
+| e2e, shadow side | commented out `chromePortableStyles` in `shadowStyles.ts` | fails with "missing from the shadow root (shadowStyles.ts entry)" |
+
+The e2e spec also pins `global.scss` to exactly one tree per mode, which is the reach claim the guide makes for it.
+
+**Two environment notes for P77-D.** Port 5173 was serving an unrelated project, and `playwright.config.ts` has `reuseExistingServer: true`, so the suite would have driven the wrong app and reported a locator timeout rather than a clear error. Validation for this track ran against a gallery dev server on 5174 with `E2E_BASE_URL`. Separately, the project pins Playwright 1.61 (Chromium build 1228) while the user's general-purpose Playwright is 1.62 (build 1234); only the 262 MB headless shell for 1228 was kept.
+
+### P77-G (2026-09-09)
+
+**Status: done.** After the user rebuilt and redeployed, the production home page carried three server-rendered `<link>` elements with the WordPress handle ids `mullion-gallery-app-style-0-css` through `-2-css` (Mantine core, Dockview, entry) and `document.styleSheets` contained Mantine's base rules with `readyState` already `complete`, before any dynamic chunk had run. Runtime-injected links from Vite's preload helper carry no id, so the two delivery paths are distinguishable and the check does not depend on sign-in state.
+
+`Mullion_Embed::get_entry_css_files()` walks the manifest from `index.html`: each statically imported chunk's CSS first, depth first, every chunk visited once (the walk tolerates cycles), then the entry's own CSS. Both `register_assets()` and the shortcode enqueue use it, so the `mullion-gallery-app-style-N` handles the wp-admin renderers already iterate now cover every sheet. Run against the real manifest the result is exactly the three files `dist/index.html` links, in the same order: `vendor-mantine-core`, `vendor-dockview`, `index`. Dynamic-only chunks are left to Vite's preload helper, which already injects their CSS.
+
+Four PHPUnit tests cover the walk (order, deduplication, a deliberate cycle, a dynamic chunk excluded), the empty and bare-manifest cases, registration of one handle per file, and enqueueing on render. `Mullion_Embed_Test.php` passes 30 of 30. The full suite reported three failures, none in this area: the edition-marker test fails whenever a local build leaves `assets/mullion-edition.json` behind (its own message says so), and two `Mullion_REST_Extended_Test` analytics cases returned 403. Re-running that file against a tree with this change stashed produced an error in a third test on one run and a clean 63 of 63 on the next, so it is order-dependent and predates this track. Worth a line in P77-D's list even though that track is scoped to the e2e suite.
+
+**Sizing, from the signed-in production check.** With campaigns present a gallery adapter chunk loads immediately and its preload list pulls both vendor sheets into the document within the first paints, so the drawer and modals were never visibly broken for a signed-in admin. The exposure was the window before that first dynamic chunk, and any page that never loads one: signed-out visitors on a page with no adapter, where the auth bar's admin `Menu` portals to a document with no Mantine base rules. Small, but the class of defect this phase exists to remove.
+
+### P77-D (2026-09-09)
+
+**Scope change.** The user folded the PHP suite in: after P77-G's full run showed three PHPUnit failures, fixing them became part of this track rather than a note in it.
+
+**Baseline, measured before touching anything.** `npx playwright test` on a gallery dev server (port 5174; see the port note under P77-A) gave 36 failed, 36 passed. Thirty-three of the failures were the Storybook screenshot suite under `e2e/visual/`, which the default config swept in because `testDir` is `./e2e` and only `playwright.visual.config.ts` knows how to serve it. The three real failures were the two `mantine8-runtime-qa` specs and `media-flows`. The accessibility specs the plan listed as failing or flaky passed on that run and failed on the next, which is what a timing defect looks like. `theme-qa`'s persistence test passed, as a tautology does.
+
+**What each failure actually was.** The plan's diagnoses were taken as hypotheses and two of them were wrong.
+
+| Spec | Plan said | Measured | Fix |
+|------|-----------|----------|-----|
+| `e2e/visual/adapters.spec.ts` (33) | not listed | wrong config picks it up; no server, no baselines | `testIgnore: ['**/visual/**']` in `playwright.config.ts` |
+| `mantine8-runtime-qa` drawer test | debug markers off | markers are on in dev. The dialog is named "Settings" since P75-E, not "Display Settings". Past that, the nested Responsive Gallery Config drawer rendered *inside* the Settings drawer's transformed, scrolling content with `withinPortal={false}`, so `position: fixed` resolved against that box and the editor's header scrolled 46px above the viewport; Playwright could not click Apply because nothing was there. A real bug a user hits by scrolling the Settings panel before opening the editor | dialog name regex; `GalleryConfigEditorModal` gains `withinPortal` and `drawerProps`, and the Settings panel portals it as a peer with the same `adminChrome*` props (contract: M4 carries the chrome tokens across the portal). The CampaignViewer keeps it inline inside the shadow tree. The overlay/close debug slots the spec addressed were never emitted by these two components; they are now, matching the other modals |
+| `mantine8-runtime-qa` viewer test | debug markers off | same missing slots on `GalleryConfigEditorModal` | slots added; no other change needed |
+| `media-flows` | not listed | strict-mode clash between "Upload" and "Remove upload.jpg"; then the upload mock still returned the pre-P28-D single-file shape, so `uploadMany` threw before any toast; then the expected toast text predates P28-D | `exact: true`; batch-shaped `media/upload` and `campaigns/101/media/batch` mocks; expect the batch summary toast |
+| `accessibility` lightbox | login modal order-dependent | the lightbox's first-open keyboard hint (`packages/shared-ui/src/KeyboardHintOverlay.tsx`) styles itself with `--mantine-color-dimmed`, `dark-7`, `dark-4` and `radius-md`. The lightbox portals to `document.body`, where under a shadow mount none of those variables exist, so the hint painted as inherited dark text on a near-black overlay: axe measured 1.24:1. It shows once per session for 3.5s with a 300ms fade, so a scan that lands inside that window fails and one that lands outside passes | literal overlay-safe colours in the hint (the overlay behind it is always `rgba(0,0,0,0.93)`, so this is theme-independent by construction) and a plain styled `<kbd>` in place of Mantine's `Kbd`, which has the same dependency; the test now waits for the hint to be fully painted and scans it rather than racing it |
+| `theme-qa` persistence | vacuous | vacuous | selects Tokyo Night, requires Save to enable, asserts the stored id. Mutation-tested: with `persistThemeId` short-circuited it fails with `Received: "default-dark"` |
+
+The lightbox hint is the P77-A contract's mechanism M3 failing to reach a portal, the same class as every Phase 76 defect. It was fixed here rather than handed to P77-C because C is about `global.scss` rules and CSS modules, this is a component's inline styles, and the test could not be made deterministic without either fixing or hiding it.
+
+**PHP suite.** Three failures in the full run, none of them in the code they appeared to implicate:
+
+| Test | Cause | Fix |
+|------|-------|-----|
+| `Mullion_Package_Edition_Test::test_defaults_premium_without_marker_file` | asserted that the real build output `assets/mullion-edition.json` does not exist, which is false on any machine that has run `npm run build:wp` | the test filters the marker path to a temp file that cannot exist; the default-path assertion moved to its own test |
+| `Mullion_REST_Extended_Test::test_get_campaign_analytics`, `::test_list_access` (403) | `Mullion_DB::$space_cache` is a static per-process memo of space rows. `WP_UnitTestCase` rolls the database back after each test but nothing rolls the static back, so a later test resolved the default space through a row the database no longer held. Passes in isolation every time; reproduced only in full-suite order | `Mullion_DB::flush_space_cache()` plus a PHPUnit `BeforeTestHook` extension (`tests/Mullion_Test_Isolation_Hook.php`, registered in `phpunit.xml.dist`) that calls it before every test. Production code path unchanged apart from the new method |
+
+**Results.** `npx playwright test` twice in a row on a clean tree: 39 passed, 39 passed. PHPUnit through wp-env: 1328 tests, 13750 assertions, 2 skipped, no failures. `npx vitest run` on the touched components: green. The persistence test and the P77-A guards are the only e2e or unit tests in this track that were mutation-tested; the others are repairs of specs whose failure mode was observed directly.
+
+### P77-C (2026-09-09)
+
+**Measured first, in both mount modes and both `applyThemeEverywhere` states, with the Admin panel and the Settings drawer open.** The plan's diagnosis was "dead for portaled chrome because `global.scss` never reaches the document". That is true and was not the whole story. Each of the three rules was dead for a second reason that no delivery fix could touch:
+
+| Rule | Plan said | Measured | Fix |
+|------|-----------|----------|-----|
+| `.mullion-mantine-select-option[data-selected]` | dead in portaled dropdowns | matched **nothing in any tree**: Mantine 9.3.1 marks the chosen option with `data-checked` (`data-combobox-selected` is the keyboard-active state). The theme dropdown had no selected-state highlight anywhere, which the P76 baselines show | rule targets `[data-checked]`; the two colours ride on the dropdown as inline custom properties because the dropdown portals on its own, so nothing on the Select root can inherit into it |
+| `.mullion-mantine-tabs-tab[data-active]` | dead in the drawer, live in the Admin panel | the border half was live in the Admin panel (stroke `#008e85` measured against the drawer's Mantine default `#007870`). The colour half was dead everywhere: the adapter pins `color: textMuted` inline on every tab, and inline outranks any class rule | the active border is Mantine's own `--tabs-color`, set from the adapter; both text colours travel as `--mullion-tabs-tab-color` / `--mullion-tabs-tab-active-color` on the Tabs root and the inline colour is gone |
+| `.mullion-mantine-segmented-control-label[data-active]` | assumed dead like the tabs rule | its only declaration was dead everywhere, same inline cause | Mantine reads `--sc-label-color` on the active label, so that variable carries the active colour; the resting colour is `--mullion-segmented-control-label-color`, read by a `:not([data-active])` rule so Mantine's own rule keeps the active state |
+
+All three rules now live in `chrome-portable.scss` with the doubled first class, and `global.scss` has no selector outside `.mullion-gallery`. The pattern is the P76-I-2 checkbox one generalised: a themed colour a state rule must read travels as a custom property, never as an inline colour on the same part. Mantine merges theme-level `vars` after its own `varsResolver` (verified in `use-styles.mjs`), which is why `--tabs-color` can be set from the adapter at all. After the change every surface measured the intended colours: active tab text `#eef8fb` and border `#008e85` in the drawer and the Admin panel alike, checked option `#ffffff` on `#007870` in the drawer's dropdowns and in the Admin panel's sort dropdown, which sits in a document portal with no `--mantine-*` variables at all. Resting colours were re-measured unchanged.
+
+**CSS modules.** `MediaCard.module.scss` and `MediaTab.module.scss` are registered in `shadowStyles.ts`; the probe that found them dead now reports element and rule in the same tree. `MediaTab.module.scss` also carried a `.mediaCard` block nothing consumed (the class of that name comes from `MediaCard.module.scss`); it is deleted. The comment in `MediaCard.module.scss` claiming the card renders inside the Layout Builder modal was wrong and is corrected.
+
+**Baselines, recaptured deliberately.** All 21 theme-qa tests passed *before* recapture, because `maxDiffPixelRatio: 0.1` absorbs a dead rule going live. `--update-snapshots=all` rewrote 15 of 16 files. To separate this track's change from older drift, the baselines were captured once more from a stash of HEAD and pixel-diffed against the new set:
+
+| Snapshot family | Pixels changed by P77-C | What they are |
+|-----------------|-------------------------|---------------|
+| `theme-selector-open-*` (2) | 2.2% | the checked theme option's primary fill and contrast text, plus the active tab |
+| `display-settings-*` (7) | 0.02% to 0.07% | the "Appearance" tab's text and underline |
+| `gallery-shell-*` (6) | 0 to 0.01% | the access-mode "Lock" segmented label brightening from textMuted to text |
+| `themed-control-tight` | 0 | unchanged, as its zero-tolerance assertion requires |
+
+Against the committed baselines the same files differ by 1.1% to 3.1%: header buttons, input borders and label weights that Phase 76 changed after the baselines were captured, all inside tolerance and never reviewed. They are now current. The dropdown diffs were inspected by eye: the "Mullion" and "Mullion Light" rows carry the fill, nothing else in the dropdown moved.
+
+**Tests.** The unit guard's two allowlists are gone, and the test now fails on any unscoped `global.scss` selector or any unregistered module without justification. `adapter.test.ts` gains an assertion that Tabs, SegmentedControl and Select carry no inline colour on the tab, label or option and do carry the variables. `e2e/style-delivery.spec.ts` gains a paint check: with the drawer open, the active tab's computed colour and border equal the variables it carries, and the Theme select's checked option paints the checked pair. Mutations verified: renaming `data-checked` in the rule fails the paint check; restoring `color` in `Tabs.styles.tab` fails the adapter test.
+
+**Flake fixed on the way.** In one of the two full Playwright runs the accessibility spec's login-modal and settings-panel scans failed on contrast values like `#20343e` for text whose inline colour is `#eef8fb`: axe scanning during Mantine's 200ms entrance fade, the same mechanism P77-D found on the lightbox hint. Reproduced at roughly one run in six on the login modal, with no tab, segmented control or select on that surface. Both scans now wait for the dialog to be fully painted (`awaitFullyPainted`), the P77-D lightbox approach made reusable.
+
+**Data point for P77-B.** The Admin panel's own Select dropdown portals to `document.body` and, under the shipped mount, resolves no `--mantine-*` variable at all: its hover colour is Mantine's `--mantine-color-dark-4` fallback `#424242`, not the theme's. The checked state now paints correctly only because its colours travel inline. Anything in the gallery tree that portals is in the same position, and that is the boundary B is deciding on.
+
+**Results.** Before the flake fix, `npx playwright test` (40 tests) gave 40 passed, then 38 passed with the two axe scans above. After it: 40 passed, 40 passed, and the two scans repeated six times each, 12 passed. `npx vitest run`: 259 files, 3922 tests, all passed (one `SettingsPanel.test.tsx` timeout under full-suite load did not reproduce in isolation, the same class as the P77-A `TemplatesTab` note).
+
+### P77-B (2026-09-09)
+
+**Prototype.** `src/portalTarget.ts` resolves a portal mode (`document`, `shadow`, `overlay-root`) and builds the target node; `withPortalTarget` sets `theme.components.Portal.defaultProps.target` once, in `ThemedApp`, and nested providers inherit it. It is set exactly once for a reason found while reading Mantine's merge: `deepMerge` spreads any object it finds on both sides, and an `HTMLElement` is an object, so a second declaration would turn the target into a plain object and every portal would throw. `AdminChromeProvider.test.tsx` now asserts the nested provider sees the same element. `OverlayRootSync` keeps the overlay root's theme-variable and Mantine-variable sheets current and stamps `data-mantine-color-scheme` on the host and the target, which Mantine's scheme-keyed rules need. The env fallback exists so a dev server can run the suite in one mode without touching the specs.
+
+**Mantine's own hooks are already shadow-safe.** `useClickOutside` walks `composedPath()`, `scopeTab` reads `getRootNode().activeElement`, and Escape handling only reads an attribute off the retargeted event target. Nothing in the prototype patches Mantine.
+
+**What the measurement changed.** Two things the plan assumed did not survive contact. First, (a) was "the leading option"; the containing-block failure is total inside a transformed wrapper and the fixture that shows it is four lines of CSS. Second, the plan's list of bridges that (a) would delete was too long: the nested chrome provider's sheet stays in the gallery tree in every mode, so `adminChromeStyles()` remains the way lock mode reaches the chrome. The prototype also found a gap that only shows on a surface no e2e spec opens: the Layout Builder's Dockview and builder rules are document stylesheets in `main.tsx` and reached an overlay root not at all until `overlayStyles` added them. `e2e/portal-mode.spec.ts` now opens the builder in overlay mode and asserts the rules are present and a tab is painted.
+
+**Pre-existing findings on the way, filed in FUTURE_TASKS.** Focus after closing the Settings drawer lands on `body` in every mode, because `useFocusReturn` records `document.activeElement`, which is the shadow host rather than the trigger button. On the real site the WordPress admin bar (`z-index: 99999`) covers the drawer's header buttons for logged-in users in every mode; Mantine's drawer sits at 450. Both are independent of the boundary and neither is fixed here.
+
+**Tests.** `src/__tests__/portalTarget.test.ts` (mode resolution; element identity through `mergeMantineTheme`), the nested-provider guard above, and `e2e/portal-mode.spec.ts` (drawer geometry inside the hostile wrapper, host-CSS isolation, Escape and click-outside, light mount ignores the flag, builder sheets). Mutation: pointing the geometry test at `?portal=shadow` fails it with `top` at -500. Full Playwright suite on the default server: see the results line below. Manual check on the redeployed dev site (2026-09-09, user): `https://wordpress.lan/?portal=overlay-root` exercised the drawer, nested editor, theme select and Layout Builder against the real theme; theming and CSS reported correct. The default flip remains the user's call.
+
+**Results.** `npx playwright test` on the default dev server, twice in a row with the three new portal-mode tests included: 43 passed, 43 passed. In `shadow` and `overlay-root` mode servers: 39 passed of 40 each, the one failure being the P77-A document-placement assertion described in the Decision. `npx vitest run`: 260 files, 3926 tests, all passed.
+
+### P77-F (2026-09-09)
+
+**Token.** `deriveFocusHalo` in the theme engine derives `focusHalo` from the theme's own ground: the background's hue at near-zero chroma, stepped from lightness 96 toward white on dark schemes (12 toward black on light) until it clears 3:1 against the ring core, `primaryStroke`. If the scheme's pole cannot clear the core (a luminous accent such as `#ffd700` on a dark ground, where white reaches 1.4:1) the opposite pole is used; the core still carries the ring against the grounds, so the pair keeps its guarantee. Both designer constraints hold by construction: the halo is a neutral, never a second accent (measured chroma under 8 on every bundled theme), and the geometry is fixed in the stylesheet. Exposed as `--mullion-color-focus-halo`, in `theme.other.colors`, and carried inline into portaled chrome by `chromeVars()` next to the stroke token.
+
+**Rule.** The P76-I-2 ring rule in `chrome-portable.scss` gains `box-shadow: 0 0 0 6px var(--mullion-color-focus-halo, transparent)`: 2px of halo inside the outline's offset, the 2px core, 2px of halo outside. The SegmentedControl label, which routes its core through Mantine's `--segmented-control-outline`, gets the same shadow. Delivered through the canonical channel from P77-A and P77-C, which is why this track was sequenced after them: nothing new was added to `global.scss` or to any inline style.
+
+**Audit re-modelled, not replaced.** `intendedUiContrastChecks` gains three checks: halo against core, and for `surface` and `surfaceRaised` whichever of the two tones contrasts better against that ground, labelled with the tone that carries it. The six core-on-ground checks stay, because input focus borders, active tabs and builder outlines are core-only affordances. Zero exceptions on all 23 bundled themes.
+
+**Hostile-theme spot check.** A `ThemeColors` block cannot author a surface equal to its own stroke: the engine always expands `primary` into a ramp and some rung clears any single ground. The case exists at the resolved level, so the primitive is tested with the core pinned to the surface; the halo clears 3:1 against that surface and against `surfaceRaised`, in both schemes.
+
+**Measured.** default-dark: halo `#edf5fb`, core `#008e85`; halo against core 3.66:1, halo on surface 14.33:1, on surfaceRaised 12.50:1. default-light: halo `#101416`, core `#006e66`; halo against core 3.02:1, on surface 17.66:1, on surfaceRaised 18.52:1. The e2e ring walk (theme-qa) now runs four times, shadow and light mount times locked and following chrome, and on every painted ring asserts: core in `primaryStroke`, core width 2px, the halo token present on the element, and the painted box-shadow equal to that token at exactly 6px spread. All four pass. The full theme-qa suite passes with no resting baseline moving, as the acceptance criteria require.
+
+**Tight layouts, by eye.** Focused controls were screenshotted at 2x: the access-mode segmented control, the "All" filter chip, the drawer's "Apply gallery theme" switch and an Edit button inside a table cell. The halo renders as a full ring on each, inside and outside the core, and none is clipped by an ancestor. The `overflow: hidden` risk the plan named did not materialise on any surface probed; it remains a thing to look for when a new container is introduced.
+
+**Results.** `npx playwright test` twice in a row (46 tests, the ring walk now counting four): 46 passed, 46 passed. `npx vitest run`: 260 files, 3931 tests, all passed, the 1.4.11 gate included with its three new checks per theme.
+
+**Not done here.** An authored `focusHalo` override in theme JSON was considered and not added: the designer's constraint is that the halo is derived from the grounds, and an override would reintroduce the failure mode the halo exists to close.
+
+#### Designer sign-off (2026-09-11), and a correction to the spec
+
+The designer reviewed the ring in situ and signed off all three questions with **no changes to the ring** ([design/correspondences/designer-response-focus-ring-2026-09-11.md](design/correspondences/designer-response-focus-ring-2026-09-11.md), proof sheet alongside it). Two of the three answers changed something other than the code, which is why they are recorded here rather than just filed.
+
+**The pole rule was stated wrongly, in their brief and in ours.** The original constraint read "light pole on dark themes, dark on light", and P77-F's implementation notes above describe the five dark themes that resolve dark as "the fallback behaviour working exactly as designed". The designer's correction: that is not a fallback, it is the rule. The pole is a function of the core's lightness, not of the colour scheme, and had the scheme-based rule been implemented literally those five themes would have shipped with a halo that fails the pair guarantee outright. The code was already correct, because it tries the scheme's pole and then the other; only the descriptions undersold it. Corrected in the `deriveFocusHalo` docstring, [design/COLOR-SPEC.md](design/COLOR-SPEC.md) and [design/DESIGN_BRIEF.md](design/DESIGN_BRIEF.md).
+
+**The 4:1 change this report suggested would have made the ring worse.** The notes to the designer offered to raise the pair target from 3:1 to about 4:1, on the reasoning that eight themes sitting at 3.00 to 3.13 were "the ramp stopping at the first step that passes rather than continuing to a comfortable margin". The mechanism was right and the conclusion was wrong: those themes are near the end of the ramp, not early in it. A halo can never beat pure white or pure black against the core, and that ceiling binds hard.
+
+Every figure in the designer's argument was re-derived from the engine before accepting it, and all of it reproduces exactly:
+
+| Claim | Measured |
+|-------|----------|
+| Ceiling on the current pole for each of the eight floor themes | All eight match to two decimals (`catppuccin-latte` 3.07, `solarized-dark` 3.20, `solarized-light` 3.28, `ocean-breeze` 3.28, `default-light` 3.42, `synthwave` 3.45, `forest-whisper` 3.45, `material-light` 4.01) |
+| Highest global target with zero pole flips is 3.07, bound by `catppuccin-latte` | 3.0739, `catppuccin-latte`. Seven of the eight cannot reach 4:1 on their pole at all |
+| At a 4:1 target, eight themes are forced off their pole | Eight, by name, in both directions |
+| Their halo-to-surface contrast collapses | From 12.21 to 17.66 down to 1.05 to 1.62. `default-light` goes from 17.66 to **1.05**, a white halo on a near-white surface |
+| A 3.5:1 target still costs seven flips | Seven |
+| The five dark-pole themes already carry the strongest core separation | Their `core:surf` is 4.10 to 5.72 against a median of 4.42 and a floor of 3.64 |
+
+The trap is that the number being optimised improves while the ring gets worse: `halo:core` is a floor for function, and past the ceiling it can only be bought out of `halo:surf`, which is the contrast that makes the ring findable. **The target stays at 3.** A test now enforces it ("the 3:1 pair target is at the system ceiling, so it must not be raised" in `colorGen.test.ts`), mutation-checked by raising `UI_CONTRAST_MIN` to 4, which fails it and names the theme that became binding. The docstring carries the reason so the next reader does not have to find this entry.
+
+**Geometry confirmed by measurement, not by eye alone.** The designer read the focused chip in the gallery header: `outline: 2px solid rgb(0,142,133)`, `outline-offset: 2px`, `box-shadow: 0 0 0 6px rgb(237,245,251)`, on a 28px control. Exact match to spec. They rendered 1/2/1 and 3/2/3 at true size and rejected both, and noted that a 1px band lands on 1.25 device pixels under Windows display scaling at 125 percent, which is the common case rather than the edge case. Their closing point is the one worth keeping: ring weight cannot be judged magnified, which is the same failure mode as the aperture icon at 16px.
+
+**One process finding, theirs.** Sweeping the host document for the halo rule finds nothing, because the gallery mounts into a shadow root. The designer caught this before reporting the ring as undeployed. Added as a standing note at the top of [guides/ACCESSIBILITY_MANUAL_AUDIT.md](guides/ACCESSIBILITY_MANUAL_AUDIT.md), with the two expressions that inspect the right trees, since it will catch the next outside reviewer otherwise.
+
+### P77-E (2026-09-10)
+
+**Method.** The user was interviewed first (Key Decisions G to M) so the weights were theirs, not the author's. Codebase facts were measured on `c131b50d` with a multi-line-aware import parser (the plan's "153 of 434" became 142 non-test files of 357, 73 distinct symbols, 62 components; 1,535 style props; about 1,500 literal `size` and `variant` props; 117 provider-wrapped test files). Library facts came from the npm registry, the GitHub API and the libraries' own source files on 2026-09-10; web search was unavailable, so every claim carries a primary source. Representative component sets from each candidate were bundled with esbuild under one method so their sizes compare with each other.
+
+**What the measurement changed about the plan's framing.** Bundle size is a weak discriminator: a headless library of comparable coverage costs the same as Mantine for our set (Ark 120 kB gz, React Aria Components 139, Base UI 141, Mantine's used set 114 plus 32 kB of CSS), and the visitor-facing cost is a code-splitting question. Shadow-DOM support divides the field sharply when read from source: Ark (`EnvironmentProvider`, root-node-aware DOM queries), Base UI (`container` accepting `ShadowRoot`, a shadow-walking active-element helper) and React Aria (behind a global `enableShadowDOM()` flag with `UNSAFE_PortalProvider`) pass; Radix's `FocusScope` reads `document.activeElement` in six places; Mantine's `useFocusReturn` still does in 9.6.1. Coverage divides it again: Ark has direct counterparts for every behavioural component we use, Base UI lacks pagination, tags input and colour picker, React Aria lacks pagination and scroll area; Ariakit and Headless UI lack sliders and number fields and are excluded. Mantine's own headless mode (`HeadlessMantineProvider`, present in 9.3.1) turned out to be a real option and is the fallback.
+
+**Scores.** Twelve options against eleven criteria and three gates, weighted three ways (section 8 of the document). The recommended option leads under the user's weights and under equal weights; staying wins narrowly under a ship-soon weighting. The three viable primitives finish within three points, which is why the choice is delegated to a spike with fixed measurements rather than decided on paper.
+
+**Exit conditions** are recorded in both directions: what would turn this back into "stay" (the spike fails twice; the designer's refresh does not happen; the primitive loses its organisation), and what would have turned a "stay" into "leave" (a second `styles`-class trap; a major that changes the theming contract; an unfixable in-component boundary defect).
+
+### P77-H (2026-09-10)
+
+**Delivered** as [IN_HOUSE_UI_FRAMEWORK_STUDY.md](IN_HOUSE_UI_FRAMEWORK_STUDY.md): eight principles, the architecture (three packages, a `MullionProvider` that absorbs `ThemeContext`, `OverlayRootSync`, `AdminChromeProvider` and Mantine's variable emitter; a three-tier token model in which the adapter's 31 override blocks become engine-derived component tokens; a styling layer with no colour literals and no ancestor scheme selectors; one delivery list for every tree), a behaviour-sourcing table for all 62 components against Ark, Base UI and React Aria Components, the "need to address" list (fifteen groups, measured) and the "should address" list (fifteen shortcomings, each with its P76 or P77 evidence and the design that removes it), effort classes per step, and risks.
+
+**Two findings worth stating outside the document.** The largest mechanical cost of leaving Mantine is not the behavioural components but the style props and literal scales (about 3,000 occurrences), and that cost is identical under Mantine's own headless mode, so headless Mantine is a fallback rather than a cheaper stepping stone. And the Theme Manager merge is mostly a consolidation of code that already exists in five files; what is new is the runtime editor with audits at save and the lock/follow mode as a provider prop rather than a nested-provider trick.
+
+### P77-I (2026-09-10)
+
+**The flip.** `resolvePortalMode()` now returns `overlay-root` when nothing selects a mode. The three overrides are unchanged in precedence (`window.__MULLION_PORTAL_MODE__`, then `?portal=`, then `VITE_MULLION_PORTAL_MODE`), and `document` became an explicitly recognised value rather than the fallback. That distinction matters: before, any unrecognised string silently meant `document`, so a typo in the flag would have quietly restored the old placement. Now a typo lands on the shipped default and only the literal `document` opts out.
+
+**The retargeted guard.** The P77-A spec asserted the Settings drawer renders under `document.body`, which is exactly the fact this track changes. It now asserts what replaced it, in two halves that fail for different reasons: the drawer's root node is the overlay root's shadow root (what blocks host-page CSS), and the overlay root's host is a direct child of `body` (what keeps it out of any transformed ancestor, the containing-block failure P77-B measured for option (a)). `selectorsIn` gained an `overlay` tree, and two new assertions pin what the overlay root bought: `chrome-portable.scss` reaches it, and so does `global.scss`, which is the defect class behind P76-I-2 and P77-C.
+
+**Mutation-tested, both guards.** Reverting the default to `document` fails the e2e placement assertion by name ("the overlay root must exist under the shipped default") and fails the unit test with `expected 'document' to be 'overlay-root'`. Restored afterwards.
+
+**Baselines, checked properly rather than trusted.** `theme-qa` passed, but its `maxDiffPixelRatio` is 0.1, so a green run is not evidence (the P77-C lesson). Re-capturing every baseline with `--update-snapshots=all` moved two files: the two theme-selector dropdown shots. Decoding both and comparing pixel by pixel showed a **maximum per-channel delta of 1** on a handful of antialiased edge pixels, and zero pixels differing by more than that. Sub-visual rounding, not a layout or colour change. The committed baselines were restored unchanged, so the acceptance criterion is met and is now verified rather than assumed.
+
+**A test-integrity bug found in passing, and fixed.** The first full run reported 45 failures of 46, including the smoke test and "Gallery" heading. None was real. `playwright.config.ts` defaulted to Vite's port 5173, another project on this machine was serving that port, and `reuseExistingServer: true` cannot tell whose server it found, so the entire suite ran against a different application. Every failure looked like an application defect. The config now uses a distinctive port (5180) and carries a comment explaining why; `E2E_BASE_URL` still overrides. This is the P77-D class of defect and it would have cost the next person the same hour.
+
+**Results.** `npx playwright test` with no environment override, so the config starts its own server: 46 passed, twice. `npx vitest run`: 260 files, 3931 tests, all passed. `npx eslint .` and `npx tsc --noEmit`: clean. The prototype's 39 of 40 is now 46 of 46, because the one failure was the assertion this track retargeted.
+
+**Verified on 2026-09-11**, against the user's redeployed build on `wordpress.lan`, logged in as an admin, on a real page with the Twenty Twenty-Five theme's block content above the shortcode. Every item on P77-B's required manual pass:
+
+| Check | Result |
+|-------|--------|
+| Drawer over the admin menu | Renders inside the overlay root, a direct child of `document.body`, at full viewport geometry |
+| Nested modal from within the drawer | Opening Settings with a stale localStorage draft correctly shows "Unsaved settings found" stacked on top of the Settings drawer, in the same overlay-root shadow tree; dismissing it leaves the drawer open underneath |
+| Select dropdown inside the drawer | The Theme select opens all 23 themes grouped; the checked option resolves `data-checked="true"`, `background-color: rgb(0, 120, 112)` (`#007870`), white text, exactly the P77-C token contract; picking a theme live-restyles the drawer itself (`follow` mode, confirmed by the drawer's background changing to Tokyo Night's `#24283b`) |
+| Escape dismissal | Correctly blocked while changes are unsaved (`closeOnEscape={!hasChanges}`), and closes the drawer once changes are clean |
+| Click-outside dismissal | Closes the drawer when changes are clean |
+| Host CSS isolation | A hostile rule injected into the host document (`button { background: red !important }`, the same probe P77-B used) does not reach a single control inside the drawer |
+
+**A tooling finding, not a product one.** Coordinate-based synthetic clicks (`click_at`) intermittently missed real interactive elements two shadow-DOM levels deep under `position: fixed`, even though `getBoundingClientRect()` reported the correct viewport coordinates and the element was confirmed not to move on scroll (ruling out a real containing-block regression). A direct `element.click()` call always landed correctly. Recorded as a note for whoever runs the next manual pass through this kind of automation: prefer a DOM-level `.click()` over synthetic pointer coordinates when driving two nested shadow roots.
 
 ## Outcome
 
-_Pending._
+**All nine tracks are done.** The phase set out to replace a pattern of per-defect workarounds with a stated contract, a decided boundary, and tests that fail when either is broken. It did that, and it also answered the dependency question the user raised at the start.
+
+What changed, in the order it will matter to someone reading this later:
+
+- **There is one style-delivery contract** ([guides/STYLING_GUIDE.md](guides/STYLING_GUIDE.md)), four mechanisms rather than a folklore list of seven, and four guards that fail when a style is written through a channel that cannot reach its target. Every guard was mutation-tested.
+- **The boundary is decided and shipped.** Portaled chrome renders in an overlay root of ours: host CSS cannot reach it, every theme token does, and the stylesheet-in-the-wrong-tree defect class is closed. The compatibility argument that made this pre-release is discharged.
+- **Three state rules that had never painted now paint**, and the two causes that delivery could not fix (an attribute Mantine does not set, and inline colour outranking every state rule) are written into the contract as traps to check for.
+- **The focus ring is structural rather than audited.** A derived neutral halo means one of the two tones contrasts with any ground, including themes no build-time audit can see.
+- **The suite is honest.** It was red on a clean tree at the start of the phase, and the last track found that it could also be green-looking while running against the wrong application entirely.
+- **The Mantine question has a written answer** with scores, sources and exit conditions, and the user accepted it: an in-house component layer on headless primitives, scheduled as Phases 78 to 81.
+
+**The designer's review landed on 2026-09-11 and closed P77-F's last open item** with no changes to the ring, plus a correction to how the pole rule was stated and a rejection of the 4:1 target this report had proposed. See the P77-F notes; the argument was re-derived from the engine and reproduces exactly, and the target is now guarded by a test.
+
+**The manual wp-admin pass was run on 2026-09-11**, against the user's redeployed build on `wordpress.lan`, and every P77-B/P77-I requirement passes. Details below. The phase has no open items left.

@@ -1,6 +1,6 @@
 # Phase 64 — Manual QA & Validation Runbook
 
-**Companion to:** [PHASE64_REPORT.md](PHASE64_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format established in [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md).
+**Companion to:** [PHASE64_REPORT.md](../archive/phases/PHASE64_REPORT.md). That doc is the plan and the *what/why*; this one is the detailed **HOW** for verifying each fix by hand — exact preconditions, commands, expected results, the reasoning that makes each result *meaningful*, and the pitfalls that silently invalidate a test. It follows the format established in [PHASE63_MANUAL_QA_RUNBOOK.md](PHASE63_MANUAL_QA_RUNBOOK.md).
 
 **Scope:** tracks P64-A … P64-G. Each track section is self-contained. Do the shared setup once (§1–§3), then run the tracks in any order.
 

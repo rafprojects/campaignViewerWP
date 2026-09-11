@@ -113,6 +113,42 @@ describe('adaptTheme', () => {
     expect(select?.classNames?.option).toBe(themeStateClasses.selectOption);
   });
 
+  // P77-C: an inline `color` on these parts outranks any class rule, which is
+  // how the active-state rules stayed dead even where their stylesheet
+  // reached. The colours must travel as variables that chrome-portable.scss
+  // and Mantine's own rules read.
+  it('delivers tab, segmented label and select option colours as variables, not inline colour', () => {
+    const def = makeThemeDef();
+    const result = adaptTheme(def);
+    type Block = {
+      vars?: () => Record<string, Record<string, string>>;
+      styles?: () => Record<string, Record<string, unknown>>;
+    };
+    const tabs = result.components?.Tabs as Block;
+    const segmented = result.components?.SegmentedControl as Block;
+    const select = result.components?.Select as Block;
+
+    expect(tabs.vars?.().root).toMatchObject({
+      '--tabs-color': '#008e85',
+      '--mullion-tabs-tab-color': '#9db4bf',
+      '--mullion-tabs-tab-active-color': '#eef8fb',
+    });
+    expect(tabs.styles?.().tab).not.toHaveProperty('color');
+
+    expect(segmented.vars?.().root).toMatchObject({
+      '--sc-label-color': '#eef8fb',
+      '--mullion-segmented-control-label-color': '#9db4bf',
+    });
+    expect(segmented.styles?.().label).toBeUndefined();
+
+    expect(select.styles?.().dropdown).toMatchObject({
+      color: '#eef8fb',
+      '--mullion-select-option-checked-bg': '#007870',
+      '--mullion-select-option-checked-color': '#ffffff',
+    });
+    expect(select.styles?.().option).toBeUndefined();
+  });
+
   it('stores semantic colors in theme.other', () => {
     const def = makeThemeDef();
     const result = adaptTheme(def);
