@@ -98,7 +98,7 @@ Measured in `node_modules/@mantine/core@9.3.1` (installed) and confirmed unchang
 | Styles API: `styles`, `classNames`, `vars` | 27 `styles`, 5 `vars`, 4 `classNames` blocks in the adapter; 18 `styles` props in components | `styles` emits inline style and drops pseudo-selectors (P76-I-1); `vars` is not forwarded from `Select` to its `Combobox` (P77-C); theme `vars` do override Mantine's own `varsResolver` |
 | Global classes (`mantine-focus-auto`, `mantine-focus-always`) | Overridden in `chrome-portable.scss` with doubled classes | Mantine draws the ring from `--mantine-primary-color-filled` (the fill), which failed 3:1 on 13 of 23 themes (P76-I-2) |
 | `Portal` | `defaultProps.target` set once in the top-level theme (P77-B) | A string target goes through `document.querySelector`, which cannot see into a shadow root; `deepMerge` spreads an element found on both sides of a theme merge into a plain object |
-| `useFocusReturn` (inside Modal and Drawer) | Every overlay | Records `document.activeElement`, which is the shadow host when the trigger is inside the gallery, so focus returns to `body` (FUTURE_TASKS). Unchanged in 9.6.1 |
+| `useFocusReturn` (inside Modal and Drawer) | Every overlay | Records `document.activeElement`, which is the shadow host when the trigger is inside the gallery, so focus returns to `body` (FUTURE_TASKS). Unchanged in 9.6.1, and it is inside the component, so it cannot be fixed from outside without wrapping. All three headless candidates resolve the active element through the shadow tree before storing it (section 7), so this defect does not survive the move |
 | `FocusTrap`, `useClickOutside` | Every overlay | Both shadow-safe (`getRootNode().activeElement`, `composedPath()`) |
 | Box style props and responsive props | 1,535 occurrences | Responsive props render a hoisted `<style>` in the root container (P77-A constraint) |
 | z-index scale (app 100, modal 200, popover 300, overlay 400, max 9999) | Settings drawer at 450, nested editor 500 | No relationship to host page layers; `#wpadminbar` at 99999 covers the drawer header (FUTURE_TASKS) |
@@ -296,7 +296,9 @@ field. Presentational pieces (`Text`, `Stack`, `Badge`, `Table`) are ours in any
 
 Shadow DOM is explicit: `EnvironmentProvider` takes a root node (or a function returning one)
 and Zag's DOM queries resolve `getRootNode()`, `getActiveElement` walking nested shadow roots,
-and `contains` through composed trees (`@zag-js/dom-query`). `Portal` takes a `container`.
+and `contains` through composed trees (`@zag-js/dom-query`). `Portal` takes a `container`. Its
+focus trap stores `getActiveElement(this.doc)` before activating and restores it on
+deactivate, so the focus-return defect we have under Mantine does not reproduce.
 Styling is data attributes only: `data-scope`, `data-part`, `data-state`, plus a
 `--layer-index` variable for stacked overlays; no CSS ships. That is exactly the styling model
 the P77-A contract converged on (state as attributes, colour as tokens, one stylesheet
@@ -315,9 +317,10 @@ fan-out (69 `@zag-js/*` packages) that tree-shakes per component.
 
 Renamed from `@base-ui-components/react` (deprecated) to `@base-ui/react`; 1.0.0 on
 2025-12-11, 1.8.0 on 2026-09-04, twelve releases in twelve months. Shadow-aware by
-construction: `activeElement(doc)` walks shadow roots (`packages/utils/src/shadowDom.ts`),
-`Dialog.Portal.container` accepts `HTMLElement | ShadowRoot | RefObject`, and it carries its own
-fork of Floating UI. Styling is `className` and `style` as functions of state, data attributes
+construction and without a flag: `activeElement(doc)` walks `shadowRoot.activeElement`
+(`packages/utils/src/shadowDom.ts`) and its forked `FloatingFocusManager` stores that value as
+the element to restore, so focus return across the boundary works; `Dialog.Portal.container`
+accepts `HTMLElement | ShadowRoot | RefObject`. Styling is `className` and `style` as functions of state, data attributes
 (`data-checked` and the like) and layout variables (`--anchor-width`,
 `--available-height`); no CSS ships. shadcn/ui made Base UI its default primitive in July 2026,
 which is a strong ecosystem signal.
@@ -337,8 +340,9 @@ picker and field, table, toast, toolbar, tree, virtualizer). Gaps for us: pagina
 (native overflow instead), tags input by composition.
 
 Shadow DOM is supported behind a global opt-in flag, `enableShadowDOM()` from the flags module,
-which gates `nodeContains`, `getActiveElement`, `getEventTarget` and the focus walker; portal
-containers come from `UNSAFE_PortalProvider({ getContainer })`. Both work, and both names say
+which gates `nodeContains`, `getActiveElement`, `getEventTarget` and the focus walker;
+`FocusScope`'s `useRestoreFocus` stores the shadow-resolved active element, so focus return
+works once the flag is set. Portal containers come from `UNSAFE_PortalProvider({ getContainer })`. Both work, and both names say
 the maintainers consider the surface provisional. Styling is render props (`className` and
 `style` as functions of state) with data attributes (`data-focus-visible`, `data-selected`,
 `data-pressed`). Bundle 139.3 kB gz for our set, the largest of the three because of the

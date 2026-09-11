@@ -44,8 +44,9 @@ this codebase actually touches, measured.
    one value, not per-theme choices. The designer's P77-F constraint generalised.
 6. **Behaviour is bought, not written.** Keyboard, focus, ARIA and dismissal come from a
    headless primitive library chosen by the P77-E spike. The framework wraps; it does not
-   reimplement. The one exception is focus return through a shadow boundary, which every
-   library gets partly wrong and which is twenty lines to own.
+   reimplement. This is a deliberate limit: the moment the framework starts writing its own
+   combobox semantics or focus trap, it inherits the class of correctness problem this
+   codebase has already shown it gets wrong, and it stops being a styling framework.
 7. **The theme manager is part of the framework.** Registry, switching, persistence, scoping,
    lock and follow, and runtime editing are provider concerns with a public API, not app code
    arranged around a provider.
@@ -175,13 +176,34 @@ the library chosen by the P77-E spike; the column shows which candidate has a di
 counterpart (Ark UI, Base UI, React Aria Components) so the spike's coverage question is
 concrete.
 
+**What "ours" means here.** Styling, tokens and the component API are ours in every row
+without exception; that is the whole point of the framework and is never what the word is
+marking. Where the tables say "ours" they mean one of three narrower things, and the
+distinction matters because only the second carries correctness risk:
+
+| Sense | Meaning | Examples |
+|-------|---------|----------|
+| Ours, presentational | No behaviour to buy. A styled element reading tokens, with no keyboard, focus or ARIA state machine | `Text`, `Stack`, `Badge`, `Card`, `Table`, `Button`, the first table below |
+| Ours, behavioural | The primitive supplies nothing for this and we write real interaction code. Each instance is named in the tables and each is a risk to review | `Textarea` autosize, the `SegmentedControl` indicator animation, the notification store, `Pagination` where the primitive lacks it |
+| Ours, composed | The primitive has the parts but not the assembled component; we compose its parts and own the assembly, not the semantics | tags input on Base UI and React Aria, password input on Base UI |
+
+Focus return across the shadow boundary was listed here as a fourth case in the first draft of
+this document and is not one. Measured in the libraries' sources on 2026-09-10, all three
+candidates already resolve the focused element through the shadow tree before storing it, so
+the P76-era bug does not survive the move: Base UI's `activeElement(doc)` walks
+`shadowRoot.activeElement` and `FloatingFocusManager` stores its result; Zag's focus trap
+stores `getActiveElement(this.doc)` from `@zag-js/dom-query`, which walks nested roots;
+React Aria's `useRestoreFocus` stores `getActiveElement()` from its shadow DOM helpers, gated
+behind the global `enableShadowDOM()` flag. Mantine's `useFocusReturn` stores
+`document.activeElement` unguarded, which is why focus returns to `body` today.
+
 | Ours (presentational, no primitive needed) |
 |---|
 | `Text`, `Title`, `Anchor`, `Kbd`, `Badge`, `Alert`, `Loader`, `Skeleton`, `Divider`, `Image`, `Paper`, `Card`, `Center`, `Container`, `Stack`, `Group`, `Grid`, `SimpleGrid`, `Box`, `UnstyledButton`, `Button`, `ActionIcon`, `CloseButton`, `ColorSwatch`, `VisuallyHidden`, `Table`, `Chip` (a styled checkbox or toggle), `CopyButton`, `FileButton`, `Collapse` |
 
 | Behavioural | Ark UI | Base UI | React Aria Components | Note |
 |-------------|--------|---------|------------------------|------|
-| `Modal`, `Drawer`, `ModalsProvider` | Dialog, Drawer | Dialog, Drawer, AlertDialog | Dialog, Modal | Focus return through the shadow boundary is ours in all three |
+| `Modal`, `Drawer`, `ModalsProvider` | Dialog, Drawer | Dialog, Drawer, AlertDialog | Dialog, Modal | All three restore focus through a shadow boundary; Mantine does not (section 5.2 item 8) |
 | `Popover`, `Tooltip` | Popover, Tooltip | Popover, Tooltip, PreviewCard | Popover, Tooltip | Anchor positioning later |
 | `Menu` | Menu | Menu, Menubar, ContextMenu | Menu | |
 | `Select`, `MultiSelect`, `Combobox`, `useCombobox`, `TagsInput` | Select, Combobox, Listbox, TagsInput | Select, Combobox, Autocomplete (tags by composition) | Select, ComboBox, ListBox, TagGroup (tags by composition) | Coverage discriminator |
