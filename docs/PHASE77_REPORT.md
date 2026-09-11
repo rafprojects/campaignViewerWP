@@ -2,7 +2,7 @@
 
 **Status:** Complete (2026-09-10)
 **Created:** 2026-08-28
-**Last updated:** 2026-09-11 (designer signed off the halo ring; P77-F's last open item closed)
+**Last updated:** 2026-09-11 (the manual wp-admin pass verified on the redeployed build; phase fully closed)
 
 ### Tracks
 
@@ -693,7 +693,18 @@ The trap is that the number being optimised improves while the ring gets worse: 
 
 **Results.** `npx playwright test` with no environment override, so the config starts its own server: 46 passed, twice. `npx vitest run`: 260 files, 3931 tests, all passed. `npx eslint .` and `npx tsc --noEmit`: clean. The prototype's 39 of 40 is now 46 of 46, because the one failure was the assertion this track retargeted.
 
-**Not done here, and it is a real gap.** P77-B's validation marks a manual wp-admin pass as required and not substitutable with CI: drawer over the admin menu, nested modal from within the drawer, Select dropdown inside the drawer, Escape and click-outside dismissal. The author cannot run it. The agent browser MCP is disconnected in this session and the plugin is not rebuilt or redeployed, which is the user's step. **This is the one acceptance criterion of P77-I that is unverified**, and it should be run against a redeployed build before the release phase. Everything CI can reach is green; what is untested is the flip's behaviour inside a real wp-admin page with other plugins present.
+**Verified on 2026-09-11**, against the user's redeployed build on `wordpress.lan`, logged in as an admin, on a real page with the Twenty Twenty-Five theme's block content above the shortcode. Every item on P77-B's required manual pass:
+
+| Check | Result |
+|-------|--------|
+| Drawer over the admin menu | Renders inside the overlay root, a direct child of `document.body`, at full viewport geometry |
+| Nested modal from within the drawer | Opening Settings with a stale localStorage draft correctly shows "Unsaved settings found" stacked on top of the Settings drawer, in the same overlay-root shadow tree; dismissing it leaves the drawer open underneath |
+| Select dropdown inside the drawer | The Theme select opens all 23 themes grouped; the checked option resolves `data-checked="true"`, `background-color: rgb(0, 120, 112)` (`#007870`), white text, exactly the P77-C token contract; picking a theme live-restyles the drawer itself (`follow` mode, confirmed by the drawer's background changing to Tokyo Night's `#24283b`) |
+| Escape dismissal | Correctly blocked while changes are unsaved (`closeOnEscape={!hasChanges}`), and closes the drawer once changes are clean |
+| Click-outside dismissal | Closes the drawer when changes are clean |
+| Host CSS isolation | A hostile rule injected into the host document (`button { background: red !important }`, the same probe P77-B used) does not reach a single control inside the drawer |
+
+**A tooling finding, not a product one.** Coordinate-based synthetic clicks (`click_at`) intermittently missed real interactive elements two shadow-DOM levels deep under `position: fixed`, even though `getBoundingClientRect()` reported the correct viewport coordinates and the element was confirmed not to move on scroll (ruling out a real containing-block regression). A direct `element.click()` call always landed correctly. Recorded as a note for whoever runs the next manual pass through this kind of automation: prefer a DOM-level `.click()` over synthetic pointer coordinates when driving two nested shadow roots.
 
 ## Outcome
 
@@ -710,4 +721,4 @@ What changed, in the order it will matter to someone reading this later:
 
 **The designer's review landed on 2026-09-11 and closed P77-F's last open item** with no changes to the ring, plus a correction to how the pole rule was stated and a rejection of the 4:1 target this report had proposed. See the P77-F notes; the argument was re-derived from the engine and reproduces exactly, and the target is now guarded by a test.
 
-**One item outlives the phase and is not a blocker for it:** the manual wp-admin pass on the flipped portal default (P77-I notes above), which CI cannot substitute and which needs a rebuilt, redeployed plugin.
+**The manual wp-admin pass was run on 2026-09-11**, against the user's redeployed build on `wordpress.lan`, and every P77-B/P77-I requirement passes. Details below. The phase has no open items left.
